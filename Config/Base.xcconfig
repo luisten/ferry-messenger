@@ -1,0 +1,8 @@
+// The project's base configuration (project.pbxproj), so every target inherits it.
+// Your own values go in Local.xcconfig (gitignored): copy Local.example.xcconfig and fill it in. Without it the app
+// still builds and runs in the simulator, as com.example.ferry-messenger.
+
+FERRY_BUNDLE_PREFIX = com.example
+DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"

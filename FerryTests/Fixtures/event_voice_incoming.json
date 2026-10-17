@@ -1,0 +1,27 @@
+{
+  "content": {
+    "body": "audioclip-1791832515000-7291.mp4.ogg",
+    "com.beeper.disappearing_timer": {},
+    "info": {
+      "duration": 7291,
+      "mimetype": "audio/ogg",
+      "size": 32428
+    },
+    "m.mentions": {},
+    "msgtype": "m.audio",
+    "org.matrix.msc1767.audio": {
+      "duration": 7291,
+      "waveform": []
+    },
+    "org.matrix.msc3245.voice": {},
+    "url": "mxc://igm.home.arpa/RoueWLJThuRbDiYWLaeDolTg"
+  },
+  "event_id": "$ILPjj2IUWNSQtYbxuHEsHs5u7K9rCMqqjTFIPfYg1Ak",
+  "origin_server_ts": 1791832518983,
+  "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+  "sender": "@instagram_17841400000000301:igm.home.arpa",
+  "type": "m.room.message",
+  "unsigned": {
+    "membership": "join"
+  }
+}

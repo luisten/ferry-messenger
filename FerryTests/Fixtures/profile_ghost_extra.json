@@ -1,0 +1,10 @@
+{
+  "displayname": "Kivo Studio",
+  "avatar_url": "mxc://igm.home.arpa/AKRxSivqzKQzNAwknfzLHZsH",
+  "com.beeper.bridge.network": "instagram",
+  "com.beeper.bridge.service": "instagramgo",
+  "com.beeper.bridge.remote_id": "17841400000000302",
+  "com.beeper.bridge.identifiers": [
+    "instagram:kivostudio"
+  ]
+}

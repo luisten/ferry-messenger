@@ -1,0 +1,94 @@
+# Release: a signed tag vX.Y becomes a GitHub release with an unsigned .ipa (docs/DEVELOPMENT.md, "Releases").
+# Nothing is published unless the tag is annotated, signed by a key in the RELEASE_SIGNERS repository variable (a
+# variable, so a push can't change who's trusted) and matches the app's MARKETING_VERSION. Never talks to Instagram.
+# Actions are pinned by commit SHA; Go by version and SHA-256, as in ci.yml.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash # -eo pipefail
+
+jobs:
+  release:
+    name: Signed release
+    runs-on: xcode-27
+    timeout-minutes: 40
+    permissions:
+      contents: write # gh release create
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app/Contents/Developer
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The tag as pushed, annotation and signature included (a checkout can leave a plain ref in its place).
+      - name: Check the tag's signature
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SIGNERS: ${{ vars.RELEASE_SIGNERS }}
+        run: |
+          [ -n "$RELEASE_SIGNERS" ] || { echo "::error::Set the RELEASE_SIGNERS repository variable (docs/DEVELOPMENT.md, Releases)."; exit 1; }
+          gh auth setup-git
+          git fetch --force --no-tags origin "+refs/tags/$TAG:refs/tags/$TAG"
+          [ "$(git cat-file -t "$TAG")" = tag ] || { echo "::error::$TAG isn't an annotated tag; sign it with git tag -s."; exit 1; }
+          [ "$(git rev-parse "$TAG^{commit}")" = "$GITHUB_SHA" ] || { echo "::error::$TAG doesn't point at the commit being built."; exit 1; }
+          printf '%s\n' "$RELEASE_SIGNERS" >"$RUNNER_TEMP/allowed_signers"
+          git -c gpg.ssh.allowedSignersFile="$RUNNER_TEMP/allowed_signers" tag -v "$TAG"
+
+      - name: Check the version matches the tag
+        run: |
+          version=$(xcodebuild -project Ferry.xcodeproj -scheme Ferry -configuration Release -showBuildSettings 2>/dev/null \
+            | sed -n 's/^ *MARKETING_VERSION = //p' | head -1)
+          [ "v$version" = "$TAG" ] || { echo "::error::The tag is $TAG but MARKETING_VERSION is $version."; exit 1; }
+
+      - name: Build core/ (Go)
+        env:
+          GO_VERSION: go1.27.1
+          GO_SHA256: ee215d57e0ec269c60cc9ceca68e6bda321ba9ee5afe24f4b0988703c2d87d12 # darwin-arm64.tar.gz
+        run: |
+          mkdir -p "$RUNNER_TEMP/go-dl"
+          curl -fsSLo "$RUNNER_TEMP/go-dl/go.tar.gz" "https://go.dev/dl/$GO_VERSION.darwin-arm64.tar.gz"
+          printf '%s  %s\n' "$GO_SHA256" "$RUNNER_TEMP/go-dl/go.tar.gz" | shasum -a 256 -c -
+          tar -xzf "$RUNNER_TEMP/go-dl/go.tar.gz" -C "$RUNNER_TEMP"
+          PATH="$RUNNER_TEMP/go/bin:$PATH" core/build.sh
+
+      # Unsigned: AltStore and SideStore sign it with the installer's own Apple account. Without Config/Local.xcconfig
+      # the bundle ID is com.example.ferry-messenger; they change it to fit that account.
+      - name: Build the .ipa
+        run: |
+          xcodebuild build -project Ferry.xcodeproj -scheme Ferry -configuration Release -destination generic/platform=iOS \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" CODE_SIGNING_ALLOWED=NO
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/Ferry.app" "$RUNNER_TEMP/ipa/Payload/"
+          (cd "$RUNNER_TEMP/ipa" && zip -qry FerryMessenger.ipa Payload && shasum -a 256 FerryMessenger.ipa >FerryMessenger.ipa.sha256)
+          cat "$RUNNER_TEMP/ipa/FerryMessenger.ipa.sha256"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd "$RUNNER_TEMP/ipa"
+          {
+            echo "Install \`FerryMessenger.ipa\` with AltStore or SideStore, or build from source: [docs/DEVELOPMENT.md](https://github.com/$GITHUB_REPOSITORY/blob/$TAG/docs/DEVELOPMENT.md#install-on-your-iphone)."
+            echo
+            echo "Built from the signed tag $TAG by [this run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID). SHA-256:"
+            echo
+            echo "\`\`\`"
+            cat FerryMessenger.ipa.sha256
+            echo "\`\`\`"
+          } >notes.md
+          gh release create "$TAG" FerryMessenger.ipa FerryMessenger.ipa.sha256 --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "Ferry Messenger $TAG" --notes-file notes.md

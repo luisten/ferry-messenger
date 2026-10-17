@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Ferry app icon: Two aboard, Deep water (tinted)</title>
+  <!-- Tinted appearance, round 2 (2026-10-15). Grayscale on transparent: iOS discards colour here and tints by
+       luminance in the person's own tint (white = full tint, the gray = about half). So the coloured icon's tinted
+       variant keeps the v3 tones: front bubble and hull full, back bubble and wave half, the same hierarchy as the
+       light icon (white and foam).
+       Geometry is identical to ferry-icon-color.svg. Render rules for CoreGraphics (top-left origin, 1 unit = 1 px of
+       the 1024 artboard): only M, H, V, C, Z; absolute coordinates; every path is one closed outline filled nonzero;
+       the wave is a stroke (width 36, round caps, round joins). Draw in this order. -->
+  <!-- 2. Back bubble (second account): half tint. -->
+  <path d="M650 216 H722 C766.2 216 802 251.8 802 296 V316 C802 368 795.2 402.1 815.6 436.8 C785.7 418.4 727.2 396 666 396 H650 C605.8 396 570 360.2 570 316 V296 C570 251.8 605.8 216 650 216Z" fill="#8A8A8A"/>
+  <!-- 3. Front bubble (first account): full tint. -->
+  <path d="M306 252 H430 C485.2 252 530 296.8 530 352 V384 C530 439.2 485.2 484 430 484 H376 C299.5 484 226.4 512 189 535 C214.5 491.6 206 449 206 384 V352 C206 296.8 250.8 252 306 252Z" fill="#FFFFFF"/>
+  <!-- 4. Hull: full tint. -->
+  <path d="M162 572 H862 C836 614 808 654 784 684 C776 694 766 700 752 700 H250 C208 700 178 648 162 572Z" fill="#FFFFFF"/>
+  <!-- 5. Wave: half tint. -->
+  <path d="M242 794 C291.5 772.7 328.5 772.7 378 794 C427.5 815.3 464.5 815.3 514 794 C563.5 772.7 600.5 772.7 650 794 C699.5 815.3 736.5 815.3 786 794" fill="none" stroke="#8A8A8A" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

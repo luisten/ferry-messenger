@@ -1,0 +1,72 @@
+{
+ "account": "17841400000000302",
+ "at": 1792199286804,
+ "delta": {
+  "__typename": "SlideUQPPNewMessage",
+  "uq_seq_id": "222",
+  "thread_read_state_effect": "MARK_UNREAD",
+  "message": {
+   "thread_fbid": "1700000000000301",
+   "offline_threading_id": "7517028625980330026",
+   "message_id": "mid.$cAAAy8NQIKzyneKwklmhR2bVaABAq",
+   "sender_fbid": "17841400000000301",
+   "text_body": null,
+   "timestamp_ms": "1792199285910",
+   "igd_snippet": "Tamo sent a GIF.",
+   "content": {
+    "__typename": "SlideMessageAnimatedMediaContent",
+    "animated_media": [
+     {
+      "preview_cdn_url": null,
+      "alt_text": null,
+      "attachment_webp_url": "https://scontent.example.invalid/v/g001.webp",
+      "preview_height": 240,
+      "preview_width": 240,
+      "is_sticker": false,
+      "attachment_mp4_url": "https://scontent.example.invalid/v/g002.mp4"
+     }
+    ],
+    "__isSlideMessageContent": "SlideMessageAnimatedMediaContent"
+   },
+   "id": "mid.$cAAAy8NQIKzyneKwklmhR2bVaABAq",
+   "content_type": "GIFS",
+   "is_reported": false,
+   "tombstone_reason": null,
+   "is_tombstone_revealable": null,
+   "reactions": [],
+   "bot_response_id": null,
+   "is_ai_generated": false,
+   "mentions": [],
+   "igd_is_forwarded": false,
+   "replied_to_message_id": null,
+   "msg_reactions": [],
+   "replied_to_message": null,
+   "sender": {
+    "name": "Tamo Veska",
+    "id": "17841400000000301",
+    "igid": "4200000301",
+    "user_dict": {
+     "profile_pic_url": "https://scontent.example.invalid/v/g003.jpg",
+     "username": "tamoveska",
+     "full_name": "Tamo Veska",
+     "friendship_status": {
+      "blocking": false,
+      "is_restricted": false
+     },
+     "interop_messaging_user_fbid": "17841400000000301",
+     "id": "4200000301",
+     "ai_agent_type": null
+    }
+   },
+   "slide_edit_history": [],
+   "is_pinned": false,
+   "igd_wearables_attribution_text": null,
+   "igd_wearables_attribution_type": null,
+   "expiration_timestamp_ms": null,
+   "view_expiration_timestamp_ms": null
+  },
+  "__isSlideUQPPMutationWithThreadKey": "SlideUQPPNewMessage",
+  "thread_fbid": "1700000000000301"
+ },
+ "kind": "Delta"
+}

@@ -1,0 +1,34 @@
+{
+  "content": {
+    "body": "**sample.photos Morning light over the harbour, first ferry of the day heading out. Walking the old qu…**\n[https://www.instagram.com/p/DSamplePo01/](https://www.instagram.com/p/DSamplePo01/?carousel_share_child_media_id=3990000000000000004_10000004&is_sponsored=false&is_ineligible_for_clips_chaining=false)",
+    "com.beeper.disappearing_timer": {},
+    "external_url": "https://www.instagram.com/p/DSamplePo01/?carousel_share_child_media_id=3990000000000000004_10000004&is_sponsored=false&is_ineligible_for_clips_chaining=false",
+    "filename": "800000003_10000000000000003_1000000000000000003_n.jpg",
+    "format": "org.matrix.custom.html",
+    "formatted_body": "<strong>sample.photos Morning light over the harbour, first ferry of the day heading out. Walking the old qu…</strong><p><a href=\"https://www.instagram.com/p/DSamplePo01/?carousel_share_child_media_id=3990000000000000004_10000004&amp;is_sponsored=false&amp;is_ineligible_for_clips_chaining=false\">https://www.instagram.com/p/DSamplePo01/</a></p>",
+    "info": {
+      "h": 4096,
+      "mimetype": "image/jpeg",
+      "size": 2728286,
+      "thumbnail_info": {
+        "h": 1438,
+        "mimetype": "image/jpeg",
+        "size": 235797,
+        "w": 1080
+      },
+      "thumbnail_url": "mxc://igm.home.arpa/ZqOvaYugPJpVxGmgzAoitbGt",
+      "w": 3075
+    },
+    "m.mentions": {},
+    "msgtype": "m.image",
+    "url": "mxc://igm.home.arpa/PpZPJehYzvPxhKSuorczrYzD"
+  },
+  "event_id": "$tSmpB6HTh88xdwyR5kJT9cAvRQ6nnXTWNI4mmo5J37A",
+  "origin_server_ts": 1791905148356,
+  "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+  "sender": "@instagram_17841400000000301:igm.home.arpa",
+  "type": "m.room.message",
+  "unsigned": {
+    "membership": "join"
+  }
+}

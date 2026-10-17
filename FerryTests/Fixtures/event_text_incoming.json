@@ -1,0 +1,16 @@
+{
+  "content": {
+    "body": "test",
+    "com.beeper.disappearing_timer": {},
+    "m.mentions": {},
+    "msgtype": "m.text"
+  },
+  "event_id": "$sfdYZ4m04l-a8_aP0tdw3ZED50C86qWI1xsjKCcM_i0",
+  "origin_server_ts": 1781263924700,
+  "room_id": "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA",
+  "sender": "@instagram_17841400000000302:igm.home.arpa",
+  "type": "m.room.message",
+  "unsigned": {
+    "membership": "join"
+  }
+}

@@ -1,0 +1,151 @@
+M8 starting-folder capture (spike S5(d)). NOT part of the bridge build: applies on top of
+server/bridge/inbox-folder.patch for a one-off debug image (manual-verification.md, Hand-off C).
+Logs each inbox thread's IDs, folder-like scalars and key names only (never content, names or cookies);
+FERRY_DEBUG_PRO_GK=1 sends IsProfessionalAccountGK true.
+
+diff --git a/pkg/instameow/graphql.go b/pkg/instameow/graphql.go
+index ad816c2..6fc7b03 100644
+--- a/pkg/instameow/graphql.go
++++ b/pkg/instameow/graphql.go
+@@ -156,6 +156,10 @@ func makeGraphQLRequest[T any](ctx context.Context, c *Client, name string, req
+ 		c.checkResponseError(err)
+ 		return
+ 	}
++	switch name { // Ferry M8 TEMPORARY DEBUG
++	case "PolarisDirectInboxQuery", "IGDThreadListOffMsysPaginationQuery", "IGDThreadDetailQuery":
++		ferryDebugLogThreadFolders(ctx, c, name, respData)
++	}
+ 	var wrappedResp graphql.Response[T]
+ 	err = json.Unmarshal(respData, &wrappedResp)
+ 	if err != nil {
+diff --git a/pkg/instameow/ferry_debug.go b/pkg/instameow/ferry_debug.go
+new file mode 100644
+index 0000000..1252432
+--- /dev/null
++++ b/pkg/instameow/ferry_debug.go
+@@ -0,0 +1,104 @@
++package instameow
++
++// Ferry M8 TEMPORARY DEBUG (starting-folder experiment). Logs, for each thread in the inbox/thread queries, only its
++// IDs and the scalar values of folder-like keys, plus the names of all its keys. Never message content, names or
++// cookies. Removed after the experiment.
++
++import (
++	"context"
++	"encoding/json"
++	"fmt"
++	"slices"
++	"strings"
++
++	"github.com/rs/zerolog"
++)
++
++func folderLike(key string) bool {
++	k := strings.ToLower(key)
++	for _, bad := range []string{"text", "snippet", "title", "name", "body", "url", "uri"} {
++		if strings.Contains(k, bad) {
++			return false
++		}
++	}
++	for _, good := range []string{"folder", "inbox", "tab", "label", "categor", "primary", "general", "tag"} {
++		if strings.Contains(k, good) {
++			return true
++		}
++	}
++	return false
++}
++
++func ferryDebugLogThreadFolders(ctx context.Context, c *Client, query string, respData []byte) {
++	log := zerolog.Ctx(ctx)
++	if v := c.GetViewer(); v != nil && query == "PolarisDirectInboxQuery" {
++		log.Info().Bool("is_professional_account", v.IsProfessionalAccount).Bool("has_tabbed_inbox", v.HasTabbedInbox).
++			Bool("is_business_account", v.IsBusinessAccount).Bool("viewer_loaded", v.Username != "").
++			Msg("Ferry M8 debug: viewer account type")
++	}
++	var root any
++	if err := json.Unmarshal(respData, &root); err != nil {
++		log.Warn().Err(err).Str("query", query).Msg("Ferry M8 debug: unparseable response")
++		return
++	}
++	var walk func(node any, path string)
++	walk = func(node any, path string) {
++		switch n := node.(type) {
++		case []any:
++			for _, child := range n {
++				walk(child, path)
++			}
++		case map[string]any:
++			_, hasSubtype := n["thread_subtype"]
++			_, hasKey := n["thread_key"]
++			if hasSubtype || hasKey {
++				keys := make([]string, 0, len(n))
++				fields := zerolog.Dict()
++				for k, v := range n {
++					keys = append(keys, k)
++					if !folderLike(k) {
++						continue
++					}
++					switch val := v.(type) {
++					case string:
++						if len(val) > 40 {
++							val = val[:40] + "…"
++						}
++						fields.Str(k, val)
++					case bool, float64, nil:
++						fields.Interface(k, val)
++					default:
++						fields.Str(k, fmt.Sprintf("<%T>", val))
++					}
++				}
++				slices.Sort(keys)
++				log.Info().Str("query", query).Str("path", path).
++					Interface("thread_fbid", n["thread_fbid"]).Interface("thread_key", n["thread_key"]).
++					Interface("thread_subtype", n["thread_subtype"]).
++					Dict("folder_fields", fields).Strs("keys", keys).
++					Msg("Ferry M8 debug: thread folder fields")
++			} else if path == "" || strings.Count(path, "/") < 3 {
++				// Container levels (mailbox, edges): key names and folder-like scalars only.
++				keys := make([]string, 0, len(n))
++				for k, v := range n {
++					keys = append(keys, k)
++					if folderLike(k) {
++						if s, ok := v.(string); ok && len(s) <= 40 {
++							log.Info().Str("query", query).Str("path", path+"/"+k).Str("value", s).Msg("Ferry M8 debug: container folder field")
++						}
++					}
++				}
++				slices.Sort(keys)
++				log.Debug().Str("query", query).Str("path", path).Strs("keys", keys).Msg("Ferry M8 debug: container keys")
++			}
++			for k, v := range n {
++				switch k {
++				case "slide_messages", "users", "viewer", "usersWithoutViewer", "nicknames", "slide_read_receipts", "extensions":
++					continue
++				}
++				walk(v, path+"/"+k)
++			}
++		}
++	}
++	walk(root, "")
++}
+diff --git a/pkg/instameow/slidetypes/requests.go b/pkg/instameow/slidetypes/requests.go
+index 60f2b13..8e90b3a 100644
+--- a/pkg/instameow/slidetypes/requests.go
++++ b/pkg/instameow/slidetypes/requests.go
+@@ -17,6 +17,7 @@
+ package slidetypes
+ 
+ import (
++	"os"
+ 	"go.mau.fi/util/jsontime"
+ )
+ 
+@@ -197,7 +198,7 @@ type GetMailboxRequest struct {
+ func MakeMailboxRequest(deviceID string) *GetMailboxRequest {
+ 	return &GetMailboxRequest{
+ 		DeviceIDForIrisSubscription:    deviceID,
+-		IsProfessionalAccountGK:        false,
++		IsProfessionalAccountGK:        os.Getenv("FERRY_DEBUG_PRO_GK") == "1", // Ferry M8 TEMPORARY DEBUG
+ 		PinnedThreadsRenderEnabledGK:   true,
+ 		MaxUnreadMessagesCount:         5,
+ 		PolarisAIGMAccountLabelEnabled: false,

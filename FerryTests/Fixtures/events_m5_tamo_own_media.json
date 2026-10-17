@@ -1,0 +1,133 @@
+[
+  {
+    "content": {
+      "body": "igm-photo-test.jpg",
+      "filename": "igm-photo-test.jpg",
+      "info": {
+        "h": 900,
+        "mimetype": "image/jpeg",
+        "size": 55228,
+        "w": 1200
+      },
+      "msgtype": "m.image",
+      "url": "mxc://igm.home.arpa/DsffXxJsaGrrUoXTLzuDXalX"
+    },
+    "event_id": "$jTmhB9WnkHzhsa5q3OSYffduqNliq3DtWaG4u9lkGMY",
+    "origin_server_ts": 1791832504659,
+    "room_id": "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA",
+    "sender": "@me:igm.home.arpa",
+    "type": "m.room.message",
+    "unsigned": {
+      "m.relations": {
+        "m.reference": {
+          "chunk": [
+            {
+              "event_id": "$7NCGuzOswyJTavt5sI1GakK6fHiZecBOA476I5QbRAY"
+            }
+          ]
+        }
+      },
+      "membership": "join",
+      "transaction_id": "m5-photo-1"
+    }
+  },
+  {
+    "content": {
+      "m.relates_to": {
+        "event_id": "$jTmhB9WnkHzhsa5q3OSYffduqNliq3DtWaG4u9lkGMY",
+        "rel_type": "m.reference"
+      },
+      "status": "SUCCESS"
+    },
+    "event_id": "$7NCGuzOswyJTavt5sI1GakK6fHiZecBOA476I5QbRAY",
+    "origin_server_ts": 1791832508584,
+    "room_id": "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA",
+    "sender": "@instagrambot:igm.home.arpa",
+    "type": "com.beeper.message_send_status",
+    "unsigned": {
+      "membership": "join"
+    }
+  },
+  {
+    "content": {
+      "body": "igm-voice-test.m4a",
+      "filename": "igm-voice-test.m4a",
+      "info": {
+        "duration": 7193,
+        "mimetype": "audio/mp4",
+        "size": 35081
+      },
+      "msgtype": "m.audio",
+      "org.matrix.msc1767.audio": {
+        "duration": 7193,
+        "waveform": [
+          40,
+          90,
+          160,
+          220,
+          180,
+          120,
+          200,
+          240,
+          170,
+          90,
+          60,
+          140,
+          210,
+          250,
+          190,
+          110,
+          70,
+          130,
+          200,
+          230,
+          160,
+          100,
+          150,
+          220,
+          180,
+          90,
+          50,
+          30
+        ]
+      },
+      "org.matrix.msc3245.voice": {},
+      "url": "mxc://igm.home.arpa/xUgOmbeFhmIWNbsaYZbyOlOE"
+    },
+    "event_id": "$9h3Wom8uv3NbwVf1FhvaHYymNSL3rg8DU24MQhnEotU",
+    "origin_server_ts": 1791832514279,
+    "room_id": "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA",
+    "sender": "@me:igm.home.arpa",
+    "type": "m.room.message",
+    "unsigned": {
+      "m.relations": {
+        "m.reference": {
+          "chunk": [
+            {
+              "event_id": "$BmM1s_Ea0KxlnEjYDPr9OqSFP-gs4maFUYLlgzhXwq8"
+            }
+          ]
+        }
+      },
+      "membership": "join",
+      "transaction_id": "m5-voice-1"
+    }
+  },
+  {
+    "content": {
+      "m.relates_to": {
+        "event_id": "$9h3Wom8uv3NbwVf1FhvaHYymNSL3rg8DU24MQhnEotU",
+        "rel_type": "m.reference"
+      },
+      "status": "SUCCESS"
+    },
+    "event_id": "$BmM1s_Ea0KxlnEjYDPr9OqSFP-gs4maFUYLlgzhXwq8",
+    "origin_server_ts": 1791832519564,
+    "room_id": "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA",
+    "sender": "@instagrambot:igm.home.arpa",
+    "type": "com.beeper.message_send_status",
+    "unsigned": {
+      "membership": "join"
+    }
+  }
+]

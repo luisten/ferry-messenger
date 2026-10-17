@@ -1,0 +1,8 @@
+// Copy to Config/Local.xcconfig (gitignored); Base.xcconfig includes it.
+
+// A reverse-DNS prefix you own. Bundle IDs: <prefix>.ferry-messenger, <prefix>.ferry-messenger.tests, <prefix>.ferry-messenger.uitests.
+FERRY_BUNDLE_PREFIX = com.example
+
+// Your Apple developer team ID (10 characters, e.g. ABCDE12345: Xcode > Settings > Accounts), for running on a
+// device. Leave it empty for the simulator.
+DEVELOPMENT_TEAM =

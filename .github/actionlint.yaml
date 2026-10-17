@@ -1,0 +1,5 @@
+# actionlint 1.7.12 predates the GitHub-hosted `xcode-27` label (public preview since 2026-07); listing it here keeps
+# the runner-label check on for every other label. Drop it once actionlint knows the label.
+self-hosted-runner:
+  labels:
+    - xcode-27

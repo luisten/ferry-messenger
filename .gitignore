@@ -1,0 +1,25 @@
+# Secrets / local env
+.env
+.env.*
+!.env.example
+
+# Xcode
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+
+# macOS
+.DS_Store
+
+# Simulator screenshots can show real IG accounts/messages; keep them local (the design diff is the one tracked file)
+docs/verification/*
+!docs/verification/m7-design-diff.md
+.claude/
+dist/
+
+# Per-developer Xcode settings (team ID, bundle ID prefix): Config/Local.example.xcconfig
+Config/Local.xcconfig
+
+# Local-only notes (real test-account names and the like)
+docs/local/

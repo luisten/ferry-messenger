@@ -1,0 +1,23 @@
+{
+  "content": {
+    "body": "800000002_1000000000000002_1000000000000000002_n.jpg",
+    "com.beeper.disappearing_timer": {},
+    "info": {
+      "h": 900,
+      "mimetype": "image/jpeg",
+      "size": 54625,
+      "w": 1200
+    },
+    "m.mentions": {},
+    "msgtype": "m.image",
+    "url": "mxc://igm.home.arpa/zHGtTkWDqzUaIgSDeWTXWrmn"
+  },
+  "event_id": "$4M3r5wWs0mzYxRRmsQzw4SLzPdcXEEvWyhpsjSlAZ6E",
+  "origin_server_ts": 1791832507960,
+  "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+  "sender": "@instagram_17841400000000301:igm.home.arpa",
+  "type": "m.room.message",
+  "unsigned": {
+    "membership": "join"
+  }
+}

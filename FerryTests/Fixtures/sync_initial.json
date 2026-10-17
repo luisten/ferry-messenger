@@ -1,0 +1,1652 @@
+{
+  "next_batch": "s97_1_0_8_16_1_1_11_0_1_2_1_1_1",
+  "device_one_time_keys_count": {
+    "signed_curve25519": 0
+  },
+  "device_unused_fallback_key_types": [],
+  "rooms": {
+    "join": {
+      "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA": {
+        "timeline": {
+          "events": [
+            {
+              "content": {
+                "service_members": [
+                  "@instagrambot:igm.home.arpa"
+                ]
+              },
+              "event_id": "$Zc0tTu-xsXUCGuN0UILfMpcaBvaIyohXGCUjdiqLxm8",
+              "origin_server_ts": 1791816584876,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "io.element.functional_members",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "bridgebot": "@instagrambot:igm.home.arpa",
+                "channel": {
+                  "fi.mau.receiver": "17841400000000301",
+                  "id": "17841400000000302"
+                },
+                "com.beeper.room_type": "dm",
+                "com.beeper.room_type.v2": "dm",
+                "creator": "@instagrambot:igm.home.arpa",
+                "protocol": {
+                  "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                  "displayname": "Instagram",
+                  "external_url": "https://instagram.com",
+                  "id": "instagramgo"
+                }
+              },
+              "event_id": "$BSptGCmxXDj7Vg_prQZlKbqxU2PgiwwfEBacfvGN0vg",
+              "origin_server_ts": 1791816584876,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "igm.home.arpa/instagram",
+              "type": "uk.half-shot.bridge",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "bridgebot": "@instagrambot:igm.home.arpa",
+                "channel": {
+                  "fi.mau.receiver": "17841400000000301",
+                  "id": "17841400000000302"
+                },
+                "com.beeper.room_type": "dm",
+                "com.beeper.room_type.v2": "dm",
+                "creator": "@instagrambot:igm.home.arpa",
+                "protocol": {
+                  "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                  "displayname": "Instagram",
+                  "external_url": "https://instagram.com",
+                  "id": "instagramgo"
+                }
+              },
+              "event_id": "$u4zBdJYMh6cGUrT5JmdC57LcfekeqoKXO-96OGYpqO8",
+              "origin_server_ts": 1791816584876,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "igm.home.arpa/instagram",
+              "type": "m.bridge",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "delete": 2,
+                "delete_chat": true,
+                "edit": 2,
+                "edit_max_age": 900,
+                "edit_max_count": 5,
+                "file": {
+                  "fi.mau.gif": {
+                    "caption": -1,
+                    "max_size": 8000000,
+                    "mime_types": {
+                      "image/gif": 2
+                    }
+                  },
+                  "m.audio": {
+                    "caption": -1,
+                    "max_size": 25000000,
+                    "mime_types": {
+                      "audio/mp4": 2,
+                      "audio/mpeg": 2,
+                      "audio/wav": 2
+                    }
+                  },
+                  "m.image": {
+                    "caption": -1,
+                    "max_size": 8000000,
+                    "mime_types": {
+                      "image/gif": 2,
+                      "image/jpeg": 2,
+                      "image/png": 2,
+                      "image/webp": 2
+                    }
+                  },
+                  "m.sticker": {
+                    "caption": -1,
+                    "max_size": 8000000,
+                    "mime_types": {
+                      "image/png": 2,
+                      "image/webp": 2
+                    }
+                  },
+                  "m.video": {
+                    "caption": -1,
+                    "max_size": 25000000,
+                    "mime_types": {
+                      "video/mp4": 2,
+                      "video/ogg": 2,
+                      "video/quicktime": 2,
+                      "video/webm": 2
+                    }
+                  },
+                  "org.matrix.msc3245.voice": {
+                    "caption": -1,
+                    "max_size": 25000000,
+                    "mime_types": {
+                      "audio/mp4": 2,
+                      "audio/ogg": 1
+                    }
+                  }
+                },
+                "formatting": {
+                  "blockquote": 2,
+                  "bold": 2,
+                  "code_block": 2,
+                  "inline_code": 2,
+                  "italic": 2,
+                  "strikethrough": 2,
+                  "user_link": 2
+                },
+                "id": "fi.mau.instagram.capabilities.2026_08_31+ffmpeg",
+                "max_text_length": 1000,
+                "message_request": {
+                  "accept_with_button": 2
+                },
+                "reaction": 2,
+                "reaction_count": 1,
+                "reply": 2,
+                "typing_notifications": true
+              },
+              "event_id": "$-5w35qx45iK0qrJDPTZ7TyX72X_03g-gkQ3Cdvo8sqE",
+              "origin_server_ts": 1791816584877,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "igm.home.arpa/instagram",
+              "type": "com.beeper.room_features",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "com.beeper.exclude_from_timeline": true,
+                "topic": ""
+              },
+              "event_id": "$OSEY58j7qDTw6kQ1SCe0GT9dl73vWoFVPcnsoIOy7Ls",
+              "origin_server_ts": 1791816584878,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.topic",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "avatar_url": "mxc://igm.home.arpa/AKRxSivqzKQzNAwknfzLHZsH",
+                "com.beeper.exclude_from_timeline": true,
+                "displayname": "Kivo Studio",
+                "fi.mau.will_auto_accept": true,
+                "membership": "invite"
+              },
+              "event_id": "$5X6QG2TFOqo4UTcEnhxPM4qTUOIH86PAk6moPbPRfCo",
+              "origin_server_ts": 1791816585047,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "@instagram_17841400000000302:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "avatar_url": "mxc://igm.home.arpa/AKRxSivqzKQzNAwknfzLHZsH",
+                "displayname": "Kivo Studio",
+                "membership": "join"
+              },
+              "event_id": "$YVAXaPBdFsBHHqr5fFVcZRUu5yr7JxpESgPI8UcK10o",
+              "origin_server_ts": 1791816585137,
+              "sender": "@instagram_17841400000000302:igm.home.arpa",
+              "state_key": "@instagram_17841400000000302:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "leave",
+                "prev_content": {
+                  "avatar_url": "mxc://igm.home.arpa/AKRxSivqzKQzNAwknfzLHZsH",
+                  "com.beeper.exclude_from_timeline": true,
+                  "displayname": "Kivo Studio",
+                  "fi.mau.will_auto_accept": true,
+                  "membership": "invite"
+                },
+                "prev_sender": "@instagrambot:igm.home.arpa",
+                "replaces_state": "$5X6QG2TFOqo4UTcEnhxPM4qTUOIH86PAk6moPbPRfCo"
+              }
+            },
+            {
+              "content": {
+                "com.beeper.exclude_from_timeline": true,
+                "displayname": "me",
+                "fi.mau.will_auto_accept": true,
+                "membership": "invite"
+              },
+              "event_id": "$616bfJqfVL1KimCADNO2PhIoaiegPy38pjVzXTl5PaA",
+              "origin_server_ts": 1791816585198,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "@me:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "invite"
+              }
+            },
+            {
+              "content": {
+                "displayname": "me",
+                "fi.mau.double_puppet_source": "mautrix-instagram",
+                "membership": "join"
+              },
+              "event_id": "$uZJdARsB-eBkYaIVfi9tt6KIAELr19s2pVI5DGgozZM",
+              "origin_server_ts": 1791816585259,
+              "sender": "@me:igm.home.arpa",
+              "state_key": "@me:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "join",
+                "prev_content": {
+                  "com.beeper.exclude_from_timeline": true,
+                  "displayname": "me",
+                  "fi.mau.will_auto_accept": true,
+                  "membership": "invite"
+                },
+                "prev_sender": "@instagrambot:igm.home.arpa",
+                "replaces_state": "$616bfJqfVL1KimCADNO2PhIoaiegPy38pjVzXTl5PaA"
+              }
+            },
+            {
+              "content": {
+                "fi.mau.implicit_name": true,
+                "name": "Kivo Studio"
+              },
+              "event_id": "$a5tvagxW0PN-q3RE4fGktEFsYlI9iGk4Y83JIyayZGo",
+              "origin_server_ts": 1791816585941,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.name",
+              "unsigned": {
+                "membership": "join"
+              }
+            },
+            {
+              "content": {
+                "fi.mau.implicit_name": true,
+                "url": "mxc://igm.home.arpa/AKRxSivqzKQzNAwknfzLHZsH"
+              },
+              "event_id": "$mLdwSighW8nwpChAvAeCmYetq4g1BytG-wbPVjlEQBA",
+              "origin_server_ts": 1791816586000,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.avatar",
+              "unsigned": {
+                "membership": "join"
+              }
+            },
+            {
+              "content": {
+                "bridgebot": "@instagrambot:igm.home.arpa",
+                "channel": {
+                  "avatar_url": "mxc://igm.home.arpa/AKRxSivqzKQzNAwknfzLHZsH",
+                  "displayname": "Kivo Studio",
+                  "fi.mau.receiver": "17841400000000301",
+                  "id": "17841400000000302"
+                },
+                "com.beeper.room_type": "dm",
+                "com.beeper.room_type.v2": "dm",
+                "creator": "@instagrambot:igm.home.arpa",
+                "protocol": {
+                  "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                  "displayname": "Instagram",
+                  "external_url": "https://instagram.com",
+                  "id": "instagramgo"
+                }
+              },
+              "event_id": "$fHChpS5Cet9gz5X3AN8ZPnlzhQsayJe_vHnuePs6dvA",
+              "origin_server_ts": 1791816586045,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "igm.home.arpa/instagram",
+              "type": "m.bridge",
+              "unsigned": {
+                "membership": "join",
+                "prev_content": {
+                  "bridgebot": "@instagrambot:igm.home.arpa",
+                  "channel": {
+                    "fi.mau.receiver": "17841400000000301",
+                    "id": "17841400000000302"
+                  },
+                  "com.beeper.room_type": "dm",
+                  "com.beeper.room_type.v2": "dm",
+                  "creator": "@instagrambot:igm.home.arpa",
+                  "protocol": {
+                    "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                    "displayname": "Instagram",
+                    "external_url": "https://instagram.com",
+                    "id": "instagramgo"
+                  }
+                },
+                "prev_sender": "@instagrambot:igm.home.arpa",
+                "replaces_state": "$u4zBdJYMh6cGUrT5JmdC57LcfekeqoKXO-96OGYpqO8"
+              }
+            },
+            {
+              "content": {
+                "bridgebot": "@instagrambot:igm.home.arpa",
+                "channel": {
+                  "avatar_url": "mxc://igm.home.arpa/AKRxSivqzKQzNAwknfzLHZsH",
+                  "displayname": "Kivo Studio",
+                  "fi.mau.receiver": "17841400000000301",
+                  "id": "17841400000000302"
+                },
+                "com.beeper.room_type": "dm",
+                "com.beeper.room_type.v2": "dm",
+                "creator": "@instagrambot:igm.home.arpa",
+                "protocol": {
+                  "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                  "displayname": "Instagram",
+                  "external_url": "https://instagram.com",
+                  "id": "instagramgo"
+                }
+              },
+              "event_id": "$ADBx0HijI76t4JnlvFVWbsyvMMVPnHGZSMbjHEUJbDY",
+              "origin_server_ts": 1791816586086,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "igm.home.arpa/instagram",
+              "type": "uk.half-shot.bridge",
+              "unsigned": {
+                "membership": "join",
+                "prev_content": {
+                  "bridgebot": "@instagrambot:igm.home.arpa",
+                  "channel": {
+                    "fi.mau.receiver": "17841400000000301",
+                    "id": "17841400000000302"
+                  },
+                  "com.beeper.room_type": "dm",
+                  "com.beeper.room_type.v2": "dm",
+                  "creator": "@instagrambot:igm.home.arpa",
+                  "protocol": {
+                    "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                    "displayname": "Instagram",
+                    "external_url": "https://instagram.com",
+                    "id": "instagramgo"
+                  }
+                },
+                "prev_sender": "@instagrambot:igm.home.arpa",
+                "replaces_state": "$BSptGCmxXDj7Vg_prQZlKbqxU2PgiwwfEBacfvGN0vg"
+              }
+            },
+            {
+              "content": {
+                "body": "test",
+                "com.beeper.disappearing_timer": {},
+                "m.mentions": {},
+                "msgtype": "m.text"
+              },
+              "event_id": "$sfdYZ4m04l-a8_aP0tdw3ZED50C86qWI1xsjKCcM_i0",
+              "origin_server_ts": 1781263924700,
+              "sender": "@instagram_17841400000000302:igm.home.arpa",
+              "type": "m.room.message",
+              "unsigned": {
+                "membership": "join"
+              }
+            },
+            {
+              "content": {
+                "body": "hello",
+                "com.beeper.disappearing_timer": {},
+                "fi.mau.double_puppet_source": "mautrix-instagram",
+                "m.mentions": {},
+                "msgtype": "m.text"
+              },
+              "event_id": "$fQ87gE7ohgw9LTSf11Spv3C6hEzl8IS7zWBIfnVdPYg",
+              "origin_server_ts": 1781264377286,
+              "sender": "@me:igm.home.arpa",
+              "type": "m.room.message",
+              "unsigned": {
+                "membership": "join"
+              }
+            },
+            {
+              "content": {
+                "body": "[https://www.instagram.com/reel/DSampleRl01/](https://www.instagram.com/reel/DSampleRl01/?id=3900000000000000001_1000000001&is_sponsored=false&is_ineligible_for_clips_chaining=false)",
+                "com.beeper.disappearing_timer": {},
+                "com.beeper.unresolved_media": {
+                  "fi.mau.instagram.base_part": {
+                    "body": "[https://www.instagram.com/reel/DSampleRl01/](https://www.instagram.com/reel/DSampleRl01/?id=3900000000000000001_1000000001&is_sponsored=false&is_ineligible_for_clips_chaining=false)",
+                    "formatted_body": "<p><a href=\"https://www.instagram.com/reel/DSampleRl01/?id=3900000000000000001_1000000001&amp;is_sponsored=false&amp;is_ineligible_for_clips_chaining=false\">https://www.instagram.com/reel/DSampleRl01/</a></p>",
+                    "info": {
+                      "h": 1688,
+                      "mimetype": "image/jpeg",
+                      "size": 265845,
+                      "w": 950
+                    },
+                    "msgtype": "m.image",
+                    "url": "mxc://igm.home.arpa/rjDVCqAboxCeGbrIeHzoHEgy"
+                  },
+                  "kind": "permanent"
+                },
+                "external_url": "https://www.instagram.com/reel/DSampleRl01/?id=3900000000000000001_1000000001&is_sponsored=false&is_ineligible_for_clips_chaining=false",
+                "fi.mau.instagram.xma_fetch_status": "skip",
+                "filename": "700000001_10000000000000001_100000000000000001_n.jpg",
+                "format": "org.matrix.custom.html",
+                "formatted_body": "<p><a href=\"https://www.instagram.com/reel/DSampleRl01/?id=3900000000000000001_1000000001&amp;is_sponsored=false&amp;is_ineligible_for_clips_chaining=false\">https://www.instagram.com/reel/DSampleRl01/</a></p>",
+                "info": {
+                  "h": 1688,
+                  "mimetype": "image/jpeg",
+                  "size": 265845,
+                  "w": 950
+                },
+                "m.mentions": {},
+                "msgtype": "m.image",
+                "url": "mxc://igm.home.arpa/rjDVCqAboxCeGbrIeHzoHEgy"
+              },
+              "event_id": "$mGkNbgrbORGhHJdU6tATIr2ywcDOXl0Rs32LA4iAipw",
+              "origin_server_ts": 1781313332465,
+              "sender": "@instagram_17841400000000302:igm.home.arpa",
+              "type": "m.room.message",
+              "unsigned": {
+                "membership": "join"
+              }
+            },
+            {
+              "content": {
+                "fi.mau.implicit_name": true,
+                "name": "Unknown user"
+              },
+              "event_id": "$dOleV843EhpLYXhK-tNVcEkNw-5_PolDIvPDrbhMN4s",
+              "origin_server_ts": 1791816632920,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.name",
+              "unsigned": {
+                "membership": "join",
+                "prev_content": {
+                  "fi.mau.implicit_name": true,
+                  "name": "Kivo Studio"
+                },
+                "prev_sender": "@instagrambot:igm.home.arpa",
+                "replaces_state": "$a5tvagxW0PN-q3RE4fGktEFsYlI9iGk4Y83JIyayZGo"
+              }
+            },
+            {
+              "content": {
+                "avatar_url": "mxc://igm.home.arpa/AKRxSivqzKQzNAwknfzLHZsH",
+                "displayname": "Unknown user",
+                "membership": "join"
+              },
+              "event_id": "$dfLGTpZRjD3dR3ZUnZVy_dMJAjIF0GNnV5FQuDQ7Pb0",
+              "origin_server_ts": 1791816632929,
+              "sender": "@instagram_17841400000000302:igm.home.arpa",
+              "state_key": "@instagram_17841400000000302:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "join",
+                "prev_content": {
+                  "avatar_url": "mxc://igm.home.arpa/AKRxSivqzKQzNAwknfzLHZsH",
+                  "displayname": "Kivo Studio",
+                  "membership": "join"
+                },
+                "prev_sender": "@instagram_17841400000000302:igm.home.arpa",
+                "replaces_state": "$YVAXaPBdFsBHHqr5fFVcZRUu5yr7JxpESgPI8UcK10o"
+              }
+            },
+            {
+              "content": {
+                "avatar_url": "mxc://igm.home.arpa/AKRxSivqzKQzNAwknfzLHZsH",
+                "displayname": "Kivo Studio",
+                "membership": "join"
+              },
+              "event_id": "$p1rAKkShAkDOuOzl0d8yrn353dYExQFPSFYoKySjilg",
+              "origin_server_ts": 1791816633873,
+              "sender": "@instagram_17841400000000302:igm.home.arpa",
+              "state_key": "@instagram_17841400000000302:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "join",
+                "prev_content": {
+                  "avatar_url": "mxc://igm.home.arpa/AKRxSivqzKQzNAwknfzLHZsH",
+                  "displayname": "Unknown user",
+                  "membership": "join"
+                },
+                "prev_sender": "@instagram_17841400000000302:igm.home.arpa",
+                "replaces_state": "$dfLGTpZRjD3dR3ZUnZVy_dMJAjIF0GNnV5FQuDQ7Pb0"
+              }
+            },
+            {
+              "content": {
+                "fi.mau.implicit_name": true,
+                "name": "Kivo Studio"
+              },
+              "event_id": "$xuAhTxGHulF77kyVTMRBEdjn5nn3xsacrv6sg9EmoNY",
+              "origin_server_ts": 1791816633889,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.name",
+              "unsigned": {
+                "membership": "join",
+                "prev_content": {
+                  "fi.mau.implicit_name": true,
+                  "name": "Unknown user"
+                },
+                "prev_sender": "@instagrambot:igm.home.arpa",
+                "replaces_state": "$dOleV843EhpLYXhK-tNVcEkNw-5_PolDIvPDrbhMN4s"
+              }
+            }
+          ],
+          "prev_batch": "s18_1_0_8_16_1_1_11_0_1_2_1_1_1",
+          "limited": true
+        },
+        "state": {
+          "events": [
+            {
+              "content": {
+                "room_version": "12"
+              },
+              "event_id": "$ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA",
+              "origin_server_ts": 1791816584601,
+              "room_id": "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA",
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.create",
+              "unsigned": {}
+            },
+            {
+              "content": {
+                "guest_access": "can_join"
+              },
+              "event_id": "$pVgeIouU2Y_JoMhmVrwVQ6nW9fw2R6Vs2Fb8Mo4NKLk",
+              "origin_server_ts": 1791816584875,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.guest_access",
+              "unsigned": {}
+            },
+            {
+              "content": {
+                "join_rule": "invite"
+              },
+              "event_id": "$SbmRNYtsOD5M5Ken-0_xmAq_29lJ5DsvlfgVWZmP-Z0",
+              "origin_server_ts": 1791816584875,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.join_rules",
+              "unsigned": {}
+            },
+            {
+              "content": {
+                "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                "displayname": "Instagram bridge bot",
+                "membership": "join"
+              },
+              "event_id": "$uTBi6EU9V7IWh1R4ktnbms6lyvxFcmE7IXajQM24eb4",
+              "origin_server_ts": 1791816584776,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "@instagrambot:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {}
+            },
+            {
+              "content": {
+                "ban": 50,
+                "events": {
+                  "com.beeper.disappearing_timer": 0,
+                  "m.room.avatar": 0,
+                  "m.room.encryption": 100,
+                  "m.room.name": 0,
+                  "m.room.server_acl": 100,
+                  "m.room.tombstone": 100,
+                  "m.room.topic": 0
+                },
+                "events_default": 0,
+                "historical": 100,
+                "invite": 0,
+                "kick": 50,
+                "redact": 50,
+                "state_default": 50,
+                "users": {},
+                "users_default": 0
+              },
+              "event_id": "$_L6SG-7iksqxlJ4SEGixpZJpp4lgA3SdzVcGcAKoSlo",
+              "origin_server_ts": 1791816584869,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.power_levels",
+              "unsigned": {}
+            },
+            {
+              "content": {
+                "history_visibility": "shared"
+              },
+              "event_id": "$RVvUDQ4m0uEzkQHogJzcjgyxwe_n8ReK0yvxCWzRR6Y",
+              "origin_server_ts": 1791816584875,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.history_visibility",
+              "unsigned": {}
+            }
+          ]
+        },
+        "account_data": {
+          "events": []
+        },
+        "ephemeral": {
+          "events": [
+            {
+              "type": "m.receipt",
+              "content": {
+                "$mGkNbgrbORGhHJdU6tATIr2ywcDOXl0Rs32LA4iAipw": {
+                  "m.read": {
+                    "@me:igm.home.arpa": {
+                      "ts": 1791816586881
+                    },
+                    "@instagram_17841400000000302:igm.home.arpa": {
+                      "ts": 1791816635189
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "unread_notifications": {
+          "notification_count": 0,
+          "highlight_count": 0
+        },
+        "summary": {
+          "m.joined_member_count": 3,
+          "m.invited_member_count": 0
+        }
+      },
+      "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU": {
+        "timeline": {
+          "events": [
+            {
+              "content": {
+                "room_version": "12"
+              },
+              "event_id": "$o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+              "origin_server_ts": 1791816632897,
+              "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.create",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                "displayname": "Instagram bridge bot",
+                "membership": "join"
+              },
+              "event_id": "$ZVaLtDe_DvGn27R3mnBGDVQtyRUxYyHaszOPkobmg6M",
+              "origin_server_ts": 1791816632989,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "@instagrambot:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "ban": 50,
+                "events": {
+                  "com.beeper.disappearing_timer": 0,
+                  "m.room.avatar": 0,
+                  "m.room.encryption": 100,
+                  "m.room.name": 0,
+                  "m.room.server_acl": 100,
+                  "m.room.tombstone": 100,
+                  "m.room.topic": 0
+                },
+                "events_default": 0,
+                "historical": 100,
+                "invite": 0,
+                "kick": 50,
+                "redact": 50,
+                "state_default": 50,
+                "users": {},
+                "users_default": 0
+              },
+              "event_id": "$L8XocFLbxpTTFLr37A2jNvdP046m8q0IYS2vanjjj8o",
+              "origin_server_ts": 1791816633031,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.power_levels",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "join_rule": "invite"
+              },
+              "event_id": "$x3kXST1zBRYJBwh8tmlsMKYwFNPdbTwGWW-k0PvYIG4",
+              "origin_server_ts": 1791816633037,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.join_rules",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "history_visibility": "shared"
+              },
+              "event_id": "$VcN6Wcfdcuxjs59SbLgEHGov_CMXuitqMqZ-Ytp4qdg",
+              "origin_server_ts": 1791816633037,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.history_visibility",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "guest_access": "can_join"
+              },
+              "event_id": "$fBNIRhY2PtssX_WeoX5ZN4K4f5smOX4nyHXRdeB7D-8",
+              "origin_server_ts": 1791816633037,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.guest_access",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "service_members": [
+                  "@instagrambot:igm.home.arpa"
+                ]
+              },
+              "event_id": "$_s2rrXqqbnBDTQ4NnHaHH5mpZ2EIFsXWe8xjz8q3lSk",
+              "origin_server_ts": 1791816633038,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "io.element.functional_members",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "bridgebot": "@instagrambot:igm.home.arpa",
+                "channel": {
+                  "avatar_url": "mxc://igm.home.arpa/onvkSvgXgcbowUuvGnImEyPS",
+                  "displayname": "Tamo Veska",
+                  "fi.mau.receiver": "17841400000000302",
+                  "id": "17841400000000301"
+                },
+                "com.beeper.room_type": "dm",
+                "com.beeper.room_type.v2": "dm",
+                "creator": "@instagrambot:igm.home.arpa",
+                "protocol": {
+                  "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                  "displayname": "Instagram",
+                  "external_url": "https://instagram.com",
+                  "id": "instagramgo"
+                }
+              },
+              "event_id": "$2tcaVEwPDz0pF3RRtvXRcr04b9ngCwwFtbgULoYxpiQ",
+              "origin_server_ts": 1791816633038,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "igm.home.arpa/instagram",
+              "type": "uk.half-shot.bridge",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "bridgebot": "@instagrambot:igm.home.arpa",
+                "channel": {
+                  "avatar_url": "mxc://igm.home.arpa/onvkSvgXgcbowUuvGnImEyPS",
+                  "displayname": "Tamo Veska",
+                  "fi.mau.receiver": "17841400000000302",
+                  "id": "17841400000000301"
+                },
+                "com.beeper.room_type": "dm",
+                "com.beeper.room_type.v2": "dm",
+                "creator": "@instagrambot:igm.home.arpa",
+                "protocol": {
+                  "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                  "displayname": "Instagram",
+                  "external_url": "https://instagram.com",
+                  "id": "instagramgo"
+                }
+              },
+              "event_id": "$y7e8MJ-CxjoQWqqkTJ9rBVSXuYpqif3VfdFs4gAlMow",
+              "origin_server_ts": 1791816633038,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "igm.home.arpa/instagram",
+              "type": "m.bridge",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "delete": 2,
+                "delete_chat": true,
+                "edit": 2,
+                "edit_max_age": 900,
+                "edit_max_count": 5,
+                "file": {
+                  "fi.mau.gif": {
+                    "caption": -1,
+                    "max_size": 8000000,
+                    "mime_types": {
+                      "image/gif": 2
+                    }
+                  },
+                  "m.audio": {
+                    "caption": -1,
+                    "max_size": 25000000,
+                    "mime_types": {
+                      "audio/mp4": 2,
+                      "audio/mpeg": 2,
+                      "audio/wav": 2
+                    }
+                  },
+                  "m.image": {
+                    "caption": -1,
+                    "max_size": 8000000,
+                    "mime_types": {
+                      "image/gif": 2,
+                      "image/jpeg": 2,
+                      "image/png": 2,
+                      "image/webp": 2
+                    }
+                  },
+                  "m.sticker": {
+                    "caption": -1,
+                    "max_size": 8000000,
+                    "mime_types": {
+                      "image/png": 2,
+                      "image/webp": 2
+                    }
+                  },
+                  "m.video": {
+                    "caption": -1,
+                    "max_size": 25000000,
+                    "mime_types": {
+                      "video/mp4": 2,
+                      "video/ogg": 2,
+                      "video/quicktime": 2,
+                      "video/webm": 2
+                    }
+                  },
+                  "org.matrix.msc3245.voice": {
+                    "caption": -1,
+                    "max_size": 25000000,
+                    "mime_types": {
+                      "audio/mp4": 2,
+                      "audio/ogg": 1
+                    }
+                  }
+                },
+                "formatting": {
+                  "blockquote": 2,
+                  "bold": 2,
+                  "code_block": 2,
+                  "inline_code": 2,
+                  "italic": 2,
+                  "strikethrough": 2,
+                  "user_link": 2
+                },
+                "id": "fi.mau.instagram.capabilities.2026_08_31+ffmpeg",
+                "max_text_length": 1000,
+                "message_request": {
+                  "accept_with_button": 2
+                },
+                "reaction": 2,
+                "reaction_count": 1,
+                "reply": 2,
+                "typing_notifications": true
+              },
+              "event_id": "$kpvkI2C2VpXFjQE_iyi5_LyNU_Qi8PeYcWc-3O4KlvE",
+              "origin_server_ts": 1791816633039,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "igm.home.arpa/instagram",
+              "type": "com.beeper.room_features",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "com.beeper.exclude_from_timeline": true,
+                "topic": ""
+              },
+              "event_id": "$IAL2WBlYqqfjeokxDi5uEPIrYZ5MeEiCN0kGBYZWtn8",
+              "origin_server_ts": 1791816633039,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.topic",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "com.beeper.exclude_from_timeline": true,
+                "name": "Tamo Veska"
+              },
+              "event_id": "$ZqMxJlKIW0gO9vFDWKe3IAFd1nX-IJTaL3OatWKmN3w",
+              "origin_server_ts": 1791816633039,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.name",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "com.beeper.exclude_from_timeline": true,
+                "url": "mxc://igm.home.arpa/onvkSvgXgcbowUuvGnImEyPS"
+              },
+              "event_id": "$kY1j_itSVgrZG4I7zNuawP3-kg2CmxybIJvGzF80Tww",
+              "origin_server_ts": 1791816633039,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.avatar",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "avatar_url": "mxc://igm.home.arpa/onvkSvgXgcbowUuvGnImEyPS",
+                "com.beeper.exclude_from_timeline": true,
+                "displayname": "Tamo Veska",
+                "fi.mau.will_auto_accept": true,
+                "membership": "invite"
+              },
+              "event_id": "$EwTfnSN9_NOvCgOLTJIa3SyZWioI9uTyrz2ZIG9hey4",
+              "origin_server_ts": 1791816633160,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "@instagram_17841400000000301:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "avatar_url": "mxc://igm.home.arpa/onvkSvgXgcbowUuvGnImEyPS",
+                "displayname": "Tamo Veska",
+                "membership": "join"
+              },
+              "event_id": "$lVckmFv746AJ3L6l1dvkVzAg_RKjJf69QikmZFKRw5U",
+              "origin_server_ts": 1791816633207,
+              "sender": "@instagram_17841400000000301:igm.home.arpa",
+              "state_key": "@instagram_17841400000000301:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "leave",
+                "prev_content": {
+                  "avatar_url": "mxc://igm.home.arpa/onvkSvgXgcbowUuvGnImEyPS",
+                  "com.beeper.exclude_from_timeline": true,
+                  "displayname": "Tamo Veska",
+                  "fi.mau.will_auto_accept": true,
+                  "membership": "invite"
+                },
+                "prev_sender": "@instagrambot:igm.home.arpa",
+                "replaces_state": "$EwTfnSN9_NOvCgOLTJIa3SyZWioI9uTyrz2ZIG9hey4"
+              }
+            },
+            {
+              "content": {
+                "com.beeper.exclude_from_timeline": true,
+                "displayname": "me",
+                "fi.mau.will_auto_accept": true,
+                "membership": "invite"
+              },
+              "event_id": "$YNwwyEyPEXhfa9aq_LCiqS6RtckbiRWjChMhtVglUM4",
+              "origin_server_ts": 1791816633249,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "@me:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "invite"
+              }
+            },
+            {
+              "content": {
+                "displayname": "me",
+                "fi.mau.double_puppet_source": "mautrix-instagram",
+                "membership": "join"
+              },
+              "event_id": "$uQOhheYjdFAxQilDz701z3CpbSNUiT04aZuhQ7nB4Tw",
+              "origin_server_ts": 1791816633298,
+              "sender": "@me:igm.home.arpa",
+              "state_key": "@me:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "join",
+                "prev_content": {
+                  "com.beeper.exclude_from_timeline": true,
+                  "displayname": "me",
+                  "fi.mau.will_auto_accept": true,
+                  "membership": "invite"
+                },
+                "prev_sender": "@instagrambot:igm.home.arpa",
+                "replaces_state": "$YNwwyEyPEXhfa9aq_LCiqS6RtckbiRWjChMhtVglUM4"
+              }
+            },
+            {
+              "content": {
+                "body": "test",
+                "com.beeper.disappearing_timer": {},
+                "fi.mau.double_puppet_source": "mautrix-instagram",
+                "m.mentions": {},
+                "msgtype": "m.text"
+              },
+              "event_id": "$DaxGAlNdG65hM3XHvqlIDq8Go2QU_TF-Lk02gjd4zTk",
+              "origin_server_ts": 1781263924700,
+              "sender": "@me:igm.home.arpa",
+              "type": "m.room.message",
+              "unsigned": {
+                "membership": "join"
+              }
+            },
+            {
+              "content": {
+                "body": "hello",
+                "com.beeper.disappearing_timer": {},
+                "m.mentions": {},
+                "msgtype": "m.text"
+              },
+              "event_id": "$66FFEdWz_3Z10vDaOIkOL_DbzHNJpAiYmwai5Or0CUQ",
+              "origin_server_ts": 1781264377286,
+              "sender": "@instagram_17841400000000301:igm.home.arpa",
+              "type": "m.room.message",
+              "unsigned": {
+                "membership": "join"
+              }
+            },
+            {
+              "content": {
+                "body": "[https://www.instagram.com/reel/DSampleRl01/](https://www.instagram.com/reel/DSampleRl01/?id=3900000000000000001_1000000001&is_sponsored=false&is_ineligible_for_clips_chaining=false)",
+                "com.beeper.disappearing_timer": {},
+                "com.beeper.unresolved_media": {
+                  "fi.mau.instagram.base_part": {
+                    "body": "[https://www.instagram.com/reel/DSampleRl01/](https://www.instagram.com/reel/DSampleRl01/?id=3900000000000000001_1000000001&is_sponsored=false&is_ineligible_for_clips_chaining=false)",
+                    "formatted_body": "<p><a href=\"https://www.instagram.com/reel/DSampleRl01/?id=3900000000000000001_1000000001&amp;is_sponsored=false&amp;is_ineligible_for_clips_chaining=false\">https://www.instagram.com/reel/DSampleRl01/</a></p>",
+                    "info": {
+                      "h": 1688,
+                      "mimetype": "image/jpeg",
+                      "size": 265845,
+                      "w": 950
+                    },
+                    "msgtype": "m.image",
+                    "url": "mxc://igm.home.arpa/bwGtrCMMrvaycQKTkAAwoTRC"
+                  },
+                  "kind": "permanent"
+                },
+                "external_url": "https://www.instagram.com/reel/DSampleRl01/?id=3900000000000000001_1000000001&is_sponsored=false&is_ineligible_for_clips_chaining=false",
+                "fi.mau.double_puppet_source": "mautrix-instagram",
+                "fi.mau.instagram.xma_fetch_status": "skip",
+                "filename": "700000001_10000000000000001_100000000000000001_n.jpg",
+                "format": "org.matrix.custom.html",
+                "formatted_body": "<p><a href=\"https://www.instagram.com/reel/DSampleRl01/?id=3900000000000000001_1000000001&amp;is_sponsored=false&amp;is_ineligible_for_clips_chaining=false\">https://www.instagram.com/reel/DSampleRl01/</a></p>",
+                "info": {
+                  "h": 1688,
+                  "mimetype": "image/jpeg",
+                  "size": 265845,
+                  "w": 950
+                },
+                "m.mentions": {},
+                "msgtype": "m.image",
+                "url": "mxc://igm.home.arpa/bwGtrCMMrvaycQKTkAAwoTRC"
+              },
+              "event_id": "$d8JNeitVCMWdOooLHE0xmJIX-tUZrUONP6x2LfDc15Y",
+              "origin_server_ts": 1781313332465,
+              "sender": "@me:igm.home.arpa",
+              "type": "m.room.message",
+              "unsigned": {
+                "membership": "join"
+              }
+            }
+          ],
+          "prev_batch": "s97_1_0_8_16_1_1_11_0_1_2_1_1_1",
+          "limited": false
+        },
+        "state": {
+          "events": []
+        },
+        "account_data": {
+          "events": []
+        },
+        "ephemeral": {
+          "events": [
+            {
+              "type": "m.receipt",
+              "content": {
+                "$d8JNeitVCMWdOooLHE0xmJIX-tUZrUONP6x2LfDc15Y": {
+                  "m.read": {
+                    "@me:igm.home.arpa": {
+                      "ts": 1791816634162
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "unread_notifications": {
+          "notification_count": 0,
+          "highlight_count": 0
+        },
+        "summary": {
+          "m.joined_member_count": 3,
+          "m.invited_member_count": 0
+        }
+      },
+      "!w2RKZ-QLiwkbgCeUhoEJr3kpDQCPGEIJI0U61VeWL1Q": {
+        "timeline": {
+          "events": [
+            {
+              "content": {
+                "room_version": "12",
+                "type": "m.space"
+              },
+              "event_id": "$w2RKZ-QLiwkbgCeUhoEJr3kpDQCPGEIJI0U61VeWL1Q",
+              "origin_server_ts": 1791816633332,
+              "room_id": "!w2RKZ-QLiwkbgCeUhoEJr3kpDQCPGEIJI0U61VeWL1Q",
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.create",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                "displayname": "Instagram bridge bot",
+                "membership": "join"
+              },
+              "event_id": "$OOejbvrk5WMns7XhqYqEDjaspsBkBmBPiw3i5N_Hov8",
+              "origin_server_ts": 1791816633371,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "@instagrambot:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "ban": 50,
+                "events": {
+                  "m.room.avatar": 50,
+                  "m.room.canonical_alias": 50,
+                  "m.room.encryption": 100,
+                  "m.room.history_visibility": 100,
+                  "m.room.name": 50,
+                  "m.room.power_levels": 100,
+                  "m.room.server_acl": 100,
+                  "m.room.tombstone": 150
+                },
+                "events_default": 0,
+                "historical": 100,
+                "invite": 0,
+                "kick": 50,
+                "redact": 50,
+                "state_default": 50,
+                "users": {
+                  "@me:igm.home.arpa": 50
+                },
+                "users_default": 0
+              },
+              "event_id": "$LZH6m8PAoRMYQ4l3ujrmP22_0JCA4-uLnXRhhrxkdCY",
+              "origin_server_ts": 1791816633395,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.power_levels",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "join_rule": "invite"
+              },
+              "event_id": "$VT5Wqoyez9Ih_bBOjnEqpSbjO2QipPha9Zzdn-8x7Ak",
+              "origin_server_ts": 1791816633400,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.join_rules",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "history_visibility": "shared"
+              },
+              "event_id": "$9rQenQ7KTv5jNPAGztN8IDnKvMjG82mJcU9_hadjnlY",
+              "origin_server_ts": 1791816633401,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.history_visibility",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "guest_access": "can_join"
+              },
+              "event_id": "$4M_In5NscOFyrz8_CO2YteF--zgyX5b0-gj1Yy8P3Rc",
+              "origin_server_ts": 1791816633402,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.guest_access",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv"
+              },
+              "event_id": "$LUS3YKXTc9CxMmenumlrlZj6bFQatd1RxowySzu1XVg",
+              "origin_server_ts": 1791816633402,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.avatar",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "bridgebot": "@instagrambot:igm.home.arpa",
+                "channel": {
+                  "fi.mau.receiver": "17841400000000302",
+                  "id": "__personal_filtering_space__"
+                },
+                "com.beeper.room_type.v2": "personal_filtering_space",
+                "protocol": {
+                  "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                  "displayname": "Instagram",
+                  "external_url": "https://instagram.com",
+                  "id": "instagramgo"
+                }
+              },
+              "event_id": "$9DSpzbJj6PA-Int6vdI07Hwcf2AAhj82nCXX08qAK88",
+              "origin_server_ts": 1791816633402,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.bridge",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "name": "Instagram (Kivo Studio)"
+              },
+              "event_id": "$x8V6D5NFpln-dhvJxE_5jCUi5wmhydP_BychkQVOBVg",
+              "origin_server_ts": 1791816633402,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.name",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "m.topic": {
+                  "m.text": [
+                    {
+                      "body": "Your Instagram bridged chats - Kivo Studio"
+                    }
+                  ]
+                },
+                "topic": "Your Instagram bridged chats - Kivo Studio"
+              },
+              "event_id": "$x13BiRn0UEas2GsMy5-W73oCpJr1kfpxOZphSga5rEo",
+              "origin_server_ts": 1791816633402,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.topic",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "displayname": "me",
+                "membership": "invite"
+              },
+              "event_id": "$7kVLfqCSfg3newtJtq7ygnYzhdFvmgOgJhitKIeSte0",
+              "origin_server_ts": 1791816633493,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "@me:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "invite"
+              }
+            },
+            {
+              "content": {
+                "displayname": "me",
+                "fi.mau.double_puppet_source": "mautrix-instagram",
+                "membership": "join"
+              },
+              "event_id": "$F74Zx8li-5u6kAjwhP2hsUjHbxmrA1VsOJHXUkQ2Ky4",
+              "origin_server_ts": 1791816633545,
+              "sender": "@me:igm.home.arpa",
+              "state_key": "@me:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "join",
+                "prev_content": {
+                  "displayname": "me",
+                  "membership": "invite"
+                },
+                "prev_sender": "@instagrambot:igm.home.arpa",
+                "replaces_state": "$7kVLfqCSfg3newtJtq7ygnYzhdFvmgOgJhitKIeSte0"
+              }
+            },
+            {
+              "content": {
+                "via": [
+                  "igm.home.arpa"
+                ]
+              },
+              "event_id": "$NS5XVvPtElihPCnsnILO6fS0BJki1lsrRvZBv5mYnzE",
+              "origin_server_ts": 1791816633573,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+              "type": "m.space.child",
+              "unsigned": {
+                "membership": "join"
+              }
+            }
+          ],
+          "prev_batch": "s97_1_0_8_16_1_1_11_0_1_2_1_1_1",
+          "limited": false
+        },
+        "state": {
+          "events": []
+        },
+        "account_data": {
+          "events": []
+        },
+        "ephemeral": {
+          "events": []
+        },
+        "unread_notifications": {
+          "notification_count": 0,
+          "highlight_count": 0
+        },
+        "summary": {
+          "m.joined_member_count": 2,
+          "m.invited_member_count": 0
+        }
+      },
+      "!8B3W21v2O_DdWOmLU2US75eotLLpkE2-BhMsjpPbvZ0": {
+        "timeline": {
+          "events": [
+            {
+              "content": {
+                "room_version": "12",
+                "type": "m.space"
+              },
+              "event_id": "$8B3W21v2O_DdWOmLU2US75eotLLpkE2-BhMsjpPbvZ0",
+              "origin_server_ts": 1791816585297,
+              "room_id": "!8B3W21v2O_DdWOmLU2US75eotLLpkE2-BhMsjpPbvZ0",
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.create",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                "displayname": "Instagram bridge bot",
+                "membership": "join"
+              },
+              "event_id": "$tdhrWQOTMbPxRpgWehXoMFE0QVRgTLKwTTeVA0x_qyM",
+              "origin_server_ts": 1791816585336,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "@instagrambot:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "ban": 50,
+                "events": {
+                  "m.room.avatar": 50,
+                  "m.room.canonical_alias": 50,
+                  "m.room.encryption": 100,
+                  "m.room.history_visibility": 100,
+                  "m.room.name": 50,
+                  "m.room.power_levels": 100,
+                  "m.room.server_acl": 100,
+                  "m.room.tombstone": 150
+                },
+                "events_default": 0,
+                "historical": 100,
+                "invite": 0,
+                "kick": 50,
+                "redact": 50,
+                "state_default": 50,
+                "users": {
+                  "@me:igm.home.arpa": 50
+                },
+                "users_default": 0
+              },
+              "event_id": "$DbVA0jVG8nHOCFjETosricI0PvWWN33I5525IJkd9TU",
+              "origin_server_ts": 1791816585359,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.power_levels",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "join_rule": "invite"
+              },
+              "event_id": "$-68TcXPC_sFqkJVyPPgqs5zufeJU6VlRwUKZpG1yET0",
+              "origin_server_ts": 1791816585364,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.join_rules",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "history_visibility": "shared"
+              },
+              "event_id": "$rkEDlihdSy5qrjhvwCjP1pKlPGv4iQejceCc-fvY4i8",
+              "origin_server_ts": 1791816585364,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.history_visibility",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "guest_access": "can_join"
+              },
+              "event_id": "$WnnrO1n4y6B_Uzea1xoncRBATBr2e1mPsZUZrn8TjyY",
+              "origin_server_ts": 1791816585364,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.guest_access",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv"
+              },
+              "event_id": "$Bj8tJYO4_1weEbDmU0aWEx5s_sYwR5RNpccM7pKmXzw",
+              "origin_server_ts": 1791816585364,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.avatar",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "bridgebot": "@instagrambot:igm.home.arpa",
+                "channel": {
+                  "fi.mau.receiver": "17841400000000301",
+                  "id": "__personal_filtering_space__"
+                },
+                "com.beeper.room_type.v2": "personal_filtering_space",
+                "protocol": {
+                  "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+                  "displayname": "Instagram",
+                  "external_url": "https://instagram.com",
+                  "id": "instagramgo"
+                }
+              },
+              "event_id": "$NeIS3NVY5Q5zXqRIbazj8ryZ1XMiIYgPLLdzCcNUYa8",
+              "origin_server_ts": 1791816585364,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.bridge",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "name": "Instagram (Tamo Veska)"
+              },
+              "event_id": "$yGOwdo3CfCg-Q7pZXDaPBA2qAfD8-3WIyKPut1uplOc",
+              "origin_server_ts": 1791816585365,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.name",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "m.topic": {
+                  "m.text": [
+                    {
+                      "body": "Your Instagram bridged chats - Tamo Veska"
+                    }
+                  ]
+                },
+                "topic": "Your Instagram bridged chats - Tamo Veska"
+              },
+              "event_id": "$ZdxDt7Kh1N6cYTq-AVtl8GgmQYQJHaUPNeML_b_I6oY",
+              "origin_server_ts": 1791816585365,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "",
+              "type": "m.room.topic",
+              "unsigned": {
+                "membership": "leave"
+              }
+            },
+            {
+              "content": {
+                "displayname": "me",
+                "membership": "invite"
+              },
+              "event_id": "$Vkr42dasRIXnW9gYahNGk6UQ6RzxDWTffnDCbA9ShXc",
+              "origin_server_ts": 1791816585428,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "@me:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "invite"
+              }
+            },
+            {
+              "content": {
+                "displayname": "me",
+                "fi.mau.double_puppet_source": "mautrix-instagram",
+                "membership": "join"
+              },
+              "event_id": "$B_0kAAeuix8SoAGAM6vRPXh8ZdS4RqfivKw03cP9cvc",
+              "origin_server_ts": 1791816585477,
+              "sender": "@me:igm.home.arpa",
+              "state_key": "@me:igm.home.arpa",
+              "type": "m.room.member",
+              "unsigned": {
+                "membership": "join",
+                "prev_content": {
+                  "displayname": "me",
+                  "membership": "invite"
+                },
+                "prev_sender": "@instagrambot:igm.home.arpa",
+                "replaces_state": "$Vkr42dasRIXnW9gYahNGk6UQ6RzxDWTffnDCbA9ShXc"
+              }
+            },
+            {
+              "content": {
+                "via": [
+                  "igm.home.arpa"
+                ]
+              },
+              "event_id": "$Rzih3tnu33qS3Aal4mzKUkEygOnvgjRiWxpOuvIwYWw",
+              "origin_server_ts": 1791816585510,
+              "sender": "@instagrambot:igm.home.arpa",
+              "state_key": "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA",
+              "type": "m.space.child",
+              "unsigned": {
+                "membership": "join"
+              }
+            }
+          ],
+          "prev_batch": "s97_1_0_8_16_1_1_11_0_1_2_1_1_1",
+          "limited": false
+        },
+        "state": {
+          "events": []
+        },
+        "account_data": {
+          "events": []
+        },
+        "ephemeral": {
+          "events": []
+        },
+        "unread_notifications": {
+          "notification_count": 0,
+          "highlight_count": 0
+        },
+        "summary": {
+          "m.joined_member_count": 2,
+          "m.invited_member_count": 0
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IG Messenger Design</title>
+<style>
+/* Layout: a spec sheet. Page header, then flows of iPhone frames (393 x 852 pt) grouped by area, then component panels.
+   Color plan: monochrome chrome; the only chromatic color belongs to an account (Ocean = Studio, Ember = Personal, Grape = Band). */
+:root{
+  --page-bg:#E8EAEE; --page-surface:#F6F7F9; --page-ink:#121317; --page-muted:#5B5E66; --page-line:rgba(18,19,23,.10);
+  --bezel:#1C1C1F; --bezel-rim:#4B4B51; --shadow:rgba(20,22,30,.28);
+
+  --bg:#FFFFFF; --bg-grouped:#F2F2F7; --cell:#FFFFFF; --label:#000000; --label-2:#6C6C72; --label-3:#AEAEB2;
+  --sep:rgba(60,60,67,.20); --fill:rgba(120,120,128,.12); --fill-2:rgba(120,120,128,.24);
+  --bubble-in:#E9E9EB; --rx-bg:#FFFFFF; --web:#FAFAFA; --skel:rgba(120,120,128,.18);
+  --glass:rgba(255,255,255,.62); --glass-sheen:rgba(255,255,255,.60); --glass-rim:rgba(255,255,255,.95);
+  --glass-edge:rgba(0,0,0,.07); --glass-drop:rgba(0,0,0,.10);
+  --scrim:rgba(0,0,0,.24); --behind:#000000;
+  --ok:#1F7A35; --ok-g:#34C759; --warn:#B25000; --warn-g:#FF9500; --err:#D70015; --err-g:#FF3B30;
+  --sw-a:#1C1C1E; --sw-b:#636366; --sw-c:#8E8E93; --toggle-on:#34C759; --knob:#FFFFFF;
+  --on-color:#FFFFFF; --media:#000000; --on-media:#FFFFFF; --on-media-2:rgba(255,255,255,.78);
+  --media-glass:rgba(70,70,74,.36); --media-rim:rgba(255,255,255,.40); --media-scrim:rgba(0,0,0,.62);
+
+  --ocean:#1F5FD6; --ocean-ink:#1F5FD6; --ocean-wash:rgba(31,95,214,.12);
+  --ember:#C2410C; --ember-ink:#C2410C; --ember-wash:rgba(194,65,12,.12);
+  --grape:#7A3FD1; --grape-ink:#7A3FD1; --grape-wash:rgba(122,63,209,.12);
+  --teal:#0F766E;  --teal-ink:#0F766E;  --teal-wash:rgba(15,118,110,.12);
+  --berry:#C2255C; --berry-ink:#C2255C; --berry-wash:rgba(194,37,92,.12);
+  --moss:#4D7C0F;  --moss-ink:#4D7C0F;  --moss-wash:rgba(77,124,15,.12);
+  --cocoa:#8A5A2B; --cocoa-ink:#8A5A2B; --cocoa-wash:rgba(138,90,43,.12);
+  --slate:#475B78; --slate-ink:#475B78; --slate-wash:rgba(71,91,120,.12);
+
+  --font:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  --font-round:ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page-bg:#0D0E11; --page-surface:#16171B; --page-ink:#F1F2F4; --page-muted:#A3A6AD; --page-line:rgba(255,255,255,.10);
+    --bezel:#1A1A1D; --bezel-rim:#55555C; --shadow:rgba(0,0,0,.6);
+    --bg:#000000; --bg-grouped:#000000; --cell:#1C1C1E; --label:#FFFFFF; --label-2:#A1A1A8; --label-3:#5C5C61;
+    --sep:rgba(84,84,88,.62); --fill:rgba(120,120,128,.26); --fill-2:rgba(120,120,128,.40);
+    --bubble-in:#262629; --rx-bg:#2C2C2E; --web:#121212; --skel:rgba(120,120,128,.30);
+    --glass:rgba(40,40,44,.58); --glass-sheen:rgba(255,255,255,.07); --glass-rim:rgba(255,255,255,.16);
+    --glass-edge:rgba(255,255,255,.06); --glass-drop:rgba(0,0,0,.45);
+    --scrim:rgba(0,0,0,.50); --behind:#000000;
+    --ok:#30D158; --ok-g:#30D158; --warn:#FF9F0A; --warn-g:#FF9F0A; --err:#FF453A; --err-g:#FF453A;
+    --sw-a:#3A3A3C; --sw-b:#636366; --sw-c:#8E8E93; --toggle-on:#30D158; --knob:#FFFFFF;
+    --ocean-ink:#7FAAF7; --ocean-wash:rgba(31,95,214,.24);
+    --ember-ink:#F59A6B; --ember-wash:rgba(194,65,12,.24);
+    --grape-ink:#B897F5; --grape-wash:rgba(122,63,209,.24);
+    --teal-ink:#5FCFC3;  --teal-wash:rgba(15,118,110,.24);
+    --berry-ink:#F27DA6; --berry-wash:rgba(194,37,92,.24);
+    --moss-ink:#A3CF5F;  --moss-wash:rgba(77,124,15,.24);
+    --cocoa-ink:#D6A877; --cocoa-wash:rgba(138,90,43,.24);
+    --slate-ink:#A9B8CF; --slate-wash:rgba(71,91,120,.26);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page-bg:#0D0E11; --page-surface:#16171B; --page-ink:#F1F2F4; --page-muted:#A3A6AD; --page-line:rgba(255,255,255,.10);
+  --bezel:#1A1A1D; --bezel-rim:#55555C; --shadow:rgba(0,0,0,.6);
+  --bg:#000000; --bg-grouped:#000000; --cell:#1C1C1E; --label:#FFFFFF; --label-2:#A1A1A8; --label-3:#5C5C61;
+  --sep:rgba(84,84,88,.62); --fill:rgba(120,120,128,.26); --fill-2:rgba(120,120,128,.40);
+  --bubble-in:#262629; --rx-bg:#2C2C2E; --web:#121212; --skel:rgba(120,120,128,.30);
+  --glass:rgba(40,40,44,.58); --glass-sheen:rgba(255,255,255,.07); --glass-rim:rgba(255,255,255,.16);
+  --glass-edge:rgba(255,255,255,.06); --glass-drop:rgba(0,0,0,.45);
+  --scrim:rgba(0,0,0,.50); --behind:#000000;
+  --ok:#30D158; --ok-g:#30D158; --warn:#FF9F0A; --warn-g:#FF9F0A; --err:#FF453A; --err-g:#FF453A;
+  --sw-a:#3A3A3C; --sw-b:#636366; --sw-c:#8E8E93; --toggle-on:#30D158; --knob:#FFFFFF;
+  --ocean-ink:#7FAAF7; --ocean-wash:rgba(31,95,214,.24);
+  --ember-ink:#F59A6B; --ember-wash:rgba(194,65,12,.24);
+  --grape-ink:#B897F5; --grape-wash:rgba(122,63,209,.24);
+  --teal-ink:#5FCFC3;  --teal-wash:rgba(15,118,110,.24);
+  --berry-ink:#F27DA6; --berry-wash:rgba(194,37,92,.24);
+  --moss-ink:#A3CF5F;  --moss-wash:rgba(77,124,15,.24);
+  --cocoa-ink:#D6A877; --cocoa-wash:rgba(138,90,43,.24);
+  --slate-ink:#A9B8CF; --slate-wash:rgba(71,91,120,.26);
+  color-scheme:dark;
+}
+
+/* ---------- page ---------- */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page-bg);color:var(--page-ink);font-family:var(--font);font-size:15px;line-height:1.45;overflow-x:clip;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1480px;margin:0 auto;padding-inline:max(16px, env(safe-area-inset-left, 0px));padding-block:32px 72px}
+.head{display:flex;flex-wrap:wrap;gap:20px 32px;align-items:flex-end;justify-content:space-between;padding-bottom:24px;border-bottom:1px solid var(--page-line)}
+.head h1{margin:0;font-size:clamp(30px,5vw,44px);line-height:1.05;letter-spacing:-.02em;font-weight:750;text-wrap:balance}
+.head .sub{margin:8px 0 0;color:var(--page-muted);max-width:62ch}
+.seg{display:inline-flex;padding:3px;border-radius:12px;background:var(--fill);gap:2px}
+.seg button{all:unset;cursor:pointer;padding:6px 14px;border-radius:9px;font-size:13px;font-weight:600;color:var(--page-muted)}
+.seg button[aria-pressed="true"]{background:var(--page-surface);color:var(--page-ink);box-shadow:0 1px 3px var(--glass-drop)}
+.seg button:focus-visible{outline:2px solid var(--page-ink);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:20px;align-items:center}
+.legend .k{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--page-muted);font-weight:600}
+.pr{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.pr span{font-size:13px;padding:5px 11px;border-radius:999px;border:1px solid var(--page-line);color:var(--page-ink)}
+section{margin-top:44px}
+section > h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--page-muted);margin:0 0 18px;font-weight:700}
+.frames{display:flex;flex-wrap:wrap;gap:44px 36px;align-items:flex-start}
+figure{margin:0;width:calc(415px * var(--s,1));max-width:100%}
+figcaption{margin-top:14px;max-width:415px}
+figcaption .id{font:600 12px/1 var(--font);letter-spacing:.04em;color:var(--page-muted);margin-right:8px;font-variant-numeric:tabular-nums}
+figcaption b{font-size:16px}
+figcaption p{margin:6px 0 0;color:var(--page-muted);font-size:14px}
+.dw{position:relative;width:calc(415px * var(--s,1));height:calc(874px * var(--s,1));max-width:100%}
+.device{position:absolute;left:0;top:0;width:415px;height:874px;padding:11px;border-radius:66px;background:var(--bezel);
+  box-shadow:inset 0 0 0 1.5px var(--bezel-rim),0 30px 60px -24px var(--shadow);transform:scale(var(--s,1));transform-origin:0 0}
+
+/* ---------- iOS primitives ---------- */
+.phone{position:relative;width:393px;height:852px;border-radius:55px;overflow:hidden;background:var(--bg);color:var(--label);isolation:isolate;
+  font-family:var(--font);font-size:17px;line-height:22px;letter-spacing:-.2px;text-align:left}
+.phone.grouped{background:var(--bg-grouped)}
+.sb{position:absolute;top:0;left:0;right:0;height:54px;display:flex;justify-content:space-between;align-items:center;z-index:80;color:var(--label);pointer-events:none}
+.sb-t,.sb-i{width:134px;display:flex;justify-content:center;align-items:center;gap:6px;padding-top:4px}
+.sb-t{font-weight:600;font-size:17px;letter-spacing:-.3px}
+.sb-i svg{fill:currentColor}
+.phone[data-sb="light"] .sb{color:var(--on-media)}
+.phone[data-sb="none"] .sb{display:none}
+.island{position:absolute;top:11px;left:50%;width:124px;height:36px;margin-left:-62px;border-radius:20px;background:#000;z-index:90}
+.home{position:absolute;bottom:8px;left:50%;width:139px;height:5px;margin-left:-69.5px;border-radius:3px;background:var(--label);z-index:90}
+.phone[data-home="light"] .home{background:var(--on-media)}
+
+.i{width:1em;height:1em;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.glass{background:linear-gradient(180deg,var(--glass-sheen),transparent 58%),var(--glass);
+  -webkit-backdrop-filter:blur(16px) saturate(1.8);backdrop-filter:blur(16px) saturate(1.8);
+  box-shadow:inset 0 .5px 0 var(--glass-rim),inset 0 0 0 .5px var(--glass-edge),0 6px 18px var(--glass-drop),0 1px 2px var(--glass-drop)}
+.mglass{background:var(--media-glass);-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);
+  box-shadow:inset 0 .5px 0 var(--media-rim),0 4px 14px rgba(0,0,0,.22);color:var(--on-media)}
+.gb{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:21px;color:var(--label)}
+.gb.prom{background:var(--label);color:var(--bg);box-shadow:0 4px 14px var(--glass-drop)}
+.gcap{height:44px;border-radius:22px;display:flex;align-items:center;padding:0 4px;color:var(--label)}
+.gcap > span{width:40px;height:44px;display:grid;place-items:center;font-size:21px}
+.tb{position:absolute;top:56px;left:16px;right:16px;height:44px;display:flex;justify-content:space-between;align-items:center;z-index:40}
+.lt{position:absolute;left:16px;right:16px;font-size:34px;line-height:41px;font-weight:700;letter-spacing:.2px}
+.lt small{display:block;font-size:15px;line-height:20px;font-weight:400;letter-spacing:-.2px;color:var(--label-2);margin-top:1px}
+.edge-top{position:absolute;left:0;right:0;top:0;height:var(--eh,160px);z-index:30;pointer-events:none;background:linear-gradient(var(--bg) 0%,var(--bg) 62%,transparent 100%)}
+.edge-top::before{content:"";position:absolute;inset:0;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  -webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)}
+.edge-bot{position:absolute;left:0;right:0;bottom:0;height:120px;z-index:30;pointer-events:none;background:linear-gradient(transparent,var(--bg) 78%)}
+.wash{position:absolute;left:0;right:0;top:0;height:220px;z-index:31;pointer-events:none;background:linear-gradient(var(--acc-wash),transparent)}
+
+/* account scopes */
+.a-ocean{--acc:var(--ocean);--acc-ink:var(--ocean-ink);--acc-wash:var(--ocean-wash)}
+.a-ember{--acc:var(--ember);--acc-ink:var(--ember-ink);--acc-wash:var(--ember-wash)}
+.a-grape{--acc:var(--grape);--acc-ink:var(--grape-ink);--acc-wash:var(--grape-wash)}
+.a-teal{--acc:var(--teal);--acc-ink:var(--teal-ink);--acc-wash:var(--teal-wash)}
+.a-berry{--acc:var(--berry);--acc-ink:var(--berry-ink);--acc-wash:var(--berry-wash)}
+.a-moss{--acc:var(--moss);--acc-ink:var(--moss-ink);--acc-wash:var(--moss-wash)}
+.a-cocoa{--acc:var(--cocoa);--acc-ink:var(--cocoa-ink);--acc-wash:var(--cocoa-wash)}
+.a-slate{--acc:var(--slate);--acc-ink:var(--slate-ink);--acc-wash:var(--slate-wash)}
+
+/* avatars */
+.av{position:relative;flex:none;width:var(--z,52px);height:var(--z,52px);border-radius:50%;display:grid;place-items:center;font-size:calc(var(--z,52px) * .5);line-height:1}
+.av.pp::before{content:"";position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 50% 39%,rgba(255,255,255,.40) 0 15.5%,transparent 16.5%),radial-gradient(ellipse 31% 23% at 50% 89%,rgba(255,255,255,.34) 0 97%,transparent 100%)}
+.pp-maya{background:radial-gradient(circle at 28% 22%,#ffd9b8 0 18%,transparent 58%),radial-gradient(circle at 78% 84%,#6e3f30 0 22%,transparent 64%),linear-gradient(140deg,#e7a47c,#a3644d)}
+.pp-jonah{background:radial-gradient(circle at 25% 25%,#cfe3ee 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#2f4a5c 0 24%,transparent 66%),linear-gradient(140deg,#93b6ca,#4f6f83)}
+.pp-ana{background:radial-gradient(circle at 25% 25%,#ffd4df 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#7c3a55 0 24%,transparent 66%),linear-gradient(140deg,#e9a6b9,#9a5670)}
+.pp-priya{background:radial-gradient(circle at 25% 25%,#fbe7b2 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#7a5a22 0 24%,transparent 66%),linear-gradient(140deg,#e7c27a,#9b7636)}
+.pp-theo{background:radial-gradient(circle at 25% 25%,#e2ebc4 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#46592c 0 24%,transparent 66%),linear-gradient(140deg,#b5c58a,#61733f)}
+.pp-lena{background:radial-gradient(circle at 25% 25%,#ece3fb 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#4d3d78 0 24%,transparent 66%),linear-gradient(140deg,#c2b2e6,#6d5a9a)}
+.pp-sam{background:radial-gradient(circle at 25% 25%,#e7e7ea 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#45454d 0 24%,transparent 66%),linear-gradient(140deg,#b9b9c0,#6a6a73)}
+.pp-dev{background:radial-gradient(circle at 25% 25%,#d6f0ea 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#2c5b52 0 24%,transparent 66%),linear-gradient(140deg,#94c9bd,#4b8075)}
+.br-north{background:#3B2A20}
+.br-kestrel{background:linear-gradient(140deg,#e9f1e7,#c9dccb)}
+.br-tide{background:linear-gradient(160deg,#1a6c97,#0a3a5a)}
+.br-crypto{background:linear-gradient(140deg,#2a2a2e,#111114)}
+.own-p{background:radial-gradient(circle at 30% 25%,#ffe1c7 0 16%,transparent 56%),radial-gradient(circle at 75% 85%,#5c3424 0 26%,transparent 64%),linear-gradient(150deg,#e3a07a,#8e553f)}
+.own-s{background:linear-gradient(150deg,#f4f4f2,#dcdcd8);color:#111;font:800 calc(var(--z,52px) * .46)/1 Georgia,"Times New Roman",serif;letter-spacing:-.04em}
+.own-b{background:linear-gradient(160deg,#1d3d6e,#0d1d38)}
+.own{box-shadow:0 0 0 var(--gap,2px) var(--ring-bg,var(--bg)),0 0 0 calc(var(--gap,2px) + var(--rw,2px)) var(--acc)}
+.grp{position:relative;flex:none;width:52px;height:52px}
+.grp .av{position:absolute;--z:36px}
+.grp .av:first-child{left:0;top:0}
+.grp .av:nth-child(2){right:0;bottom:0;box-shadow:0 0 0 2px var(--bg)}
+
+/* AccountMark */
+.mk{position:absolute;right:-2px;bottom:-2px;width:20px;height:20px;border-radius:50%;background:var(--acc);color:var(--on-color);
+  font:700 11px/20px var(--font-round);text-align:center;letter-spacing:0;box-shadow:0 0 0 2px var(--ring-bg,var(--bg));z-index:2}
+.mk.s18{width:18px;height:18px;font-size:10px;line-height:18px}
+.mk.s12{width:12px;height:12px;font-size:7px;line-height:12px;right:-4px;bottom:-4px;box-shadow:0 0 0 1.5px var(--ring-bg,var(--bg))}
+.mk.s30{width:30px;height:30px;font-size:16px;line-height:30px;right:-4px;bottom:-4px;box-shadow:0 0 0 3px var(--ring-bg,var(--bg))}
+.mi{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;background:var(--acc);color:var(--on-color);font:700 10px/1 var(--font-round);letter-spacing:0}
+.mi.s16{width:16px;height:16px;font-size:9px}
+.tag{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px 0 3px;border-radius:11px;background:var(--acc-wash);color:var(--acc-ink);font-size:13px;line-height:1;font-weight:600;letter-spacing:-.1px;white-space:nowrap}
+.tag .h{font-weight:400}
+.tag.on-media{background:rgba(255,255,255,.16);color:var(--on-media)}
+
+/* scope chips */
+.scope{position:absolute;left:0;right:0;display:flex;gap:8px;padding:0 16px;overflow:hidden;z-index:35}
+.chip{height:34px;border-radius:17px;padding:0 12px 0 8px;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:500;background:var(--fill);color:var(--label);white-space:nowrap;flex:none}
+.chip.all{padding:0 14px}
+.chip .ct{font-size:13px;color:var(--label-2);font-variant-numeric:tabular-nums;font-weight:500}
+.chip.on-all{background:var(--label);color:var(--bg)}
+.chip.on-all .ct{color:var(--bg);opacity:.75}
+.chip.on{background:var(--acc);color:var(--on-color)}
+.chip.on .mi{background:var(--on-color);color:var(--acc)}
+.chip.on .ct{color:var(--on-color);opacity:.85}
+.chip .wg{color:var(--warn-g);font-size:15px}
+
+/* folder tiles */
+.tiles{position:absolute;left:16px;right:16px;display:flex;gap:10px;z-index:5}
+.tile{flex:1;height:62px;border-radius:16px;background:var(--fill);padding:9px 12px;display:flex;flex-direction:column;justify-content:space-between}
+.tile .r1{display:flex;justify-content:space-between;align-items:center}
+.tile .r1 .i{font-size:22px;color:var(--tint,var(--label))}
+.tile .n{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+.tile .lb{font-size:14px;font-weight:600;color:var(--label-2);line-height:16px}
+
+/* chat rows */
+.list{position:absolute;left:0;right:0}
+.row{position:relative;display:flex;gap:12px;padding:10px 16px 0 22px;height:78px;background:var(--bg)}
+.row .dot{position:absolute;left:7px;top:33px;width:10px;height:10px;border-radius:50%;background:var(--label)}
+.row .tx{flex:1;min-width:0;border-bottom:.5px solid var(--sep);padding-bottom:9px}
+.row .l1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.row .nm{font-size:17px;font-weight:600;letter-spacing:-.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .tm{font-size:15px;color:var(--label-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.row .pv{font-size:15px;line-height:20px;color:var(--label-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:1px}
+.row.un .pv,.row.un .tm{color:var(--label)}
+.row .pv .i{font-size:15px;margin-top:-2px}
+.row .typing{font-style:italic}
+.row .gl{color:var(--label-3);font-size:14px;margin-left:4px}
+.swipe{position:relative;height:78px;overflow:hidden}
+.swipe .row{transform:translateX(-216px)}
+.swipe .acts{position:absolute;top:0;right:0;bottom:0;width:216px;display:flex}
+.swipe .acts div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--on-color);font-size:13px;font-weight:500}
+.swipe .acts .i{font-size:22px}
+
+/* bottom bar */
+.bb{position:absolute;left:16px;right:16px;bottom:30px;display:flex;gap:10px;z-index:40}
+.srch{flex:1;height:48px;border-radius:24px;display:flex;align-items:center;gap:8px;padding:0 16px;color:var(--label-2);font-size:17px}
+.srch .i{font-size:19px}
+.srch .mic{margin-left:auto}
+.bb .gb{width:48px;height:48px}
+
+/* banner */
+.banner{position:absolute;left:12px;right:12px;z-index:36;border-radius:20px;padding:12px 12px 12px 12px;display:flex;gap:12px;align-items:center}
+.banner .bt{flex:1;min-width:0}
+.banner b{display:flex;align-items:center;gap:6px;font-size:15px;line-height:20px}
+.banner b .i{color:var(--warn-g);font-size:15px}
+.banner p{margin:1px 0 0;font-size:13px;line-height:17px;color:var(--label-2)}
+.pill-btn{height:34px;border-radius:17px;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;background:var(--label);color:var(--bg);white-space:nowrap}
+.pill-btn.sec{background:var(--fill);color:var(--label)}
+.pill-btn.acc{background:var(--acc);color:var(--on-color)}
+
+/* thread */
+.th-c{position:absolute;top:54px;left:72px;right:72px;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:40}
+.namepill{height:26px;border-radius:13px;padding:0 10px 0 12px;display:flex;align-items:center;gap:2px;font-size:14px;font-weight:600}
+.namepill .i{font-size:12px;color:var(--label-2)}
+.msgs{position:absolute;left:0;right:0;top:0;bottom:92px;display:flex;flex-direction:column;justify-content:flex-end;padding:0 12px;gap:2px;z-index:2}
+.b{position:relative;max-width:75%;padding:8px 12px;font-size:17px;line-height:22px;border-radius:20px;letter-spacing:-.3px}
+.b.in{align-self:flex-start;background:var(--bubble-in);color:var(--label)}
+.b.out{align-self:flex-end;background:var(--acc);color:var(--on-color)}
+.in.first{border-bottom-left-radius:6px}.in.mid{border-top-left-radius:6px;border-bottom-left-radius:6px}.in.last{border-top-left-radius:6px}
+.out.first{border-bottom-right-radius:6px}.out.mid{border-top-right-radius:6px;border-bottom-right-radius:6px}.out.last{border-top-right-radius:6px}
+.gap{height:var(--g,10px);flex:none}
+.day{align-self:center;font-size:12px;line-height:16px;color:var(--label-2);margin:4px 0 6px}
+.day b{font-weight:600}
+.meta-r{align-self:flex-end;font-size:11px;line-height:13px;color:var(--label-2);margin:3px 6px 0}
+.rx{position:absolute;display:flex;align-items:center;gap:2px;height:24px;padding:0 6px;border-radius:12px;background:var(--rx-bg);font-size:14px;line-height:1;
+  box-shadow:0 0 0 2px var(--bg),0 1px 4px var(--glass-drop);z-index:3}
+.rx.r-in{right:-8px;bottom:-14px}.rx.r-out{left:-8px;bottom:-14px}
+.rcap{font-size:12px;line-height:16px;color:var(--label-2);margin:0 4px 3px}
+.rcap.out{align-self:flex-end}
+.rq{align-self:flex-end;display:flex;align-items:center;gap:8px;padding:5px 10px 5px 5px;border-radius:14px;border:1px solid var(--sep);opacity:.75;margin-bottom:3px}
+.rq .t{width:28px;height:42px;border-radius:7px;position:relative;overflow:hidden}
+.rq span{font-size:13px;line-height:17px;color:var(--label-2)}
+
+/* media cards */
+.reel{position:relative;flex:none;width:var(--rw,190px);height:var(--rh,285px);border-radius:18px;overflow:hidden;align-self:flex-start;color:var(--on-media)}
+.reel.last-in{border-top-left-radius:6px}
+.reel .top{position:absolute;left:0;right:0;top:0;padding:9px 9px 26px 10px;display:flex;align-items:center;gap:7px;background:linear-gradient(rgba(0,0,0,.45),transparent);font-size:13px;line-height:16px;font-weight:600;z-index:2}
+.reel .top .av{--z:22px;font-size:12px;box-shadow:0 0 0 1.5px rgba(255,255,255,.7)}
+.reel .top .rg{margin-left:auto;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:14px}
+.reel .play{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;display:grid;place-items:center;font-size:24px;z-index:2}
+.reel .play .i{margin-left:3px}
+.reel .cap{position:absolute;left:0;right:0;bottom:0;padding:30px 54px 10px 11px;background:linear-gradient(transparent,var(--media-scrim));font-size:13px;line-height:17px;z-index:2}
+.reel .cap > span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.reel .cap.full{padding-right:11px}
+.dur{position:absolute;right:9px;bottom:10px;height:20px;padding:0 7px;border-radius:10px;background:rgba(0,0,0,.42);font-size:12px;line-height:20px;font-weight:600;font-variant-numeric:tabular-nums;z-index:3;color:var(--on-media)}
+.emo{position:absolute;left:var(--x,50%);top:var(--y,50%);font-size:var(--fs,60px);line-height:1;transform:translate(-50%,-50%) rotate(var(--r,0deg));filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))}
+.sc-reef{position:absolute;inset:0;background:
+  radial-gradient(circle at 72% 30%,rgba(255,255,255,.55) 0 2px,transparent 3px),radial-gradient(circle at 76% 22%,rgba(255,255,255,.5) 0 1.5px,transparent 2.5px),
+  radial-gradient(circle at 69% 17%,rgba(255,255,255,.45) 0 2.5px,transparent 3.5px),
+  radial-gradient(ellipse 70% 22% at 50% -4%,rgba(255,255,255,.62),transparent 70%),
+  repeating-linear-gradient(104deg,rgba(255,255,255,.08) 0 6px,transparent 6px 22px),
+  radial-gradient(ellipse 120% 24% at 40% 104%,#cfae6f 0 55%,transparent 56.5%),
+  linear-gradient(180deg,#7bd5e7 0%,#2b94be 34%,#0e5f8d 68%,#083b5c 100%)}
+.sc-sunset{position:absolute;inset:0;overflow:hidden;background:radial-gradient(circle at 68% 44%,#fff4c8 0 6%,rgba(255,214,140,.75) 7.5%,transparent 24%),
+  linear-gradient(180deg,#ffd193 0%,#f59a64 38%,#c4607a 62%,#5b3a6e 82%,#2a2244 100%)}
+.sc-sunset::before{content:"";position:absolute;left:-5%;right:-5%;bottom:0;height:46%;background:#3a2b52;opacity:.85;clip-path:polygon(0 60%,14% 30%,26% 52%,40% 18%,55% 46%,68% 26%,82% 50%,100% 28%,100% 100%,0 100%)}
+.sc-sunset::after{content:"";position:absolute;left:-5%;right:-5%;bottom:0;height:28%;background:#1d1631;clip-path:polygon(0 50%,18% 22%,34% 58%,52% 30%,70% 60%,86% 34%,100% 52%,100% 100%,0 100%)}
+.sc-latte{position:absolute;inset:0;background:radial-gradient(circle at 50% 52%,#f6e6cc 0 13%,#d9b48a 14% 19%,#f2dfc2 20% 24%,#8a5634 25% 38%,#5a3520 39% 41%,transparent 42%),linear-gradient(135deg,#dcc6a8,#a37753)}
+.sc-stage{position:absolute;inset:0;background:radial-gradient(circle at 28% 18%,rgba(255,90,190,.75),transparent 42%),radial-gradient(circle at 76% 22%,rgba(90,170,255,.75),transparent 42%),
+  radial-gradient(ellipse 90% 28% at 50% 100%,#050308 0 60%,transparent 62%),linear-gradient(#2c1444,#0b0614)}
+.sc-link{position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(122,63,209,.6),transparent 50%),linear-gradient(135deg,#14202e,#2f4b63)}
+.photo{position:relative;flex:none;width:var(--pw,170px);height:var(--ph,114px);border-radius:18px;overflow:visible;align-self:flex-start}
+.photo .clip{position:absolute;inset:0;border-radius:inherit;overflow:hidden}
+.voice{position:relative;flex:none;display:flex;align-items:center;gap:10px;width:236px;height:44px;padding:0 12px 0 6px;border-radius:20px;background:var(--bubble-in);align-self:flex-start}
+.voice.out{align-self:flex-end;background:var(--acc);color:var(--on-color)}
+.vp{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--label);color:var(--bg);font-size:14px;flex:none}
+.voice.out .vp{background:var(--on-color);color:var(--acc)}
+.vp .i{margin-left:2px}
+.wave{flex:1;display:flex;align-items:center;gap:2px;height:28px;min-width:0;overflow:hidden}
+.wave i{display:block;width:3px;border-radius:2px;background:currentColor;opacity:.32;flex:none}
+.wave i.on{opacity:1}
+.vd{font-size:13px;color:var(--label-2);font-variant-numeric:tabular-nums}
+.voice.out .vd{color:var(--on-color)}
+.spd{height:20px;padding:0 6px;border-radius:10px;background:var(--fill-2);font-size:12px;line-height:20px;font-weight:600}
+
+/* composer */
+.comp{position:absolute;left:12px;right:12px;bottom:30px;display:flex;align-items:flex-end;gap:8px;z-index:40}
+.comp .gb{flex:none}
+.field{flex:1;min-height:44px;border-radius:22px;display:flex;align-items:center;gap:9px;padding:0 6px 0 8px;font-size:17px}
+.field .ph{flex:1;color:var(--label-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field .val{flex:1;color:var(--label)}
+.field .ic{width:32px;height:32px;display:grid;place-items:center;font-size:20px;color:var(--label-2)}
+.send{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--acc);color:var(--on-color);font-size:17px;flex:none}
+.send .i{stroke-width:2.6}
+
+/* sheets & grouped lists */
+.behind{position:absolute;inset:0;background:var(--behind)}
+.behind .pv-screen{position:absolute;left:10px;right:10px;top:22px;bottom:0;border-radius:40px 40px 0 0;background:var(--bg);opacity:.55;overflow:hidden}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:38px 38px 0 0;z-index:20;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.18)}
+.sheet.grouped{background:var(--bg-grouped)}
+.sheet-tb{position:absolute;top:12px;left:16px;right:16px;height:44px;display:flex;align-items:center;justify-content:space-between;z-index:5}
+.sheet-tb .ttl{position:absolute;left:60px;right:60px;text-align:center}
+.sheet-tb .ttl b{display:block;font-size:17px;line-height:20px;font-weight:600}
+.sheet-tb .ttl span{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:15px;color:var(--label-2)}
+.grp-h{font-size:13px;line-height:18px;color:var(--label-2);text-transform:uppercase;letter-spacing:.2px;margin:0 20px 7px}
+.grp-f{font-size:13px;line-height:18px;color:var(--label-2);margin:7px 20px 0}
+.cells{margin:0 16px;background:var(--cell);border-radius:24px;overflow:hidden}
+.cell{position:relative;display:flex;align-items:center;gap:12px;min-height:46px;padding:10px 16px}
+.cell + .cell::before{content:"";position:absolute;top:0;left:var(--sep-l,16px);right:0;border-top:.5px solid var(--sep)}
+.cell .grow{flex:1;min-width:0}
+.cell .v{color:var(--label-2);display:flex;align-items:center;gap:6px;font-size:17px}
+.cell .v .i{font-size:14px;color:var(--label-3)}
+.tg{width:51px;height:31px;border-radius:16px;background:var(--toggle-on);position:relative;flex:none}
+.tg::after{content:"";position:absolute;right:2px;top:2px;width:27px;height:27px;border-radius:50%;background:var(--knob);box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.tg.off{background:var(--fill-2)}.tg.off::after{right:auto;left:2px}
+.acct .nm{font-size:17px;font-weight:600;line-height:21px;letter-spacing:-.4px}
+.acct .hd{font-size:15px;line-height:19px;color:var(--label-2)}
+.st{display:flex;align-items:center;gap:5px;font-size:13px;line-height:17px;font-weight:500;margin-top:3px}
+.st .i{font-size:14px}
+.st.ok{color:var(--ok)}.st.ok .i{color:var(--ok-g)}
+.st.warn{color:var(--warn)}.st.warn .i{color:var(--warn-g)}
+.st.err{color:var(--err)}.st.err .i{color:var(--err-g)}
+.st.neutral{color:var(--label-2)}
+.prog{height:4px;border-radius:2px;background:var(--fill-2);margin-top:7px;overflow:hidden}
+.prog i{display:block;height:100%;width:var(--p,50%);background:var(--label);border-radius:2px}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--fill-2);border-top-color:var(--label-2);flex:none;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.spin{animation:none;border-top-color:var(--label-2);border-right-color:var(--label-2)}}
+
+/* buttons */
+.big{height:52px;border-radius:26px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;background:var(--label);color:var(--bg)}
+.txtbtn{display:flex;justify-content:center;font-size:17px;font-weight:500;color:var(--label)}
+.sbtn{height:30px;border-radius:15px;padding:0 13px;display:inline-flex;align-items:center;font-size:14px;font-weight:600;background:var(--fill);color:var(--label)}
+.sbtn.dark{background:var(--label);color:var(--bg)}
+.sbtn.del{color:var(--err)}
+
+/* ---------- components panels ---------- */
+.panels{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:24px;align-items:start}
+.panel{background:var(--page-surface);border:1px solid var(--page-line);border-radius:28px;padding:20px;min-width:0}
+.panel.wide{grid-column:1 / -1}
+.panel h3{margin:0;font-size:17px;letter-spacing:-.2px}
+.panel > p{margin:4px 0 16px;color:var(--page-muted);font-size:14px}
+.ios{background:var(--bg);color:var(--label);border-radius:22px;padding:16px;font-family:var(--font);font-size:17px;line-height:22px;letter-spacing:-.2px;position:relative;overflow:hidden}
+.ios.gbg{background:var(--bg-grouped)}
+.lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--page-muted);font-weight:700;margin:16px 0 8px}
+.lbl:first-child{margin-top:0}
+.stack{display:flex;flex-direction:column;gap:12px}
+.hrow{display:flex;flex-wrap:wrap;gap:16px 20px;align-items:center}
+.anat{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.anat em{font-style:normal;font-size:12px;color:var(--page-muted);line-height:1.3}
+.pal{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr));gap:10px}
+.sw{display:flex;gap:10px;align-items:center;padding:10px;border-radius:16px;background:var(--bg)}
+.sw .c{width:38px;height:38px;border-radius:50%;background:var(--acc);display:grid;place-items:center;color:var(--on-color);font:700 17px/1 var(--font-round);flex:none}
+.sw b{display:block;font-size:14px;color:var(--label)}
+.sw span{display:block;font-size:12px;color:var(--label-2);font-variant-numeric:tabular-nums;line-height:1.35}
+.sw .ink{color:var(--acc-ink);font-weight:600}
+.mini-row{position:relative;display:flex;gap:12px;align-items:center;padding:8px 0}
+.mini-row .tx{flex:1;min-width:0}
+.mini-row .nm{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.mini-row .pv{font-size:14px;color:var(--label-2);line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-row .tm{font-size:14px;color:var(--label-2)}
+.strip{position:relative;border-radius:18px;padding:12px 0 12px;background:var(--bg)}
+.strip .scope,.strip .tiles{position:static}
+.strip .tiles{margin:10px 16px 0}
+.strip .t{display:flex;align-items:center;gap:8px;margin:0 16px 10px;font-size:13px;color:var(--label-2)}
+.strip .t b{color:var(--label);font-size:15px}
+.cmp{position:relative;display:flex;align-items:flex-end;gap:8px}
+.cmp .gb{width:40px;height:40px;font-size:19px}
+.cmp .field{min-height:40px}
+.cmp-l{font-size:12px;color:var(--page-muted);margin:12px 0 6px}
+.cmp-l:first-child{margin-top:0}
+.bar{border-radius:20px;padding:12px 14px}
+.bar p{margin:0;font-size:14px;line-height:19px;color:var(--label-2)}
+.bar b{font-size:15px}
+.bar .btns{display:flex;gap:8px;margin-top:10px}
+.bar .btns > *{flex:1;justify-content:center}
+.pop{position:relative;border-radius:18px;padding:12px 14px;font-size:14px;line-height:19px;max-width:270px}
+.pop::after{content:"";position:absolute;left:22px;bottom:-7px;width:14px;height:14px;background:inherit;transform:rotate(45deg);border-radius:0 0 3px 0;box-shadow:none}
+.gal{display:flex;flex-wrap:wrap;gap:22px 18px;align-items:flex-start}
+.gi{display:flex;flex-direction:column;gap:8px;align-items:flex-start;width:min-content}
+.gi > em{font-style:normal;font-size:12px;line-height:1.35;color:var(--page-muted);min-width:140px}
+.gi .b,.anat .b{max-width:none;white-space:nowrap}
+.ncard{width:220px;border-radius:18px;background:var(--bubble-in);padding:14px;display:flex;flex-direction:column;gap:8px}
+.ncard .ic{width:34px;height:34px;border-radius:50%;background:var(--fill-2);display:grid;place-items:center;font-size:18px;color:var(--label-2)}
+.ncard b{font-size:15px;line-height:20px}
+.ncard p{margin:0;font-size:13px;line-height:17px;color:var(--label-2)}
+.ncard .open{display:inline-flex;align-items:center;gap:5px;font-size:14px;font-weight:600;color:var(--label)}
+.share{width:230px;border-radius:18px;background:var(--bubble-in);overflow:hidden}
+.share .hdr{display:flex;align-items:center;gap:8px;padding:9px 10px;font-size:13px;font-weight:600}
+.share .hdr .av{--z:22px;font-size:12px}
+.share .img{position:relative;height:230px}
+.share .cp{padding:9px 11px 11px;font-size:13px;line-height:17px;color:var(--label)}
+.share .cp b{font-weight:600}
+.link{width:240px;border-radius:18px;overflow:hidden;background:var(--bubble-in)}
+.link .img{position:relative;height:120px}
+.link .lt2{padding:9px 12px 11px}
+.link .lt2 b{display:block;font-size:14px;line-height:18px}
+.link .lt2 span{font-size:12px;color:var(--label-2)}
+.ring{position:relative;width:56px;height:56px;border-radius:50%;display:grid;place-items:center}
+.ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.states{display:flex;flex-direction:column}
+.states .cell{background:var(--cell)}
+.ctx{position:relative;border-radius:22px;padding:18px 14px 22px;background:var(--bg-grouped);overflow:hidden}
+.ctx .blur{position:absolute;inset:0;background:var(--scrim)}
+.palette{position:relative;display:flex;gap:4px;padding:6px;border-radius:26px;width:max-content;font-size:24px;line-height:1;margin-left:auto}
+.palette span{width:40px;height:40px;display:grid;place-items:center;border-radius:50%}
+.palette span.sel{background:var(--fill-2)}
+.palette .more{font-size:20px;color:var(--label-2)}
+.menu{position:relative;width:250px;border-radius:20px;overflow:hidden;margin-left:auto}
+.menu div{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;font-size:17px}
+.menu div + div{border-top:.5px solid var(--sep)}
+.menu .i{font-size:19px}
+.menu .del{color:var(--err)}
+.menu .dim{color:var(--label-2)}
+.fromchips{display:flex;gap:8px;flex-wrap:wrap}
+.fromchips .chip{height:36px}
+.fromchips .chip.dash{background:transparent;box-shadow:inset 0 0 0 1px var(--sep);color:var(--label-2)}
+.notes{margin:0;padding-left:18px;color:var(--page-muted);font-size:14px}
+.notes li{margin:4px 0}
+.foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--page-line);color:var(--page-muted);font-size:13px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M15 4.5 7.5 12l7.5 7.5" stroke-width="2.2"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.2"/></symbol>
+    <symbol id="i-chev-d" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7" stroke-width="2.2"/></symbol>
+    <symbol id="i-chev-ud" viewBox="0 0 24 24"><path d="M7 9.5 12 4.5l5 5M7 14.5l5 5 5-5" stroke-width="2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.3" stroke-width="2"/><path d="M15.6 15.6 20 20" stroke-width="2.2"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+    <symbol id="i-compose" viewBox="0 0 24 24"><path d="M11 4.5H6.8A2.8 2.8 0 0 0 4 7.3v9.9A2.8 2.8 0 0 0 6.8 20h9.9a2.8 2.8 0 0 0 2.8-2.8V13"/><path d="M18.2 3.8a1.9 1.9 0 0 1 2.7 2.7l-8.6 8.6-3.6.9.9-3.6z"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4" stroke-width="2"/></symbol>
+    <symbol id="i-ellipsis" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.8" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-width="2.1"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" stroke-width="2.1"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7.5" stroke-width="2.4"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor" stroke="none"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke-width="2"/></symbol>
+    <symbol id="i-reload" viewBox="0 0 24 24"><path d="M19 12.5A7 7 0 1 1 16.9 7.3"/><path d="M19.5 4v4.5H15"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.6v12.8a1 1 0 0 0 1.5.86l10.3-6.4a1 1 0 0 0 0-1.72L9.5 4.74A1 1 0 0 0 8 5.6z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" stroke="none"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9.5h3.4L12 5.6v12.8l-4.6-3.9H4z" fill="currentColor" stroke="none"/><path d="M15.5 9.2a4 4 0 0 1 0 5.6M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5.5M6.5 11 12 5.5l5.5 5.5"/></symbol>
+    <symbol id="i-reply" viewBox="0 0 24 24"><path d="M9.5 6 4 11.5 9.5 17"/><path d="M4.5 11.5H14a6 6 0 0 1 6 6V19"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3.5v11M8 7.5l4-4 4 4"/><path d="M8 10.5H6.5A2 2 0 0 0 4.5 12.5v6a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H16"/></symbol>
+    <symbol id="i-ext" viewBox="0 0 24 24"><path d="M8 16 16 8M9.5 8H16v6.5" stroke-width="2"/></symbol>
+    <symbol id="i-tray" viewBox="0 0 24 24"><path d="M4 13.5 6.3 6.4A2 2 0 0 1 8.2 5h7.6a2 2 0 0 1 1.9 1.4L20 13.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 13.5h4.5l1.2 2.2h4.6l1.2-2.2H20"/></symbol>
+    <symbol id="i-req" viewBox="0 0 24 24"><circle cx="9" cy="8.2" r="3.4"/><path d="M3.2 19.5c.7-3.4 3-5.4 5.8-5.4s5.1 2 5.8 5.4"/><path d="M16.4 7.6a2.4 2.4 0 1 1 3.2 2.3c-.6.2-1 .7-1 1.3v.5"/><circle cx="18.6" cy="14.9" r=".6" fill="currentColor"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="4.5" rx="1.2"/><path d="M5 9v9.2A1.8 1.8 0 0 0 6.8 20h10.4a1.8 1.8 0 0 0 1.8-1.8V9M10 12.8h4"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M10.3 3.9a2 2 0 0 1 3.4 0l7.8 13.4a2 2 0 0 1-1.7 3H4.2a2 2 0 0 1-1.7-3z" fill="currentColor" stroke="none"/><path d="M12 8.6v5" stroke="#fff" stroke-width="2.2"/><circle cx="12" cy="16.9" r="1.25" fill="#fff" stroke="none"/></symbol>
+    <symbol id="i-errc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="currentColor" stroke="none"/><path d="M12 7.2v6" stroke="#fff" stroke-width="2.2"/><circle cx="12" cy="16.6" r="1.25" fill="#fff" stroke="none"/></symbol>
+    <symbol id="i-xc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="currentColor" stroke="none"/><path d="M8.6 8.6l6.8 6.8M15.4 8.6l-6.8 6.8" stroke="#fff" stroke-width="2.1"/></symbol>
+    <symbol id="i-checkc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="currentColor" stroke="none"/><path d="M7.8 12.3l2.9 2.9 5.5-5.8" stroke="#fff" stroke-width="2.2"/></symbol>
+    <symbol id="i-clockc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="currentColor" stroke="none"/><path d="M12 7.2V12l3.2 2" stroke="#fff" stroke-width="2.1"/></symbol>
+    <symbol id="i-bellslash" viewBox="0 0 24 24"><path d="M6.2 16.5V11a5.8 5.8 0 0 1 9.4-4.6M17.8 10.6v5.9l1.5 1.5H8.5"/><path d="M10 20.3a2 2 0 0 0 4 0M4 4l16 16"/></symbol>
+    <symbol id="i-reel" viewBox="0 0 24 24"><rect x="7" y="7" width="13" height="13" rx="3"/><path d="M4 16.5V7.5A3.5 3.5 0 0 1 7.5 4h9"/><path d="M11.8 10.6v5.8l4.6-2.9z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.8"/><circle cx="9" cy="10" r="1.6"/><path d="M3.8 17.2l5-4.4 4 3.4 2.8-2.3 4.6 4"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.4 19 6.2v5.3c0 4.3-3 7.8-7 9.1-4-1.3-7-4.8-7-9.1V6.2z"/><path d="M8.8 12.1l2.2 2.2 4.3-4.6"/></symbol>
+    <symbol id="i-eyeslash" viewBox="0 0 24 24"><path d="M3 12s3.3-6 9-6 9 6 9 6-3.3 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.7"/><path d="M4.5 4.5l15 15"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v12M7 12.5l5 5 5-5" stroke-width="2.2"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-6.2 6.2M4 20l6.2-6.2"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3A4 4 0 0 0 13 5.3l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M15.5 5.5l3 3L8.5 18.5 4.5 19.5l1-4z"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7.5 4.5 12 9 16.5"/><path d="M5 12h9.5a5 5 0 0 1 0 10H12"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v2M6.5 7l.8 11.3A2 2 0 0 0 9.3 20h5.4a2 2 0 0 0 2-1.7L17.5 7"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5"/></symbol>
+    <symbol id="i-signal" viewBox="0 0 19 12"><rect x="0" y="8" width="3.2" height="4" rx="1"/><rect x="5.2" y="5.5" width="3.2" height="6.5" rx="1"/><rect x="10.4" y="3" width="3.2" height="9" rx="1"/><rect x="15.6" y="0" width="3.2" height="12" rx="1"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 17 12"><path d="M8.5 2.3c2.5 0 4.8 1 6.5 2.6l1.3-1.3A11 11 0 0 0 8.5.4 11 11 0 0 0 .7 3.6L2 4.9a9.2 9.2 0 0 1 6.5-2.6z"/><path d="M8.5 5.9c1.5 0 2.9.6 3.9 1.6l1.3-1.3a7.4 7.4 0 0 0-10.4 0l1.3 1.3c1-1 2.4-1.6 3.9-1.6z"/><path d="M8.5 9.3c.6 0 1.1.2 1.5.6L8.5 11.5 7 9.9c.4-.4.9-.6 1.5-.6z"/></symbol>
+    <symbol id="i-batt" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.6" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.2"/><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2z" opacity=".45"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header class="head">
+    <div>
+      <h1>IG Messenger Design</h1>
+      <p class="sub">One inbox for several Instagram accounts, built on Matrix and the mautrix-instagram bridge. iPhone, iOS 26, Liquid Glass. Mockups v1, 12 Oct 2026. Specs live in DESIGN.md; screen IDs below match it.</p>
+      <div class="pr" aria-label="Design principles">
+        <span>Color means account</span><span>Threads are locked to their account</span><span>One scope control; folders are places</span><span>Reels are video messages</span><span>No feed, no next reel</span>
+      </div>
+    </div>
+    <div class="seg" role="group" aria-label="Theme">
+      <button type="button" id="theme-auto" data-t="auto" aria-pressed="true">Auto</button>
+      <button type="button" id="theme-light" data-t="light" aria-pressed="false">Light</button>
+      <button type="button" id="theme-dark" data-t="dark" aria-pressed="false">Dark</button>
+    </div>
+  </header>
+  <div class="legend">
+    <span class="k">Example accounts</span>
+    <span class="tag a-ember"><span class="mi s16">P</span>Personal <span class="h">· @marlo.jpg</span></span>
+    <span class="tag a-ocean"><span class="mi s16">S</span>Studio <span class="h">· @marlo.studio</span></span>
+    <span class="tag a-grape"><span class="mi s16">B</span>Band <span class="h">· @lowtide.band</span></span>
+  </div>
+
+<main>
+  <!-- ======================= ONBOARDING ======================= -->
+  <section>
+    <h2>Onboarding</h2>
+    <div class="frames">
+
+      <!-- O1 Welcome -->
+      <figure>
+        <div class="dw"><div class="device"><div class="phone">
+          <div style="position:absolute;left:0;right:0;top:70px;height:380px">
+            <div class="b in" style="position:absolute;left:22px;top:24px;max-width:none;transform:rotate(-3deg)">did you see the reel I sent?</div>
+            <div class="reel" style="position:absolute;left:30px;top:86px;--rw:120px;--rh:180px;transform:rotate(-5deg);box-shadow:0 18px 40px -12px rgba(0,0,0,.35)">
+              <div class="sc-reef"></div><span class="emo" style="--fs:46px;--y:48%;--r:-12deg">🐢</span>
+              <div class="play mglass" style="width:42px;height:42px;margin:-21px 0 0 -21px;font-size:18px"><svg class="i"><use href="#i-play"/></svg></div>
+            </div>
+            <div class="a-ocean" style="position:absolute;right:24px;top:104px;transform:rotate(2.5deg)">
+              <div class="b out" style="max-width:none;position:relative">watching it now 🐢<span class="mk" style="right:-7px;bottom:-7px">S</span></div>
+            </div>
+            <div class="a-ember" style="position:absolute;right:42px;top:184px;transform:rotate(-2deg)">
+              <div class="b out" style="max-width:none;position:relative">brunch sunday?<span class="mk" style="right:-7px;bottom:-7px">P</span></div>
+            </div>
+            <div class="a-grape" style="position:absolute;right:20px;top:262px;transform:rotate(3deg)">
+              <div class="b out" style="max-width:none;position:relative">new single drops friday<span class="mk" style="right:-7px;bottom:-7px">B</span></div>
+            </div>
+          </div>
+          <div style="position:absolute;left:24px;right:24px;top:468px">
+            <div style="font-size:31px;line-height:36px;font-weight:700;letter-spacing:-.3px;text-wrap:balance">All your Instagram DMs. None of the feed.</div>
+            <div style="display:flex;flex-direction:column;gap:14px;margin-top:24px;font-size:17px">
+              <div style="display:flex;gap:12px;align-items:center"><span class="gb" style="width:34px;height:34px;background:var(--fill);font-size:17px"><svg class="i"><use href="#i-tray"/></svg></span>Every account, one inbox</div>
+              <div style="display:flex;gap:12px;align-items:center"><span class="gb" style="width:34px;height:34px;background:var(--fill);font-size:17px"><svg class="i"><use href="#i-reel"/></svg></span>Reels play right in the chat</div>
+              <div style="display:flex;gap:12px;align-items:center"><span class="gb" style="width:34px;height:34px;background:var(--fill);font-size:17px"><svg class="i"><use href="#i-eyeslash"/></svg></span>No feed, no Explore, no algorithm</div>
+            </div>
+          </div>
+          <div style="position:absolute;left:20px;right:20px;bottom:44px">
+            <div class="big">Connect Instagram account</div>
+            <div style="text-align:center;font-size:12px;color:var(--label-2);margin-top:12px">Not affiliated with Instagram or Meta.</div>
+          </div>
+        </div></div></div>
+        <figcaption><span class="id">O1</span><b>Welcome</b><p>The illustration already teaches the system: each account's color and mark sit on its bubbles.</p></figcaption>
+      </figure>
+
+      <!-- O3 Connect sheet -->
+      <figure>
+        <div class="dw"><div class="device"><div class="phone" data-sb="light">
+          <div class="behind"><div class="pv-screen">
+            <div style="position:absolute;left:24px;right:24px;top:420px;font-size:28px;line-height:33px;font-weight:700;color:var(--label)">All your Instagram DMs. None of the feed.</div>
+          </div></div>
+          <div class="sheet" style="top:58px">
+            <div class="sheet-tb">
+              <span class="gb glass"><svg class="i"><use href="#i-x"/></svg></span>
+              <div class="ttl"><b>Log in to Instagram</b><span><svg class="i" style="font-size:10px"><use href="#i-lock"/></svg>instagram.com</span></div>
+              <span class="gb glass" style="font-size:19px"><svg class="i"><use href="#i-reload"/></svg></span>
+            </div>
+            <div style="position:absolute;top:66px;left:0;right:0;height:2px;background:var(--fill)"><i style="display:block;width:64%;height:100%;background:var(--label)"></i></div>
+            <div style="position:absolute;top:68px;left:0;right:0;bottom:0;background:var(--web)">
+              <div style="margin:18px 16px 0;padding:22px 18px;border:1.5px dashed var(--sep);border-radius:20px;display:flex;flex-direction:column;gap:12px;align-items:stretch">
+                <div style="font-size:12px;line-height:16px;color:var(--label-2);text-align:center">Instagram's own login page loads here (web view).<br>You type your username, password and code into it.</div>
+                <div style="height:46px;border-radius:12px;background:var(--skel);margin:10px auto 6px;width:46px"></div>
+                <div style="height:46px;border-radius:12px;background:var(--bg);box-shadow:inset 0 0 0 1px var(--sep);display:flex;align-items:center;padding:0 14px;font-size:15px;color:var(--label-2)">Username or email</div>
+                <div style="height:46px;border-radius:12px;background:var(--bg);box-shadow:inset 0 0 0 1px var(--sep);display:flex;align-items:center;padding:0 14px;font-size:15px;color:var(--label-2)">Password</div>
+                <div style="height:44px;border-radius:12px;background:var(--skel)"></div>
+                <div style="height:10px;width:44%;border-radius:5px;background:var(--skel);margin:4px auto 0"></div>
+              </div>
+            </div>
+            <div class="glass" style="position:absolute;left:12px;right:12px;bottom:28px;border-radius:24px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;z-index:5">
+              <div style="display:flex;gap:10px;font-size:14px;line-height:19px"><svg class="i" style="font-size:20px;margin-top:-1px"><use href="#i-shield"/></svg><span>Your password goes only to Instagram. IG Messenger keeps the session it needs to sync your messages.</span></div>
+              <div style="display:flex;gap:10px;font-size:13px;line-height:18px;color:var(--label-2)"><svg class="i" style="font-size:20px"><use href="#i-checkc"/></svg><span>Instagram may ask you to confirm it's you. Keep your Instagram app or email nearby.</span></div>
+            </div>
+          </div>
+        </div></div></div>
+        <figcaption><span class="id">O3</span><b>Connect Instagram account</b><p>instagram.com in a sheet, with a fresh, isolated session per account. The native footer says where the password goes. When the login cookies appear, the footer turns into "Logged in. Continue" so Instagram's "save login info" page can't strand you.</p></figcaption>
+      </figure>
+
+      <!-- O5 Name and color -->
+      <figure>
+        <div class="dw"><div class="device"><div class="phone grouped a-ocean">
+          <div class="tb"><span class="gb glass"><svg class="i"><use href="#i-chev-l"/></svg></span><span></span></div>
+          <div class="lt" style="top:106px">Name this account</div>
+          <div style="position:absolute;left:16px;right:16px;top:152px;font-size:15px;line-height:20px;color:var(--label-2)">Pick a name, color and mark for @marlo.studio. You'll see them on every chat from this account.</div>
+          <div style="position:absolute;left:16px;right:16px;top:206px;background:var(--cell);border-radius:24px;padding:12px 14px 12px;display:flex;flex-direction:column;gap:8px;--ring-bg:var(--cell)">
+            <div style="display:flex;gap:12px;align-items:center">
+              <div class="av pp pp-maya" style="--z:44px"><span class="mk s18">S</span></div>
+              <div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:600">Maya Chen</div><div style="font-size:14px;line-height:18px;color:var(--label-2)">Sent a reel by @tidepool.films</div></div>
+              <span style="font-size:14px;color:var(--label-2)">9:41</span>
+            </div>
+            <div class="b out" style="font-size:16px;padding:6px 12px">On my way!</div>
+            <div class="field" style="min-height:36px;background:var(--fill);font-size:15px;padding-left:6px">
+              <span class="av own-s own" style="--z:24px;--gap:1.5px;--rw:1.5px;--ring-bg:var(--cell)">m</span><span class="ph">Message as Studio</span>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;top:384px">
+            <div class="grp-h">Name</div>
+            <div class="cells"><div class="cell"><span class="grow">Studio</span><span class="gb" style="width:22px;height:22px;background:var(--fill-2);font-size:11px;color:var(--label-2)"><svg class="i"><use href="#i-x"/></svg></span></div></div>
+            <div style="display:flex;gap:8px;margin:8px 16px 0"><span class="sbtn">Personal</span><span class="sbtn">Work</span><span class="sbtn">Shop</span><span class="sbtn">Creator</span></div>
+            <div class="grp-h" style="margin-top:18px">Color</div>
+            <div class="cells"><div class="cell" style="justify-content:space-between;padding:12px 16px">
+              <span class="a-ocean" style="width:34px;height:34px;border-radius:50%;background:var(--acc);display:grid;place-items:center;color:var(--on-color);font-size:16px;box-shadow:0 0 0 2px var(--cell),0 0 0 4px var(--acc)"><svg class="i"><use href="#i-check"/></svg></span>
+              <span class="a-ember" style="width:34px;height:34px;border-radius:50%;background:var(--acc);opacity:.38;display:grid;place-items:center;color:var(--on-color);font:700 14px/1 var(--font-round)" title="Used by Personal">P</span>
+              <span class="a-grape" style="width:34px;height:34px;border-radius:50%;background:var(--acc)"></span>
+              <span class="a-teal" style="width:34px;height:34px;border-radius:50%;background:var(--acc)"></span>
+              <span class="a-berry" style="width:34px;height:34px;border-radius:50%;background:var(--acc)"></span>
+              <span class="a-moss" style="width:34px;height:34px;border-radius:50%;background:var(--acc)"></span>
+              <span class="a-cocoa" style="width:34px;height:34px;border-radius:50%;background:var(--acc)"></span>
+              <span class="a-slate" style="width:34px;height:34px;border-radius:50%;background:var(--acc)"></span>
+            </div></div>
+            <div class="grp-f">Ember is used by Personal.</div>
+            <div class="grp-h" style="margin-top:16px">Mark</div>
+            <div class="cells"><div class="cell" style="gap:10px">
+              <span class="mi" style="width:30px;height:30px;font-size:16px">S</span>
+              <span style="flex:1"></span>
+              <span class="sbtn" style="box-shadow:inset 0 0 0 1.5px var(--label)">S</span><span class="sbtn">T</span><span class="sbtn">U</span><span class="sbtn">✦</span><span class="sbtn">📷</span>
+            </div></div>
+          </div>
+          <div style="position:absolute;left:20px;right:20px;bottom:40px">
+            <div class="big">Save</div>
+            <div class="txtbtn" style="margin-top:14px">Add another account</div>
+          </div>
+        </div></div></div>
+        <figcaption><span class="id">O5</span><b>Name, color and mark</b><p>Three fields and a live preview of exactly what changes: the mark on rows, the bubble color, and the composer. Taken colors show their owner's mark and can't be picked.</p></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ======================= INBOX ======================= -->
+  <section>
+    <h2>Inbox and folders</h2>
+    <div class="frames">
+
+      <!-- I1 All accounts -->
+      <figure>
+        <div class="dw"><div class="device"><div class="phone">
+          <div class="tb">
+            <span class="gcap glass" style="padding:0 8px;gap:0">
+              <span class="av own-p own a-ember" style="--z:26px;width:26px;height:26px;--gap:1.5px"></span>
+              <span class="av own-s own a-ocean" style="--z:26px;width:26px;height:26px;margin-left:-4px;--gap:1.5px;font-size:13px">m</span>
+              <span class="av own-b own a-grape" style="--z:26px;width:26px;height:26px;margin-left:-4px;--gap:1.5px;font-size:13px">🌊</span>
+            </span>
+            <span class="gcap glass"><span><svg class="i"><use href="#i-filter"/></svg></span></span>
+          </div>
+          <div class="lt" style="top:106px">Chats</div>
+          <div class="scope" style="top:158px">
+            <span class="chip all on-all">All <span class="ct">6</span></span>
+            <span class="chip a-ember"><span class="mi">P</span>Personal <span class="ct">2</span></span>
+            <span class="chip a-ocean"><span class="mi">S</span>Studio <span class="ct">3</span></span>
+            <span class="chip a-grape"><span class="mi">B</span>Band <span class="ct">1</span></span>
+          </div>
+          <div class="tiles" style="top:204px">
+            <div class="tile"><div class="r1"><svg class="i"><use href="#i-req"/></svg><span class="n">4</span></div><div class="lb">Requests</div></div>
+            <div class="tile"><div class="r1"><svg class="i"><use href="#i-archive"/></svg><span class="n"></span></div><div class="lb">Archived</div></div>
+          </div>
+          <div class="list" style="top:278px">
+            <div class="row un a-ocean"><span class="dot"></span><div class="av pp pp-maya"><span class="mk">S</span></div><div class="tx"><div class="l1"><span class="nm">Maya Chen</span><span class="tm">9:41</span></div><div class="pv"><svg class="i"><use href="#i-reel"/></svg> Sent a reel by @tidepool.films</div></div></div>
+            <div class="row un a-ember"><span class="dot"></span><div class="av pp pp-maya"><span class="mk">P</span></div><div class="tx"><div class="l1"><span class="nm">Maya Chen</span><span class="tm">9:12</span></div><div class="pv">lol are we still on for saturday? I can bring the good bread</div></div></div>
+            <div class="row un a-ocean"><span class="dot"></span><div class="av br-north">☕<span class="mk">S</span></div><div class="tx"><div class="l1"><span class="nm">Northwind Coffee</span><span class="tm">8:50</span></div><div class="pv">Could you send the invoice for the menu shoot when you get a sec?</div></div></div>
+            <div class="row a-grape"><div class="av pp pp-priya"><span class="mk">B</span></div><div class="tx"><div class="l1"><span class="nm">Priya Raman</span><span class="tm">8:31</span></div><div class="pv typing">typing…</div></div></div>
+            <div class="row a-ember"><div class="grp"><div class="av pp pp-theo"></div><div class="av pp pp-jonah"></div><span class="mk">P</span></div><div class="tx"><div class="l1"><span class="nm">Weekend crew</span><span class="tm">Yesterday</span></div><div class="pv">Theo: <svg class="i"><use href="#i-mic"/></svg> Voice message · 0:21</div></div></div>
+            <div class="row a-ocean"><div class="av pp pp-ana"><span class="mk">S</span></div><div class="tx"><div class="l1"><span class="nm">Ana Lucía <svg class="i gl"><use href="#i-bellslash"/></svg></span><span class="tm">Yesterday</span></div><div class="pv"><svg class="i"><use href="#i-photo"/></svg> Photo</div></div></div>
+            <div class="row a-ember"><div class="av pp pp-jonah"><span class="mk">P</span></div><div class="tx"><div class="l1"><span class="nm">Jonah Reyes</span><span class="tm">Mon</span></div><div class="pv">You: see you there</div></div></div>
+          </div>
+          <div class="edge-bot"></div>
+          <div class="bb"><div class="srch glass"><svg class="i"><use href="#i-search"/></svg>Search<svg class="i mic"><use href="#i-mic"/></svg></div><span class="gb glass"><svg class="i"><use href="#i-compose"/></svg></span></div>
+        </div></div></div>
+        <figcaption><span class="id">I1</span><b>All accounts</b><p>One scope control. A mark on every avatar tells accounts apart. Maya messaged two of your accounts, so she appears twice, once per account. v1 folders are Requests and Archived.</p></figcaption>
+      </figure>
+
+      <!-- I1 Studio scope -->
+      <figure>
+        <div class="dw"><div class="device"><div class="phone a-ocean">
+          <div class="wash"></div>
+          <div class="tb">
+            <span class="gcap glass" style="padding:0 8px;gap:0">
+              <span class="av own-p own a-ember" style="--z:26px;width:26px;height:26px;--gap:1.5px"></span>
+              <span class="av own-s own a-ocean" style="--z:26px;width:26px;height:26px;margin-left:-4px;--gap:1.5px;font-size:13px">m</span>
+              <span class="av own-b own a-grape" style="--z:26px;width:26px;height:26px;margin-left:-4px;--gap:1.5px;font-size:13px">🌊</span>
+            </span>
+            <span class="gcap glass"><span><svg class="i"><use href="#i-filter"/></svg></span></span>
+          </div>
+          <div class="lt" style="top:106px;z-index:32">Studio<small>@marlo.studio · Primary</small></div>
+          <div class="scope" style="top:178px">
+            <span class="chip all">All</span>
+            <span class="chip a-ember"><span class="mi">P</span>Personal <span class="ct">2</span></span>
+            <span class="chip a-ocean on"><span class="mi">S</span>Studio <span class="ct">3</span></span>
+            <span class="chip a-grape"><span class="mi">B</span>Band <span class="ct">1</span></span>
+          </div>
+          <div class="tiles" style="top:224px;--tint:var(--acc-ink)">
+            <div class="tile"><div class="r1"><svg class="i"><use href="#i-tray"/></svg><span class="n">2</span></div><div class="lb">General</div></div>
+            <div class="tile"><div class="r1"><svg class="i"><use href="#i-req"/></svg><span class="n">3</span></div><div class="lb">Requests</div></div>
+            <div class="tile"><div class="r1"><svg class="i"><use href="#i-archive"/></svg><span class="n"></span></div><div class="lb">Archived</div></div>
+          </div>
+          <div class="list" style="top:298px">
+            <div class="row un"><span class="dot"></span><div class="av pp pp-maya"></div><div class="tx"><div class="l1"><span class="nm">Maya Chen</span><span class="tm">9:41</span></div><div class="pv"><svg class="i"><use href="#i-reel"/></svg> Sent a reel by @tidepool.films</div></div></div>
+            <div class="row un"><span class="dot"></span><div class="av br-north">☕</div><div class="tx"><div class="l1"><span class="nm">Northwind Coffee</span><span class="tm">8:50</span></div><div class="pv">Could you send the invoice for the menu shoot when you get a sec?</div></div></div>
+            <div class="swipe">
+              <div class="row"><div class="av br-kestrel">🚲</div><div class="tx"><div class="l1"><span class="nm">Kestrel Bikes</span><span class="tm">Tue</span></div><div class="pv">You: selects tonight</div></div></div>
+              <div class="acts"><div style="background:var(--sw-c)"><svg class="i"><use href="#i-ellipsis"/></svg>More</div><div style="background:var(--sw-b)"><svg class="i"><use href="#i-bellslash"/></svg>Mute</div><div style="background:var(--sw-a)"><svg class="i"><use href="#i-archive"/></svg>Archive</div></div>
+            </div>
+            <div class="row"><div class="av pp pp-ana"></div><div class="tx"><div class="l1"><span class="nm">Ana Lucía <svg class="i gl"><use href="#i-bellslash"/></svg></span><span class="tm">Yesterday</span></div><div class="pv"><svg class="i"><use href="#i-photo"/></svg> Photo</div></div></div>
+            <div class="row"><div class="av pp pp-lena"></div><div class="tx"><div class="l1"><span class="nm">Lena Ortiz</span><span class="tm">Sun</span></div><div class="pv">Perfect, Thursday at 4 works. I'll bring two outfits</div></div></div>
+            <div class="row"><div class="av pp pp-dev"></div><div class="tx"><div class="l1"><span class="nm">Dev Patel</span><span class="tm">Sat</span></div><div class="pv">You: Here's the moodboard</div></div></div>
+          </div>
+          <div class="edge-bot"></div>
+          <div class="bb"><div class="srch glass"><svg class="i"><use href="#i-search"/></svg>Search Studio<svg class="i mic"><use href="#i-mic"/></svg></div><span class="gb glass" style="color:var(--acc-ink)"><svg class="i"><use href="#i-compose"/></svg></span></div>
+        </div></div></div>
+        <figcaption><span class="id">I1</span><b>One account (Studio)</b><p>The screen wears Studio's color, so row marks go away. Shown with the Primary/General bridge patch: the General tile slots in front. In v1 it isn't there and the list holds all of Studio's chats. Swipe: More, Mute, Archive.</p></figcaption>
+      </figure>
+
+      <!-- I2 Requests -->
+      <figure>
+        <div class="dw"><div class="device"><div class="phone a-ocean">
+          <div class="wash" style="height:180px"></div>
+          <div class="tb" style="z-index:41">
+            <span class="gb glass"><svg class="i"><use href="#i-chev-l"/></svg></span>
+            <div style="position:absolute;left:70px;right:70px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px">
+              <b style="font-size:17px;line-height:20px">Requests</b><span class="tag" style="height:20px;font-size:12px"><span class="mi s16">S</span>Studio</span>
+            </div>
+            <span class="gcap glass" style="padding:0 14px;font-size:17px">Select</span>
+          </div>
+          <div style="position:absolute;left:16px;right:16px;top:116px;border-radius:20px;background:var(--fill);padding:12px 12px 12px 14px;display:flex;gap:10px;z-index:5">
+            <svg class="i" style="font-size:20px;margin-top:1px;color:var(--acc-ink)"><use href="#i-eyeslash"/></svg>
+            <div style="flex:1;font-size:14px;line-height:19px">Requests come from people you don't follow. They won't see that you've read their message until you accept.</div>
+            <svg class="i" style="font-size:14px;color:var(--label-2);margin-top:3px"><use href="#i-x"/></svg>
+          </div>
+          <div class="list" style="top:212px">
+            <div class="row un" style="height:128px"><span class="dot"></span><div class="av br-kestrel" style="--z:44px">🚲</div><div class="tx"><div class="l1"><span class="nm">Kestrel Bikes</span><span class="tm">2h</span></div><div class="pv">Hi! Loved the Northwind shoot. Would you be up for a product day in November?</div><div style="display:flex;gap:8px;margin-top:9px"><span class="sbtn del">Delete</span><span class="sbtn dark">Accept</span></div></div></div>
+            <div class="row un" style="height:128px"><span class="dot"></span><div class="av pp pp-lena" style="--z:44px"></div><div class="tx"><div class="l1"><span class="nm">Lena Ortiz</span><span class="tm">5h</span></div><div class="pv">Is the studio free for a portrait session the week of the 20th?</div><div style="display:flex;gap:8px;margin-top:9px"><span class="sbtn del">Delete</span><span class="sbtn dark">Accept</span></div></div></div>
+            <div class="row" style="height:128px"><div class="av br-crypto" style="--z:44px">🚀</div><div class="tx"><div class="l1"><span class="nm">crypto.wins.daily</span><span class="tm">1d</span></div><div class="pv">Turn $200 into $5,000 this week. DM me to learn the method</div><div style="display:flex;gap:8px;margin-top:9px"><span class="sbtn del">Delete</span><span class="sbtn dark">Accept</span></div></div></div>
+            <div style="padding:14px 24px 0;font-size:13px;line-height:18px;color:var(--label-2)">Requests that arrived before you connected Studio appear when the sender writes again.</div>
+          </div>
+          <div class="edge-bot" style="height:100px"></div>
+          <div style="position:absolute;left:16px;bottom:30px;z-index:40"><span class="gcap glass" style="padding:0 16px;font-size:17px;color:var(--err)">Delete All</span></div>
+        </div></div></div>
+        <figcaption><span class="id">I2</span><b>Requests (Studio)</b><p>Accept and Delete on every row. Read receipts and typing are never sent here, and the copy tells you so. IG's Hidden requests arrive mixed in (the bridge can't tell them apart), so there's one list.</p></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ======================= CONVERSATION ======================= -->
+  <section>
+    <h2>Conversation and media</h2>
+    <div class="frames">
+
+      <!-- T1 Thread -->
+      <figure>
+        <div class="dw"><div class="device"><div class="phone a-ocean">
+          <div class="msgs">
+            <div class="reel" style="position:relative;overflow:visible;--rw:180px;--rh:270px">
+              <div style="position:absolute;inset:0;border-radius:inherit;overflow:hidden">
+                <div class="sc-reef"></div><span class="emo" style="--fs:64px;--x:40%;--y:31%;--r:-14deg">🐢</span><span class="emo" style="--fs:22px;--x:78%;--y:66%;--r:8deg">🐠</span>
+                <div class="top"><span class="av br-tide">🐢</span>tidepool.films<span class="rg mglass"><svg class="i"><use href="#i-reel"/></svg></span></div>
+                <div class="play mglass"><svg class="i"><use href="#i-play"/></svg></div>
+                <div class="cap"><span>Golden hour on the reef. Shot on a 20-year-old housing, no lights.</span></div>
+                <span class="dur">0:42</span>
+              </div>
+              <span class="rx r-in">😍</span>
+            </div>
+            <div class="gap" style="--g:20px"></div>
+            <div class="rcap out">You replied to Maya</div>
+            <div class="rq"><div class="t"><div class="sc-reef"></div><span class="emo" style="--fs:16px">🐢</span></div><span>Reel · @tidepool.films</span></div>
+            <div class="b out">this is the light we want</div>
+            <div class="meta-r">Seen</div>
+            <div class="gap" style="--g:8px"></div>
+            <div class="photo in first" style="border-bottom-left-radius:6px"><div class="clip"><div class="sc-sunset"></div></div><span class="rx r-in">🔥</span></div>
+            <div class="gap" style="--g:2px"></div>
+            <div class="voice" style="border-top-left-radius:6px"><span class="vp"><svg class="i"><use href="#i-play"/></svg></span><div class="wave" data-n="34" data-p="12" data-seed="11"></div><span class="vd">0:14</span></div>
+          </div>
+          <div class="edge-top" style="--eh:176px"></div>
+          <div class="wash" style="height:190px"></div>
+          <div class="tb" style="z-index:41"><span class="gb glass"><svg class="i"><use href="#i-chev-l"/></svg></span><span class="gb glass"><svg class="i"><use href="#i-ellipsis"/></svg></span></div>
+          <div class="th-c">
+            <div class="av pp pp-maya" style="--z:36px"></div>
+            <div class="namepill glass">Maya Chen<svg class="i"><use href="#i-chev-r"/></svg></div>
+            <span class="tag"><span class="mi s16">S</span>Studio <span class="h">· @marlo.studio</span></span>
+          </div>
+          <div class="comp">
+            <span class="gb glass"><svg class="i"><use href="#i-plus"/></svg></span>
+            <div class="field glass"><span class="av own-s own" style="--z:28px;--gap:1.5px;--rw:1.5px;--ring-bg:var(--bg);font-size:14px">m</span><span class="ph">Message as Studio</span><span class="ic"><svg class="i"><use href="#i-mic"/></svg></span></div>
+          </div>
+        </div></div></div>
+        <figcaption><span class="id">T1</span><b>Thread, locked to Studio</b><p>Studio's tag sits under the contact's name, your bubbles are Studio's color, and the composer says "Message as Studio". There's no switcher. Shown: reel card, reply, Seen, photo, voice message, reactions.</p></figcaption>
+      </figure>
+
+      <!-- M1 Player -->
+      <figure>
+        <div class="dw"><div class="device"><div class="phone a-ocean" data-sb="none" data-home="light" style="background:var(--media);color:var(--on-media)">
+          <div class="sc-reef"></div>
+          <span class="emo" style="--fs:170px;--y:42%;--r:-14deg">🐢</span><span class="emo" style="--fs:44px;--x:78%;--y:58%;--r:8deg">🐠</span><span class="emo" style="--fs:30px;--x:22%;--y:30%;--r:-6deg">🐟</span>
+          <div style="position:absolute;top:58px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:rgba(255,255,255,.55);z-index:5"></div>
+          <div style="position:absolute;top:70px;left:16px;right:16px;display:flex;justify-content:space-between;z-index:5">
+            <span class="gb mglass" style="color:var(--on-media)"><svg class="i"><use href="#i-x"/></svg></span>
+            <span class="gcap mglass" style="color:var(--on-media)"><span><svg class="i"><use href="#i-speaker"/></svg></span><span><svg class="i"><use href="#i-ellipsis"/></svg></span></span>
+          </div>
+          <div class="mglass" style="position:absolute;top:128px;left:50%;transform:translateX(-50%);height:32px;border-radius:16px;padding:0 14px;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;z-index:5"><svg class="i" style="font-size:15px"><use href="#i-chev-ud"/></svg>Swipe to go back to the chat</div>
+          <div style="position:absolute;left:0;right:0;bottom:0;height:380px;background:linear-gradient(transparent,var(--media-scrim) 45%);z-index:4"></div>
+          <div style="position:absolute;left:16px;right:16px;bottom:36px;z-index:5;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px"><span class="av br-tide" style="--z:30px;box-shadow:0 0 0 1.5px rgba(255,255,255,.7)">🐢</span><b style="font-size:15px">tidepool.films</b><span class="mglass" style="margin-left:auto;height:30px;border-radius:15px;padding:0 12px;display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600">Open in Instagram<svg class="i" style="font-size:13px"><use href="#i-ext"/></svg></span></div>
+            <div style="font-size:15px;line-height:20px">Golden hour on the reef. Shot on a 20-year-old housing, no lights. Patience was 3 hours… <span style="color:var(--on-media-2);font-weight:600">more</span></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--on-media-2)">Shared by Maya Chen · 9:31 AM <span class="tag on-media"><span class="mi s16">S</span>Studio</span></div>
+            <div style="margin-top:4px">
+              <div style="height:3px;border-radius:2px;background:rgba(255,255,255,.3);position:relative"><i style="position:absolute;left:0;top:0;bottom:0;width:40%;background:var(--on-media);border-radius:2px"></i></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--on-media-2);margin-top:5px;font-variant-numeric:tabular-nums"><span>0:17</span><span>−0:25</span></div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <span class="mglass" style="flex:1;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:15px;font-weight:600"><svg class="i" style="font-size:18px"><use href="#i-reply"/></svg>Reply</span>
+              <span class="mglass" style="flex:1;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:15px;font-weight:600"><svg class="i" style="font-size:18px"><use href="#i-heart"/></svg>React</span>
+              <span class="mglass" style="flex:1;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:15px;font-weight:600"><svg class="i" style="font-size:18px"><use href="#i-share"/></svg>Share</span>
+            </div>
+          </div>
+        </div></div></div>
+        <figcaption><span class="id">M1</span><b>Full-screen reel</b><p>One reel and nothing after it. Swipe down (or up) to go back to the chat. Double-tap reacts to the message in this chat, not to the reel on Instagram. The footer shows which account a reply comes from.</p></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ======================= ACCOUNTS ======================= -->
+  <section>
+    <h2>Accounts and connection health</h2>
+    <div class="frames">
+
+      <!-- A1 Accounts -->
+      <figure>
+        <div class="dw"><div class="device"><div class="phone" data-sb="light">
+          <div class="behind"><div class="pv-screen"></div></div>
+          <div class="sheet grouped" style="top:58px;--ring-bg:var(--cell)">
+            <div class="sheet-tb"><span style="width:44px"></span><div class="ttl"><b>Accounts</b></div><span class="gb prom" style="font-size:19px"><svg class="i"><use href="#i-check"/></svg></span></div>
+            <div style="position:absolute;top:72px;left:0;right:0">
+              <div class="cells" style="--sep-l:72px">
+                <div class="cell acct a-ember"><span class="av own-p own" style="--z:44px"><span class="mk s18">P</span></span><div class="grow"><div class="nm">Personal</div><div class="hd">@marlo.jpg</div><div class="st ok"><svg class="i"><use href="#i-checkc"/></svg>Connected</div></div><svg class="i" style="font-size:14px;color:var(--label-3)"><use href="#i-chev-r"/></svg></div>
+                <div class="cell acct a-ocean"><span class="av own-s own" style="--z:44px;font-size:21px">m<span class="mk s18">S</span></span><div class="grow"><div class="nm">Studio</div><div class="hd">@marlo.studio</div><div class="st warn"><svg class="i"><use href="#i-warn"/></svg>Signed out</div></div><span class="pill-btn" style="height:32px">Log in</span></div>
+                <div class="cell acct a-grape"><span class="av own-b own" style="--z:44px;font-size:22px">🌊<span class="mk s18">B</span></span><div class="grow"><div class="nm">Band</div><div class="hd">@lowtide.band</div><div class="st neutral"><span class="spin"></span>Syncing history…</div><div class="prog" style="--p:62%"><i></i></div></div><svg class="i" style="font-size:14px;color:var(--label-3)"><use href="#i-chev-r"/></svg></div>
+                <div class="cell" style="min-height:52px"><span class="gb" style="width:44px;height:44px;background:var(--fill);font-size:20px"><svg class="i"><use href="#i-plus"/></svg></span><span class="grow" style="font-weight:500">Add Instagram account</span></div>
+              </div>
+              <div class="grp-f">Each chat stays tied to the account it belongs to. Drag to reorder the scope bar.</div>
+              <div class="grp-h" style="margin-top:16px">Privacy</div>
+              <div class="cells">
+                <div class="cell"><span class="grow">Send Read Receipts</span><span class="tg"></span></div>
+                <div class="cell"><span class="grow">Send Typing Indicators</span><span class="tg"></span></div>
+              </div>
+              <div class="grp-f">Never sent in message requests.</div>
+              <div class="grp-h" style="margin-top:16px">Reels and videos</div>
+              <div class="cells">
+                <div class="cell"><span class="grow">Auto-download</span><span class="v">Wi‑Fi only<svg class="i"><use href="#i-chev-r"/></svg></span></div>
+                <div class="cell"><span class="grow">Storage</span><span class="v">312 MB<svg class="i"><use href="#i-chev-r"/></svg></span></div>
+              </div>
+              <div class="grp-f" style="margin-top:12px;text-align:center">chat.marlo.home · Instagram bridge v26.09</div>
+            </div>
+          </div>
+        </div></div></div>
+        <figcaption><span class="id">A1</span><b>Accounts</b><p>Health at a glance with the fix inline: connected, signed out (Log in), syncing history. Tap a row to edit its name, color and mark, toggle notifications, or remove it.</p></figcaption>
+      </figure>
+
+      <!-- A3 Re-login -->
+      <figure>
+        <div class="dw"><div class="device"><div class="phone">
+          <div class="tb">
+            <span class="gcap glass" style="padding:0 8px 0 8px;gap:0">
+              <span class="av own-p own a-ember" style="--z:26px;width:26px;height:26px;--gap:1.5px"></span>
+              <span class="av own-s own a-ocean" style="--z:26px;width:26px;height:26px;margin-left:-4px;--gap:1.5px;font-size:13px">m</span>
+              <span class="av own-b own a-grape" style="--z:26px;width:26px;height:26px;margin-left:-4px;--gap:1.5px;font-size:13px">🌊</span>
+              <svg class="i" style="font-size:16px;color:var(--warn-g);margin-left:6px;width:26px"><use href="#i-warn"/></svg>
+            </span>
+            <span class="gcap glass"><span><svg class="i"><use href="#i-filter"/></svg></span></span>
+          </div>
+          <div class="lt" style="top:106px">Chats</div>
+          <div class="scope" style="top:158px">
+            <span class="chip all on-all">All <span class="ct">3</span></span>
+            <span class="chip a-ember"><span class="mi">P</span>Personal <span class="ct">2</span></span>
+            <span class="chip a-ocean"><span class="mi">S</span>Studio <svg class="i wg"><use href="#i-warn"/></svg></span>
+            <span class="chip a-grape"><span class="mi">B</span>Band <span class="ct">1</span></span>
+          </div>
+          <div class="banner glass a-ocean" style="top:204px;--ring-bg:var(--bg)">
+            <span class="av own-s own" style="--z:32px;font-size:16px">m</span>
+            <div class="bt"><b><svg class="i"><use href="#i-warn"/></svg>Studio is signed out</b><p>New messages to @marlo.studio aren't arriving.</p></div>
+            <span class="pill-btn">Log in</span>
+          </div>
+          <div class="list" style="top:290px">
+            <div class="row un a-ember"><span class="dot"></span><div class="av pp pp-maya"><span class="mk">P</span></div><div class="tx"><div class="l1"><span class="nm">Maya Chen</span><span class="tm">9:12</span></div><div class="pv">lol are we still on for saturday?</div></div></div>
+            <div class="row a-grape"><div class="av pp pp-priya"><span class="mk">B</span></div><div class="tx"><div class="l1"><span class="nm">Priya Raman</span><span class="tm">8:31</span></div><div class="pv">the mix sounds huge</div></div></div>
+            <div class="row a-ocean"><div class="av br-north">☕<span class="mk">S</span></div><div class="tx"><div class="l1"><span class="nm">Northwind Coffee</span><span class="tm">Yesterday</span></div><div class="pv">Thanks! Talk soon</div></div></div>
+          </div>
+          <div style="position:absolute;inset:0;background:var(--scrim);z-index:60"></div>
+          <div class="glass a-ocean" style="position:absolute;left:8px;right:8px;bottom:8px;border-radius:46px;padding:14px 24px 26px;z-index:70;--glass:var(--bg);--ring-bg:var(--bg)">
+            <div style="width:36px;height:5px;border-radius:3px;background:var(--fill-2);margin:0 auto"></div>
+            <span class="gb" style="position:absolute;right:14px;top:14px;width:36px;height:36px;background:var(--fill);font-size:15px;color:var(--label-2)"><svg class="i"><use href="#i-x"/></svg></span>
+            <div style="display:flex;justify-content:center;margin-top:14px">
+              <span class="av own-s own" style="--z:64px;font-size:30px;--gap:3px;--rw:3px">m<span style="position:absolute;right:-6px;bottom:-6px;width:26px;height:26px;border-radius:50%;background:var(--bg);display:grid;place-items:center"><svg class="i" style="font-size:22px;color:var(--warn-g)"><use href="#i-warn"/></svg></span></span>
+            </div>
+            <div style="text-align:center;font-size:22px;line-height:28px;font-weight:700;margin-top:14px">Log in to Studio again</div>
+            <div style="text-align:center;font-size:15px;line-height:20px;color:var(--label-2);margin-top:6px">Instagram ended the session for @marlo.studio. This usually happens after a password change, or when Instagram resets logins.</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin:18px 0 20px;font-size:15px;line-height:20px">
+              <div style="display:flex;gap:10px"><svg class="i" style="font-size:20px;color:var(--label)"><use href="#i-checkc"/></svg><span>Your chats are safe. Missed messages sync after you log in.</span></div>
+              <div style="display:flex;gap:10px"><svg class="i" style="font-size:20px;color:var(--label)"><use href="#i-checkc"/></svg><span>Personal and Band keep working.</span></div>
+            </div>
+            <div class="big">Log in again</div>
+            <div class="txtbtn" style="margin-top:14px">Not now</div>
+          </div>
+        </div></div></div>
+        <figcaption><span class="id">A3</span><b>Re-login needed</b><p>The warning shows on the account stack, the Studio chip and a banner that names the fix. The sheet explains the cause and says nothing is lost. "Log in again" reopens the instagram.com sheet for the same account.</p></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ======================= COMPONENTS ======================= -->
+  <section>
+    <h2>Components and states</h2>
+    <div class="panels">
+
+      <!-- Identity -->
+      <div class="panel wide">
+        <h3>Account identity system</h3>
+        <p>Name, color and a one-character mark, shown wherever you could act as an account. Color never appears without the mark or the name.</p>
+        <div class="ios">
+          <div class="hrow" style="align-items:flex-end">
+            <div class="anat"><div class="av pp pp-maya a-ocean"><span class="mk">S</span></div><em>AccountMark on a contact<br>52 pt avatar, 20 pt mark</em></div>
+            <div class="anat"><div style="display:flex;gap:8px"><span class="chip a-ocean on"><span class="mi">S</span>Studio <span class="ct">3</span></span><span class="chip a-ember"><span class="mi">P</span>Personal <span class="ct">2</span></span></div><em>Scope chips<br>selected fills with the account color</em></div>
+            <div class="anat"><span class="tag a-ocean"><span class="mi s16">S</span>Studio <span class="h">· @marlo.studio</span></span><em>AccountTag<br>thread header, player, requests</em></div>
+            <div class="anat a-ocean"><div class="field" style="background:var(--fill);width:230px;min-height:40px"><span class="av own-s own" style="--z:28px;--gap:1.5px;--rw:1.5px;font-size:14px">m</span><span class="ph">Message as Studio</span></div><em>Composer AccountAvatar<br>your IG avatar + ring</em></div>
+            <div class="anat a-ocean"><div class="b out">Saturday at 6 works</div><em>Your bubbles<br>account fill, white text</em></div>
+          </div>
+          <div class="lbl" style="margin-top:22px;color:var(--label-2)">Same person, two of your accounts: two threads, never merged</div>
+          <div style="max-width:420px">
+            <div class="mini-row a-ocean"><div class="av pp pp-maya" style="--z:44px"><span class="mk s18">S</span></div><div class="tx"><div class="nm">Maya Chen</div><div class="pv">Sent a reel by @tidepool.films</div></div><span class="tm">9:41</span></div>
+            <div class="mini-row a-ember"><div class="av pp pp-maya" style="--z:44px"><span class="mk s18">P</span></div><div class="tx"><div class="nm">Maya Chen</div><div class="pv">lol are we still on for saturday?</div></div><span class="tm">9:12</span></div>
+          </div>
+        </div>
+        <div class="lbl">Palette: fill (white text contrast) · ink on dark</div>
+        <div class="pal">
+          <div class="sw a-ocean"><span class="c">S</span><div><b>Ocean</b><span>#1F5FD6 · 5.73:1</span><span class="ink">dark ink #7FAAF7</span></div></div>
+          <div class="sw a-ember"><span class="c">P</span><div><b>Ember</b><span>#C2410C · 5.18:1</span><span class="ink">dark ink #F59A6B</span></div></div>
+          <div class="sw a-grape"><span class="c">B</span><div><b>Grape</b><span>#7A3FD1 · 6.07:1</span><span class="ink">dark ink #B897F5</span></div></div>
+          <div class="sw a-teal"><span class="c">T</span><div><b>Teal</b><span>#0F766E · 5.47:1</span><span class="ink">dark ink #5FCFC3</span></div></div>
+          <div class="sw a-berry"><span class="c">R</span><div><b>Berry</b><span>#C2255C · 5.66:1</span><span class="ink">dark ink #F27DA6</span></div></div>
+          <div class="sw a-moss"><span class="c">M</span><div><b>Moss</b><span>#4D7C0F · 4.99:1</span><span class="ink">dark ink #A3CF5F</span></div></div>
+          <div class="sw a-cocoa"><span class="c">C</span><div><b>Cocoa</b><span>#8A5A2B · 5.87:1</span><span class="ink">dark ink #D6A877</span></div></div>
+          <div class="sw a-slate"><span class="c">✦</span><div><b>Slate</b><span>#475B78 · 6.92:1</span><span class="ink">dark ink #A9B8CF</span></div></div>
+        </div>
+      </div>
+
+      <!-- Folder control -->
+      <div class="panel">
+        <h3>Folder control: v1 now, Primary/General later</h3>
+        <p>The scope bar picks whose chats you see. Folder tiles push a list for that scope. Adding General later is one more tile.</p>
+        <div class="stack">
+          <div class="strip">
+            <div class="t"><b>v1 · All accounts</b></div>
+            <div class="scope"><span class="chip all on-all">All</span><span class="chip a-ember"><span class="mi">P</span>Personal</span><span class="chip a-ocean"><span class="mi">S</span>Studio</span></div>
+            <div class="tiles"><div class="tile"><div class="r1"><svg class="i"><use href="#i-req"/></svg><span class="n">4</span></div><div class="lb">Requests</div></div><div class="tile"><div class="r1"><svg class="i"><use href="#i-archive"/></svg><span class="n"></span></div><div class="lb">Archived</div></div></div>
+          </div>
+          <div class="strip a-ocean">
+            <div class="t"><b>v1 · Studio</b> list = all of Studio's chats</div>
+            <div class="scope"><span class="chip all">All</span><span class="chip a-ember"><span class="mi">P</span>Personal</span><span class="chip a-ocean on"><span class="mi">S</span>Studio</span></div>
+            <div class="tiles" style="--tint:var(--acc-ink)"><div class="tile"><div class="r1"><svg class="i"><use href="#i-req"/></svg><span class="n">3</span></div><div class="lb">Requests</div></div><div class="tile"><div class="r1"><svg class="i"><use href="#i-archive"/></svg><span class="n"></span></div><div class="lb">Archived</div></div></div>
+          </div>
+          <div class="strip a-ocean">
+            <div class="t"><b>Later · Studio</b> list = Primary; needs bridge patch</div>
+            <div class="scope"><span class="chip all">All</span><span class="chip a-ember"><span class="mi">P</span>Personal</span><span class="chip a-ocean on"><span class="mi">S</span>Studio</span></div>
+            <div class="tiles" style="--tint:var(--acc-ink)"><div class="tile"><div class="r1"><svg class="i"><use href="#i-tray"/></svg><span class="n">2</span></div><div class="lb">General</div></div><div class="tile"><div class="r1"><svg class="i"><use href="#i-req"/></svg><span class="n">3</span></div><div class="lb">Requests</div></div><div class="tile"><div class="r1"><svg class="i"><use href="#i-archive"/></svg><span class="n"></span></div><div class="lb">Archived</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Composer states -->
+      <div class="panel">
+        <h3>Composer states</h3>
+        <p>The composer takes a thread, never an account. Limits come from the bridge.</p>
+        <div class="ios a-ocean" style="--ring-bg:var(--bg)">
+          <div class="cmp-l">Default</div>
+          <div class="cmp"><span class="gb glass"><svg class="i"><use href="#i-plus"/></svg></span><div class="field glass"><span class="av own-s own" style="--z:28px;--gap:1.5px;--rw:1.5px;font-size:14px">m</span><span class="ph">Message as Studio</span><span class="ic"><svg class="i"><use href="#i-mic"/></svg></span></div></div>
+          <div class="cmp-l">Typing, near the 1,000-character limit</div>
+          <div class="cmp"><span class="gb glass"><svg class="i"><use href="#i-plus"/></svg></span><div class="field glass" style="align-items:flex-end;padding-bottom:4px;padding-top:4px"><span class="av own-s own" style="--z:28px;--gap:1.5px;--rw:1.5px;font-size:14px;margin-bottom:2px">m</span><span class="val" style="font-size:16px;line-height:21px;padding:4px 0">…and the second set goes on the counter by the window.<br><span style="font-size:12px;color:var(--label-2)">87 left</span></span><span class="send"><svg class="i"><use href="#i-send"/></svg></span></div></div>
+          <div class="cmp-l">Replying</div>
+          <div class="glass" style="border-radius:16px;padding:8px 12px;display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:14px"><svg class="i" style="color:var(--acc-ink)"><use href="#i-reply"/></svg><div style="flex:1;min-width:0"><b style="font-size:13px">Replying to Maya</b><div style="color:var(--label-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ok you HAVE to see this before the shoot</div></div><svg class="i" style="color:var(--label-2)"><use href="#i-x"/></svg></div>
+          <div class="cmp"><span class="gb glass"><svg class="i"><use href="#i-plus"/></svg></span><div class="field glass"><span class="av own-s own" style="--z:28px;--gap:1.5px;--rw:1.5px;font-size:14px">m</span><span class="ph">Message as Studio</span><span class="ic"><svg class="i"><use href="#i-mic"/></svg></span></div></div>
+          <div class="cmp-l">Tap the avatar: why there's no switcher</div>
+          <div class="pop glass">This chat belongs to <b>Studio</b> (@marlo.studio). Replies always come from this account.</div>
+          <div class="cmp" style="margin-top:12px"><span class="gb glass"><svg class="i"><use href="#i-plus"/></svg></span><div class="field glass"><span class="av own-s own" style="--z:28px;--gap:1.5px;--rw:1.5px;font-size:14px">m</span><span class="ph">Message as Studio</span><span class="ic"><svg class="i"><use href="#i-mic"/></svg></span></div></div>
+          <div class="cmp-l">Message request (replaces the composer)</div>
+          <div class="bar glass"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="tag"><span class="mi s16">S</span>Studio</span></div><b>@kestrel.bikes wants to message Studio.</b><p>They won't see that you've read this until you accept.</p><div class="btns"><span class="pill-btn sec" style="color:var(--err)">Delete</span><span class="pill-btn">Accept</span></div><p style="text-align:center;margin-top:8px;font-size:13px">Reply instead <span style="color:var(--label-2)">· replying accepts</span></p></div>
+          <div class="cmp-l">Account signed out (replaces the composer)</div>
+          <div class="bar glass" style="display:flex;gap:12px;align-items:center"><svg class="i" style="font-size:22px;color:var(--warn-g)"><use href="#i-warn"/></svg><p style="flex:1;color:var(--label)">Studio is signed out. Log in again to send and receive messages.</p><span class="pill-btn">Log in again</span></div>
+        </div>
+      </div>
+
+      <!-- Media -->
+      <div class="panel wide">
+        <h3>Media in chat</h3>
+        <p>Reels behave like video messages. Backfilled reels arrive as a preview and load on tap; the message is replaced in place by the video. Every failure keeps the caption and an "Open in Instagram" way out.</p>
+        <div class="ios">
+          <div class="gal">
+            <div class="gi">
+              <div class="reel" style="--rw:150px;--rh:225px"><div class="sc-reef"></div><span class="emo" style="--fs:52px;--x:38%;--y:68%;--r:-12deg">🐢</span><div class="top"><span class="av br-tide">🐢</span>tidepool.films</div><div class="play mglass" style="width:auto;height:36px;border-radius:18px;margin:-18px 0 0 -54px;padding:0 14px;display:flex;gap:6px;font-size:14px;font-weight:600;white-space:nowrap"><svg class="i"><use href="#i-down"/></svg>Load video</div><div class="cap full">From your history</div></div>
+              <em>Preview only (backfilled). Tap runs resolve_media.</em>
+            </div>
+            <div class="gi">
+              <div class="reel" style="--rw:150px;--rh:225px"><div class="sc-reef" style="filter:saturate(.7) brightness(.85)"></div><span class="emo" style="--fs:52px;--x:38%;--y:68%;--r:-12deg;opacity:.8">🐢</span><div class="top"><span class="av br-tide">🐢</span>tidepool.films</div><div class="play mglass"><span class="spin" style="width:24px;height:24px;border-width:3px;border-color:rgba(255,255,255,.3);border-top-color:var(--on-media)"></span></div><div class="cap full">Getting video…</div></div>
+              <em>Getting video (indeterminate)</em>
+            </div>
+            <div class="gi">
+              <div class="reel" style="--rw:150px;--rh:225px"><div class="sc-reef"></div><span class="emo" style="--fs:52px;--x:38%;--y:68%;--r:-12deg">🐢</span><div class="top"><span class="av br-tide">🐢</span>tidepool.films</div>
+                <div class="play mglass"><svg width="56" height="56" viewBox="0 0 56 56" style="position:absolute;inset:0;transform:rotate(-90deg)"><circle cx="28" cy="28" r="25" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="3"/><circle cx="28" cy="28" r="25" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="57"/></svg><svg class="i" style="font-size:14px;margin:0"><use href="#i-x"/></svg></div>
+                <span class="dur">4.2 MB</span></div>
+              <em>Downloading (determinate, tap to cancel)</em>
+            </div>
+            <div class="gi">
+              <div class="reel" style="--rw:150px;--rh:225px"><div class="sc-reef"></div><span class="emo" style="--fs:52px;--x:38%;--y:68%;--r:-12deg">🐢</span>
+                <span class="mglass" style="position:absolute;top:9px;right:9px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;z-index:3"><svg class="i"><use href="#i-expand"/></svg></span>
+                <span class="mglass" style="position:absolute;bottom:14px;left:9px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:14px;z-index:3"><svg class="i"><use href="#i-speaker"/></svg></span>
+                <div style="position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.3);z-index:3"><i style="display:block;width:35%;height:100%;background:var(--on-media)"></i></div></div>
+              <em>Playing inline: mute, expand, progress</em>
+            </div>
+            <div class="gi">
+              <div class="ncard"><div style="position:relative;height:96px;border-radius:12px;overflow:hidden;margin:-4px -4px 2px"><div class="sc-reef" style="filter:grayscale(.85) brightness(.9)"></div></div><b>Video unavailable</b><p>It may be from a private account, or it was removed. "Sunset sets at Playa Grande" · @wave.house</p><span class="open">Open in Instagram<svg class="i"><use href="#i-ext"/></svg></span></div>
+              <em>Fetch failed: preview + caption + link</em>
+            </div>
+            <div class="gi">
+              <div class="ncard"><span class="ic"><svg class="i"><use href="#i-reel"/></svg></span><b>Reel too large</b><p>This reel is too big to bring into the chat.</p><span class="open">Open in Instagram<svg class="i"><use href="#i-ext"/></svg></span></div>
+              <em>Over the upload cap</em>
+            </div>
+            <div class="gi">
+              <div class="share"><div class="hdr"><span class="av br-north">☕</span>northwind.coffee<svg class="i" style="margin-left:auto;font-size:16px;color:var(--label-2)"><use href="#i-copy"/></svg></div><div class="img"><div class="sc-latte"></div><span class="dur" style="top:10px;bottom:auto">1/5</span></div><div class="cp"><b>northwind.coffee</b> New autumn menu is here. Maple oat cortado, all month.</div></div>
+              <em>Post share (carousel 1/5)</em>
+            </div>
+            <div class="gi">
+              <div class="reel" style="--rw:140px;--rh:248px"><div class="sc-stage"></div><span class="emo" style="--fs:44px;--y:58%">🎸</span><div class="top"><span class="av pp pp-priya"></span>priya.mixes</div><div class="cap full" style="font-size:12px">Story · expires in 6h</div></div>
+              <em>Story share</em>
+            </div>
+            <div class="gi">
+              <div class="ncard" style="width:180px"><span class="ic"><svg class="i"><use href="#i-clock"/></svg></span><b>Story no longer available</b><p>Stories disappear after 24 hours.</p></div>
+              <em>Story expired</em>
+            </div>
+            <div class="gi">
+              <div class="link"><div class="img"><div class="sc-link"></div><span class="emo" style="--fs:40px">🌊</span></div><div class="lt2"><b>Lowtide live at The Annex, Nov 14</b><span>lowtide.band</span></div></div>
+              <em>Link preview (bridge data)</em>
+            </div>
+            <div class="gi">
+              <div class="ncard" style="width:200px"><span class="ic"><svg class="i"><use href="#i-eyeslash"/></svg></span><b>View-once photo</b><p>Open Instagram to view it.</p><span class="open">Open in Instagram<svg class="i"><use href="#i-ext"/></svg></span></div>
+              <em>View-once</em>
+            </div>
+            <div class="gi a-ocean">
+              <div class="voice out"><span class="vp"><svg class="i"><use href="#i-pause"/></svg></span><div class="wave" data-n="26" data-p="20" data-seed="4"></div><span class="spd">1.5×</span><span class="vd">0:09</span></div>
+              <em>Voice, playing at 1.5×, outgoing</em>
+            </div>
+            <div class="gi a-ocean" style="align-items:flex-end">
+              <div style="display:flex;align-items:center;gap:8px"><div class="b out" style="opacity:.92">see you at 6</div><svg class="i" style="font-size:22px;color:var(--err-g)"><use href="#i-errc"/></svg></div>
+              <em style="color:var(--err)">Not sent. Tap to retry.</em>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connection states -->
+      <div class="panel">
+        <h3>Connection states</h3>
+        <p>Mapped from the bridge's states and login errors. Only actionable states raise a banner.</p>
+        <div class="ios gbg" style="padding:12px 0">
+          <div class="cells" style="--sep-l:16px">
+            <div class="cell"><div class="grow"><div style="font-size:15px;font-weight:600">Connecting</div><div class="st neutral"><span class="spin"></span>Reconnecting… pill after 30 s</div></div></div>
+            <div class="cell"><div class="grow"><div style="font-size:15px;font-weight:600">Syncing history</div><div class="st neutral"><span class="spin"></span>Syncing history…</div><div class="prog" style="--p:40%"><i></i></div></div></div>
+            <div class="cell"><div class="grow"><div style="font-size:15px;font-weight:600">Connected</div><div class="st ok"><svg class="i"><use href="#i-checkc"/></svg>Connected</div></div></div>
+            <div class="cell"><div class="grow"><div style="font-size:15px;font-weight:600">Signed out</div><div class="st warn"><svg class="i"><use href="#i-warn"/></svg>Signed out</div></div><span class="pill-btn" style="height:30px;font-size:14px">Log in</span></div>
+            <div class="cell"><div class="grow"><div style="font-size:15px;font-weight:600">Checkpoint · consent</div><div class="st warn"><svg class="i"><use href="#i-warn"/></svg>Instagram wants to confirm it's you</div></div><span class="pill-btn" style="height:30px;font-size:14px">Fix</span></div>
+            <div class="cell"><div class="grow"><div style="font-size:15px;font-weight:600">Rate limited</div><div class="st warn"><svg class="i" style="color:var(--warn-g)"><use href="#i-clockc"/></svg>Try again in a few minutes</div></div></div>
+            <div class="cell"><div class="grow"><div style="font-size:15px;font-weight:600">Suspended</div><div class="st err"><svg class="i"><use href="#i-xc"/></svg>Suspended by Instagram</div></div><span class="pill-btn sec" style="height:30px;font-size:14px">Remove</span></div>
+            <div class="cell"><div class="grow"><div style="font-size:15px;font-weight:600">Error</div><div class="st err"><svg class="i"><use href="#i-errc"/></svg>Can't connect to Instagram</div></div><span class="pill-btn" style="height:30px;font-size:14px">Retry</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Message actions -->
+      <div class="panel">
+        <h3>Message actions</h3>
+        <p>Stock context menu with a reaction palette on top. One reaction per person: picking another replaces yours. Edit up to 5 times within 15 minutes. Unsend, no "delete for me".</p>
+        <div class="ctx a-ocean">
+          <div class="blur"></div>
+          <div class="palette glass"><span>❤️</span><span class="sel">😂</span><span>😮</span><span>😢</span><span>🔥</span><span class="more"><svg class="i"><use href="#i-plus"/></svg></span></div>
+          <div class="b out" style="position:relative;margin:12px 0 12px auto;width:max-content;max-width:80%">this is the light we want</div>
+          <div class="menu glass" style="--glass:var(--bg)">
+            <div>Reply<svg class="i"><use href="#i-reply"/></svg></div>
+            <div>Copy<svg class="i"><use href="#i-copy"/></svg></div>
+            <div>Edit<svg class="i"><use href="#i-pencil"/></svg></div>
+            <div class="del">Unsend<svg class="i"><use href="#i-undo"/></svg></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- New message -->
+      <div class="panel">
+        <h3>New message: choose the account first</h3>
+        <p>In the All scope nothing is preselected. Search runs against the chosen account, so wrong-account chats can't start.</p>
+        <div class="ios gbg" style="padding:16px 0 14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0 16px 14px"><span style="font-size:17px">Cancel</span><b style="font-size:17px">New Message</b><span style="width:52px"></span></div>
+          <div class="grp-h">From</div>
+          <div class="fromchips" style="padding:0 16px">
+            <span class="chip a-ember"><span class="mi">P</span>Personal</span>
+            <span class="chip a-ocean on"><span class="mi">S</span>Studio</span>
+            <span class="chip a-grape"><span class="mi">B</span>Band</span>
+          </div>
+          <div class="cells a-ocean" style="margin-top:16px;--sep-l:64px">
+            <div class="cell"><span style="color:var(--label-2)">To:</span><span class="grow">kestrel</span><span class="spin"></span></div>
+            <div class="cell"><div class="av br-kestrel" style="--z:36px;font-size:18px">🚲</div><div class="grow"><div style="font-size:16px;font-weight:600">Kestrel Bikes</div><div style="font-size:14px;color:var(--label-2)">@kestrel.bikes · Open chat</div></div></div>
+            <div class="cell"><div class="av pp pp-sam" style="--z:36px"></div><div class="grow"><div style="font-size:16px;font-weight:600">Kestrel Rentals</div><div style="font-size:14px;color:var(--label-2)">@kestrelrentals</div></div></div>
+          </div>
+          <div class="grp-f">Searching Instagram from @marlo.studio</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">Mockups are illustrative; avatars, photos and reels are CSS placeholders. All handles and names are fictional. Specs, tokens, copy and the SwiftUI mapping are in DESIGN.md.</div>
+</main>
+</div>
+
+<script>
+(function(){
+  var root = document.documentElement, KEY = 'igm-theme';
+  var buttons = document.querySelectorAll('.seg button');
+  function apply(t){
+    if (t === 'light' || t === 'dark') root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+    buttons.forEach(function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-t') === (t || 'auto'))); });
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  apply(saved || 'auto');
+  buttons.forEach(function(b){
+    b.addEventListener('click', function(){
+      var t = b.getAttribute('data-t'); apply(t);
+      try { localStorage.setItem(KEY, t); } catch (e) {}
+    });
+  });
+
+  var bar = '<div class="sb" aria-hidden="true"><span class="sb-t">9:41</span><span class="sb-i">' +
+    '<svg width="19" height="12" viewBox="0 0 19 12"><use href="#i-signal"/></svg>' +
+    '<svg width="17" height="12" viewBox="0 0 17 12"><use href="#i-wifi"/></svg>' +
+    '<svg width="27" height="13" viewBox="0 0 27 13"><use href="#i-batt"/></svg></span></div>' +
+    '<div class="island" aria-hidden="true"></div><div class="home" aria-hidden="true"></div>';
+  document.querySelectorAll('.phone').forEach(function(p){ p.insertAdjacentHTML('beforeend', bar); });
+
+  document.querySelectorAll('.wave').forEach(function(w){
+    var n = +w.getAttribute('data-n') || 30, played = +w.getAttribute('data-p') || 0, seed = +w.getAttribute('data-seed') || 7, html = '';
+    for (var i = 0; i < n; i++){
+      seed = (seed * 9301 + 49297) % 233280;
+      var r = seed / 233280, v = Math.round(4 + (Math.sin(i / 2.2) + 1) * 5 + r * 13);
+      html += '<i class="' + (i < played ? 'on' : '') + '" style="height:' + Math.min(26, v) + 'px"></i>';
+    }
+    w.innerHTML = html;
+  });
+
+  var main = document.querySelector('main');
+  function fit(){
+    var s = Math.min(1, main.clientWidth / 415);
+    root.style.setProperty('--s', s.toFixed(4));
+  }
+  fit();
+  window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

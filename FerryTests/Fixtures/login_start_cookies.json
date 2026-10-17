@@ -1,0 +1,101 @@
+{
+  "login_id": "db6duumu9g3s73e78r8g",
+  "type": "cookies",
+  "step_id": "fi.mau.meta.cookies",
+  "txn_id": "bls_db6duumu9g3s73e78r90",
+  "instructions": "Enter a JSON object with your cookies, or a cURL command copied from browser devtools.",
+  "cookies": {
+    "url": "https://www.instagram.com/accounts/login/",
+    "fields": [
+      {
+        "id": "sessionid",
+        "required": true,
+        "sources": [
+          {
+            "type": "cookie",
+            "name": "sessionid",
+            "cookie_domain": "instagram.com"
+          }
+        ]
+      },
+      {
+        "id": "csrftoken",
+        "required": true,
+        "sources": [
+          {
+            "type": "cookie",
+            "name": "csrftoken",
+            "cookie_domain": "instagram.com"
+          }
+        ]
+      },
+      {
+        "id": "ds_user_id",
+        "required": true,
+        "sources": [
+          {
+            "type": "cookie",
+            "name": "ds_user_id",
+            "cookie_domain": "instagram.com"
+          }
+        ]
+      },
+      {
+        "id": "rur",
+        "required": false,
+        "sources": [
+          {
+            "type": "cookie",
+            "name": "rur",
+            "cookie_domain": "instagram.com"
+          }
+        ]
+      },
+      {
+        "id": "shbid",
+        "required": false,
+        "sources": [
+          {
+            "type": "cookie",
+            "name": "shbid",
+            "cookie_domain": "instagram.com"
+          }
+        ]
+      },
+      {
+        "id": "shbts",
+        "required": false,
+        "sources": [
+          {
+            "type": "cookie",
+            "name": "shbts",
+            "cookie_domain": "instagram.com"
+          }
+        ]
+      },
+      {
+        "id": "mid",
+        "required": false,
+        "sources": [
+          {
+            "type": "cookie",
+            "name": "mid",
+            "cookie_domain": "instagram.com"
+          }
+        ]
+      },
+      {
+        "id": "ig_did",
+        "required": false,
+        "sources": [
+          {
+            "type": "cookie",
+            "name": "ig_did",
+            "cookie_domain": "instagram.com"
+          }
+        ]
+      }
+    ],
+    "wait_for_url_pattern": "^https://www\\.instagram\\.com/(?:direct/(?:inbox/|t/[0-9]+/)?)?(?:\\?.*)?$"
+  }
+}

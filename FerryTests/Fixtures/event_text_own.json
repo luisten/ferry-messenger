@@ -1,0 +1,17 @@
+{
+  "content": {
+    "body": "hello",
+    "com.beeper.disappearing_timer": {},
+    "fi.mau.double_puppet_source": "mautrix-instagram",
+    "m.mentions": {},
+    "msgtype": "m.text"
+  },
+  "event_id": "$fQ87gE7ohgw9LTSf11Spv3C6hEzl8IS7zWBIfnVdPYg",
+  "origin_server_ts": 1781264377286,
+  "room_id": "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA",
+  "sender": "@me:igm.home.arpa",
+  "type": "m.room.message",
+  "unsigned": {
+    "membership": "join"
+  }
+}

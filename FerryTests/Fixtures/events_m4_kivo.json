@@ -1,0 +1,189 @@
+[
+  {
+    "content": {},
+    "event_id": "$qBxdGVEf9WZKCNfOn7mIaY2RJwuWNbZCHUkrFTxmF3E",
+    "origin_server_ts": 1791830287484,
+    "redacted_because": {
+      "content": {
+        "redacts": "$qBxdGVEf9WZKCNfOn7mIaY2RJwuWNbZCHUkrFTxmF3E"
+      },
+      "event_id": "$Sk4OeQxjtVJeG2ydjEdFkRuXFta0WOlV8jkuAnqK-As",
+      "origin_server_ts": 1791831187583,
+      "redacts": "$qBxdGVEf9WZKCNfOn7mIaY2RJwuWNbZCHUkrFTxmF3E",
+      "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+      "sender": "@instagram_17841400000000301:igm.home.arpa",
+      "type": "m.room.redaction",
+      "unsigned": {}
+    },
+    "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+    "sender": "@instagram_17841400000000301:igm.home.arpa",
+    "type": "m.room.message",
+    "unsigned": {
+      "membership": "join",
+      "redacted_because": {
+        "content": {
+          "redacts": "$qBxdGVEf9WZKCNfOn7mIaY2RJwuWNbZCHUkrFTxmF3E"
+        },
+        "event_id": "$Sk4OeQxjtVJeG2ydjEdFkRuXFta0WOlV8jkuAnqK-As",
+        "origin_server_ts": 1791831187583,
+        "redacts": "$qBxdGVEf9WZKCNfOn7mIaY2RJwuWNbZCHUkrFTxmF3E",
+        "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+        "sender": "@instagram_17841400000000301:igm.home.arpa",
+        "type": "m.room.redaction",
+        "unsigned": {}
+      },
+      "redacted_by": "$Sk4OeQxjtVJeG2ydjEdFkRuXFta0WOlV8jkuAnqK-As"
+    }
+  },
+  {
+    "content": {
+      "body": "M4 reply from kivostudio",
+      "m.relates_to": {
+        "m.in_reply_to": {
+          "event_id": "$qBxdGVEf9WZKCNfOn7mIaY2RJwuWNbZCHUkrFTxmF3E"
+        }
+      },
+      "msgtype": "m.text"
+    },
+    "event_id": "$KAGBPdU8-o5leNC2-ub_OSiaAmppvbsLxFuEDdJUJ3M",
+    "origin_server_ts": 1791830712861,
+    "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+    "sender": "@me:igm.home.arpa",
+    "type": "m.room.message",
+    "unsigned": {
+      "m.relations": {
+        "m.reference": {
+          "chunk": [
+            {
+              "event_id": "$qpmxnIpxfRSNnYz9gXHGv3UL2PagtpYMZwoR3tpDlDs"
+            }
+          ]
+        }
+      },
+      "membership": "join",
+      "transaction_id": "m4-reply-FA804BA3-7D66-40F4-8569-45FBB67A8557"
+    }
+  },
+  {
+    "content": {
+      "m.relates_to": {
+        "event_id": "$KAGBPdU8-o5leNC2-ub_OSiaAmppvbsLxFuEDdJUJ3M",
+        "rel_type": "m.reference"
+      },
+      "status": "SUCCESS"
+    },
+    "event_id": "$qpmxnIpxfRSNnYz9gXHGv3UL2PagtpYMZwoR3tpDlDs",
+    "origin_server_ts": 1791830715013,
+    "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+    "sender": "@instagrambot:igm.home.arpa",
+    "type": "com.beeper.message_send_status",
+    "unsigned": {
+      "membership": "join"
+    }
+  },
+  {
+    "content": {},
+    "event_id": "$SfGwWqKMtFFFzwIcnL1gLlhfszl-YJLl1iIn6daGysA",
+    "origin_server_ts": 1791830780126,
+    "redacted_because": {
+      "content": {
+        "redacts": "$SfGwWqKMtFFFzwIcnL1gLlhfszl-YJLl1iIn6daGysA"
+      },
+      "event_id": "$kBqUwzvaUKAjf83syJOkIPcgmGjPsG1ARd1FDER0E9E",
+      "origin_server_ts": 1791830882269,
+      "redacts": "$SfGwWqKMtFFFzwIcnL1gLlhfszl-YJLl1iIn6daGysA",
+      "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+      "sender": "@instagram_17841400000000301:igm.home.arpa",
+      "type": "m.room.redaction",
+      "unsigned": {}
+    },
+    "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+    "sender": "@instagram_17841400000000301:igm.home.arpa",
+    "type": "m.reaction",
+    "unsigned": {
+      "membership": "join",
+      "redacted_because": {
+        "content": {
+          "redacts": "$SfGwWqKMtFFFzwIcnL1gLlhfszl-YJLl1iIn6daGysA"
+        },
+        "event_id": "$kBqUwzvaUKAjf83syJOkIPcgmGjPsG1ARd1FDER0E9E",
+        "origin_server_ts": 1791830882269,
+        "redacts": "$SfGwWqKMtFFFzwIcnL1gLlhfszl-YJLl1iIn6daGysA",
+        "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+        "sender": "@instagram_17841400000000301:igm.home.arpa",
+        "type": "m.room.redaction",
+        "unsigned": {}
+      },
+      "redacted_by": "$kBqUwzvaUKAjf83syJOkIPcgmGjPsG1ARd1FDER0E9E"
+    }
+  },
+  {
+    "content": {
+      "redacts": "$SfGwWqKMtFFFzwIcnL1gLlhfszl-YJLl1iIn6daGysA"
+    },
+    "event_id": "$kBqUwzvaUKAjf83syJOkIPcgmGjPsG1ARd1FDER0E9E",
+    "origin_server_ts": 1791830882269,
+    "redacts": "$SfGwWqKMtFFFzwIcnL1gLlhfszl-YJLl1iIn6daGysA",
+    "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+    "sender": "@instagram_17841400000000301:igm.home.arpa",
+    "type": "m.room.redaction",
+    "unsigned": {
+      "membership": "join"
+    }
+  },
+  {
+    "content": {
+      "m.relates_to": {
+        "event_id": "$KAGBPdU8-o5leNC2-ub_OSiaAmppvbsLxFuEDdJUJ3M",
+        "key": "😂",
+        "rel_type": "m.annotation"
+      }
+    },
+    "event_id": "$EGXvm2X73y_35A4bmOpe_iOb134bWNnTE7d_plxh-C0",
+    "origin_server_ts": 1791830882372,
+    "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+    "sender": "@instagram_17841400000000301:igm.home.arpa",
+    "type": "m.reaction",
+    "unsigned": {
+      "membership": "join"
+    }
+  },
+  {
+    "content": {
+      "body": "* M4 check: hello from tamoveska (edited)",
+      "m.mentions": {},
+      "m.new_content": {
+        "body": "M4 check: hello from tamoveska (edited)",
+        "m.mentions": {},
+        "msgtype": "m.text"
+      },
+      "m.relates_to": {
+        "event_id": "$qBxdGVEf9WZKCNfOn7mIaY2RJwuWNbZCHUkrFTxmF3E",
+        "rel_type": "m.replace"
+      },
+      "msgtype": "m.text"
+    },
+    "event_id": "$RqDg2FuTf4pVam9olMm172J2FenVzRDIB9cjik2youA",
+    "origin_server_ts": 1791831021751,
+    "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+    "sender": "@instagram_17841400000000301:igm.home.arpa",
+    "type": "m.room.message",
+    "unsigned": {
+      "membership": "join"
+    }
+  },
+  {
+    "content": {
+      "redacts": "$qBxdGVEf9WZKCNfOn7mIaY2RJwuWNbZCHUkrFTxmF3E"
+    },
+    "event_id": "$Sk4OeQxjtVJeG2ydjEdFkRuXFta0WOlV8jkuAnqK-As",
+    "origin_server_ts": 1791831187583,
+    "redacts": "$qBxdGVEf9WZKCNfOn7mIaY2RJwuWNbZCHUkrFTxmF3E",
+    "room_id": "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU",
+    "sender": "@instagram_17841400000000301:igm.home.arpa",
+    "type": "m.room.redaction",
+    "unsigned": {
+      "membership": "join"
+    }
+  }
+]

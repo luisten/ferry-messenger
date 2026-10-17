@@ -1,0 +1,1650 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ferry Design v3</title>
+<style>
+/* Design pass for the rename to Ferry (2026-10-15). Same spec-sheet language as mockups.html and mockups-v2.html:
+   page header, rows of iPhone frames (393 x 852 pt) with captions, then panels. Color plan unchanged: monochrome
+   chrome; the only chromatic color belongs to an account (Ocean = Alex "A", Ember = Alex Studio "S", professional).
+   The app icon concepts are inline SVG symbols drawn from the same paths as docs/design/ferry-icon*.svg; their
+   colors come from --i-ink / --i-sec on the tile. Everything is self-contained: no external resources. */
+:root{
+  --page-bg:#E8EAEE; --page-surface:#F6F7F9; --page-ink:#121317; --page-muted:#5B5E66; --page-line:rgba(18,19,23,.10);
+  --bezel:#1C1C1F; --bezel-rim:#4B4B51; --shadow:rgba(20,22,30,.28);
+
+  --bg:#FFFFFF; --bg-grouped:#F2F2F7; --cell:#FFFFFF; --label:#000000; --label-2:#6C6C72; --label-3:#AEAEB2;
+  --sep:rgba(60,60,67,.20); --fill:rgba(120,120,128,.12); --fill-2:rgba(120,120,128,.24);
+  --bubble-in:#E9E9EB; --skel:rgba(120,120,128,.18);
+  --glass:rgba(255,255,255,.62); --glass-sheen:rgba(255,255,255,.60); --glass-rim:rgba(255,255,255,.95);
+  --glass-edge:rgba(0,0,0,.07); --glass-drop:rgba(0,0,0,.10);
+  --menu-bg:rgba(248,248,250,.94); --menu-dim:rgba(0,0,0,.06);
+  --ok:#1F7A35; --ok-g:#34C759; --warn:#B25000; --warn-g:#FF9500; --err:#D70015; --err-g:#FF3B30;
+  --on-color:#FFFFFF;
+
+  --ocean:#1F5FD6; --ocean-ink:#1F5FD6; --ocean-wash:rgba(31,95,214,.12);
+  --ember:#C2410C; --ember-ink:#C2410C; --ember-wash:rgba(194,65,12,.12);
+  --grape:#7A3FD1; --teal:#0F766E; --berry:#C2255C; --moss:#4D7C0F; --cocoa:#8A5A2B; --slate:#475B78;
+
+  --anno-line:rgba(18,19,23,.55); --anno-fill:rgba(18,19,23,.07); --anno-tag:#121317; --anno-tag-ink:#FFFFFF;
+
+  --font:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  --font-round:ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page-bg:#0D0E11; --page-surface:#16171B; --page-ink:#F1F2F4; --page-muted:#A3A6AD; --page-line:rgba(255,255,255,.10);
+    --bezel:#1A1A1D; --bezel-rim:#55555C; --shadow:rgba(0,0,0,.6);
+    --bg:#000000; --bg-grouped:#000000; --cell:#1C1C1E; --label:#FFFFFF; --label-2:#A1A1A8; --label-3:#5C5C61;
+    --sep:rgba(84,84,88,.62); --fill:rgba(120,120,128,.26); --fill-2:rgba(120,120,128,.40);
+    --bubble-in:#262629; --skel:rgba(120,120,128,.30);
+    --glass:rgba(40,40,44,.58); --glass-sheen:rgba(255,255,255,.07); --glass-rim:rgba(255,255,255,.16);
+    --glass-edge:rgba(255,255,255,.06); --glass-drop:rgba(0,0,0,.45);
+    --menu-bg:rgba(44,44,48,.94); --menu-dim:rgba(0,0,0,.30);
+    --ok:#30D158; --ok-g:#30D158; --warn:#FF9F0A; --warn-g:#FF9F0A; --err:#FF453A; --err-g:#FF453A;
+    --ocean-ink:#7FAAF7; --ocean-wash:rgba(31,95,214,.24);
+    --ember-ink:#F59A6B; --ember-wash:rgba(194,65,12,.24);
+    --anno-line:rgba(241,242,244,.60); --anno-fill:rgba(241,242,244,.09); --anno-tag:#F1F2F4; --anno-tag-ink:#0D0E11;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page-bg:#0D0E11; --page-surface:#16171B; --page-ink:#F1F2F4; --page-muted:#A3A6AD; --page-line:rgba(255,255,255,.10);
+  --bezel:#1A1A1D; --bezel-rim:#55555C; --shadow:rgba(0,0,0,.6);
+  --bg:#000000; --bg-grouped:#000000; --cell:#1C1C1E; --label:#FFFFFF; --label-2:#A1A1A8; --label-3:#5C5C61;
+  --sep:rgba(84,84,88,.62); --fill:rgba(120,120,128,.26); --fill-2:rgba(120,120,128,.40);
+  --bubble-in:#262629; --skel:rgba(120,120,128,.30);
+  --glass:rgba(40,40,44,.58); --glass-sheen:rgba(255,255,255,.07); --glass-rim:rgba(255,255,255,.16);
+  --glass-edge:rgba(255,255,255,.06); --glass-drop:rgba(0,0,0,.45);
+  --menu-bg:rgba(44,44,48,.94); --menu-dim:rgba(0,0,0,.30);
+  --ok:#30D158; --ok-g:#30D158; --warn:#FF9F0A; --warn-g:#FF9F0A; --err:#FF453A; --err-g:#FF453A;
+  --ocean-ink:#7FAAF7; --ocean-wash:rgba(31,95,214,.24);
+  --ember-ink:#F59A6B; --ember-wash:rgba(194,65,12,.24);
+  --anno-line:rgba(241,242,244,.60); --anno-fill:rgba(241,242,244,.09); --anno-tag:#F1F2F4; --anno-tag-ink:#0D0E11;
+  color-scheme:dark;
+}
+
+/* ---------- page ---------- */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page-bg);color:var(--page-ink);font-family:var(--font);font-size:15px;line-height:1.45;overflow-x:clip;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1480px;margin:0 auto;padding-inline:max(16px, env(safe-area-inset-left, 0px));padding-block:32px 72px}
+.head{display:flex;flex-wrap:wrap;gap:20px 32px;align-items:flex-end;justify-content:space-between;padding-bottom:24px;border-bottom:1px solid var(--page-line)}
+.head h1{margin:0;font-size:clamp(30px,5vw,44px);line-height:1.05;letter-spacing:-.02em;font-weight:750;text-wrap:balance}
+.head .sub{margin:8px 0 0;color:var(--page-muted);max-width:68ch}
+.seg{display:inline-flex;padding:3px;border-radius:12px;background:var(--fill);gap:2px}
+.seg button{all:unset;cursor:pointer;padding:6px 14px;border-radius:9px;font-size:13px;font-weight:600;color:var(--page-muted)}
+.seg button[aria-pressed="true"]{background:var(--page-surface);color:var(--page-ink);box-shadow:0 1px 3px var(--glass-drop)}
+.seg button:focus-visible{outline:2px solid var(--page-ink);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:20px;align-items:center}
+.legend .k{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--page-muted);font-weight:600}
+.pr{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.pr span{font-size:13px;padding:5px 11px;border-radius:999px;border:1px solid var(--page-line);color:var(--page-ink)}
+.pr span s{color:var(--page-muted)}
+section{margin-top:48px}
+section > h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--page-muted);margin:0 0 6px;font-weight:700}
+section > .lead{margin:0 0 20px;max-width:80ch;color:var(--page-muted)}
+.opt{margin-top:30px;padding-top:24px;border-top:1px solid var(--page-line)}
+.opt h3{margin:0 0 4px;font-size:21px;letter-spacing:-.2px;line-height:1.2}
+.opt > p{margin:0 0 18px;color:var(--page-muted);max-width:80ch}
+.verdict{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid var(--page-line);color:var(--page-muted);vertical-align:3px;margin-left:8px}
+.verdict.yes{background:var(--page-ink);color:var(--page-bg);border-color:transparent}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px 24px;margin:18px 0 0;max-width:1200px}
+.facts div{font-size:14px;line-height:1.4}
+.facts b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--page-muted);margin-bottom:2px}
+.frames{display:flex;flex-wrap:wrap;gap:36px 28px;align-items:flex-start}
+figure{margin:0;width:calc(415px * var(--s,1));max-width:100%}
+figcaption{margin-top:12px;max-width:100%}
+figcaption .id{font:600 12px/1 var(--font);letter-spacing:.04em;color:var(--page-muted);margin-right:8px;font-variant-numeric:tabular-nums}
+figcaption b{font-size:15px}
+figcaption p{margin:5px 0 0;color:var(--page-muted);font-size:13px;line-height:1.4}
+.dw{position:relative;width:calc(415px * var(--s,1));height:calc(874px * var(--s,1));max-width:100%}
+.device{position:absolute;left:0;top:0;width:415px;height:874px;padding:11px;border-radius:66px;background:var(--bezel);
+  box-shadow:inset 0 0 0 1.5px var(--bezel-rim),0 30px 60px -24px var(--shadow);transform:scale(var(--s,1));transform-origin:0 0}
+
+/* ---------- iOS primitives (from mockups.html) ---------- */
+.phone{position:relative;width:393px;height:852px;border-radius:55px;overflow:hidden;background:var(--bg);color:var(--label);isolation:isolate;
+  font-family:var(--font);font-size:17px;line-height:22px;letter-spacing:-.2px;text-align:left}
+.phone.grouped{background:var(--bg-grouped)}
+.sb{position:absolute;top:0;left:0;right:0;height:54px;display:flex;justify-content:space-between;align-items:center;z-index:80;color:var(--label);pointer-events:none}
+.sb-t,.sb-i{width:134px;display:flex;justify-content:center;align-items:center;gap:6px;padding-top:4px}
+.sb-t{font-weight:600;font-size:17px;letter-spacing:-.3px}
+.sb-i svg{fill:currentColor}
+.island{position:absolute;top:11px;left:50%;width:124px;height:36px;margin-left:-62px;border-radius:20px;background:#000;z-index:90}
+.home{position:absolute;bottom:8px;left:50%;width:139px;height:5px;margin-left:-69.5px;border-radius:3px;background:var(--label);z-index:90}
+
+.i{width:1em;height:1em;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.glass{background:linear-gradient(180deg,var(--glass-sheen),transparent 58%),var(--glass);
+  -webkit-backdrop-filter:blur(16px) saturate(1.8);backdrop-filter:blur(16px) saturate(1.8);
+  box-shadow:inset 0 .5px 0 var(--glass-rim),inset 0 0 0 .5px var(--glass-edge),0 6px 18px var(--glass-drop),0 1px 2px var(--glass-drop)}
+.gb{position:relative;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:21px;color:var(--label);flex:none}
+.gb.prom{background:var(--label);color:var(--bg);box-shadow:0 4px 14px var(--glass-drop)}
+.gcap{height:44px;border-radius:22px;display:flex;align-items:center;padding:0 4px;color:var(--label);flex:none}
+.tb{position:absolute;top:56px;left:16px;right:16px;height:44px;display:flex;justify-content:space-between;align-items:center;z-index:40}
+.lt{position:absolute;left:16px;right:16px;font-size:34px;line-height:41px;font-weight:700;letter-spacing:.2px;z-index:32}
+.lt small{display:block;font-size:15px;line-height:20px;font-weight:400;letter-spacing:-.2px;color:var(--label-2);margin-top:1px}
+.lt .tch{font-size:22px;color:var(--label-2);margin-left:6px;vertical-align:4px;stroke-width:2.4}
+.ntitle{position:absolute;left:96px;right:96px;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+.ntitle b{font-size:17px;line-height:21px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.ntitle span{font-size:12px;line-height:15px;color:var(--label-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.edge-top{position:absolute;left:0;right:0;top:0;height:var(--eh,160px);z-index:30;pointer-events:none;background:linear-gradient(var(--bg) 0%,var(--bg) 62%,transparent 100%)}
+.edge-bot{position:absolute;left:0;right:0;bottom:0;height:120px;z-index:30;pointer-events:none;background:linear-gradient(transparent,var(--bg) 78%)}
+.grouped .edge-bot{background:linear-gradient(transparent,var(--bg-grouped) 70%)}
+.wash{position:absolute;left:0;right:0;top:0;height:220px;z-index:31;pointer-events:none;background:linear-gradient(var(--acc-wash),transparent)}
+
+.a-ocean{--acc:var(--ocean);--acc-ink:var(--ocean-ink);--acc-wash:var(--ocean-wash)}
+.a-ember{--acc:var(--ember);--acc-ink:var(--ember-ink);--acc-wash:var(--ember-wash)}
+
+/* avatars: CSS placeholders only, no photos */
+.av{position:relative;flex:none;width:var(--z,52px);height:var(--z,52px);border-radius:50%;display:grid;place-items:center;font-size:calc(var(--z,52px) * .5);line-height:1}
+.av.pp::before{content:"";position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 50% 39%,rgba(255,255,255,.40) 0 15.5%,transparent 16.5%),radial-gradient(ellipse 31% 23% at 50% 89%,rgba(255,255,255,.34) 0 97%,transparent 100%)}
+.pp-maya{background:radial-gradient(circle at 28% 22%,#ffd9b8 0 18%,transparent 58%),radial-gradient(circle at 78% 84%,#6e3f30 0 22%,transparent 64%),linear-gradient(140deg,#e7a47c,#a3644d)}
+.pp-jonah{background:radial-gradient(circle at 25% 25%,#cfe3ee 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#2f4a5c 0 24%,transparent 66%),linear-gradient(140deg,#93b6ca,#4f6f83)}
+.pp-ana{background:radial-gradient(circle at 25% 25%,#ffd4df 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#7c3a55 0 24%,transparent 66%),linear-gradient(140deg,#e9a6b9,#9a5670)}
+.pp-priya{background:radial-gradient(circle at 25% 25%,#fbe7b2 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#7a5a22 0 24%,transparent 66%),linear-gradient(140deg,#e7c27a,#9b7636)}
+.pp-theo{background:radial-gradient(circle at 25% 25%,#e2ebc4 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#46592c 0 24%,transparent 66%),linear-gradient(140deg,#b5c58a,#61733f)}
+.pp-lena{background:radial-gradient(circle at 25% 25%,#ece3fb 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#4d3d78 0 24%,transparent 66%),linear-gradient(140deg,#c2b2e6,#6d5a9a)}
+.pp-sam{background:radial-gradient(circle at 25% 25%,#e7e7ea 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#45454d 0 24%,transparent 66%),linear-gradient(140deg,#b9b9c0,#6a6a73)}
+.pp-dev{background:radial-gradient(circle at 25% 25%,#d6f0ea 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#2c5b52 0 24%,transparent 66%),linear-gradient(140deg,#94c9bd,#4b8075)}
+.br-north{background:#3B2A20}
+.br-kestrel{background:linear-gradient(140deg,#e9f1e7,#c9dccb)}
+.br-crypto{background:linear-gradient(140deg,#2a2a2e,#111114)}
+.br-harbor{background:linear-gradient(150deg,#2c4a63,#162a3b)}
+.own-t{background:linear-gradient(150deg,#ececef,#d2d2d7);color:#5a5a62;font:600 calc(var(--z,52px) * .44)/1 var(--font)}
+.own-k{background:radial-gradient(circle at 30% 28%,#ffd76a 0 17%,transparent 40%),radial-gradient(circle at 72% 70%,#7fc8ff 0 19%,transparent 44%),linear-gradient(140deg,#f7a1c4,#9b7bd8)}
+.own{box-shadow:0 0 0 var(--gap,2px) var(--ring-bg,var(--bg)),0 0 0 calc(var(--gap,2px) + var(--rw,2px)) var(--acc)}
+.grp{position:relative;flex:none;width:52px;height:52px}
+.grp .av{position:absolute;--z:36px}
+.grp .av:first-child{left:0;top:0}
+.grp .av:nth-child(2){right:0;bottom:0;box-shadow:0 0 0 2px var(--bg)}
+
+/* AccountMark, tag */
+.mk{position:absolute;right:-2px;bottom:-2px;width:20px;height:20px;border-radius:50%;background:var(--acc);color:var(--on-color);
+  font:700 11px/20px var(--font-round);text-align:center;letter-spacing:0;box-shadow:0 0 0 2px var(--ring-bg,var(--bg));z-index:2}
+.mk.s18{width:18px;height:18px;font-size:10px;line-height:18px}
+.mk.s30{width:30px;height:30px;font-size:16px;line-height:30px;right:-4px;bottom:-4px;box-shadow:0 0 0 3px var(--ring-bg,var(--bg))}
+.mi{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;background:var(--acc);color:var(--on-color);font:700 10px/1 var(--font-round);letter-spacing:0}
+.mi.s16{width:16px;height:16px;font-size:9px}
+.mi.s14{width:14px;height:14px;font-size:8px}
+.tag{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px 0 3px;border-radius:11px;background:var(--acc-wash);color:var(--acc-ink);font-size:13px;line-height:1;font-weight:600;letter-spacing:-.1px;white-space:nowrap;max-width:100%;overflow:hidden}
+.tag .h{font-weight:400}
+.tag .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+
+/* scope chips */
+.scope{position:absolute;left:0;right:0;display:flex;align-items:center;gap:8px;padding:0 16px;overflow:hidden;z-index:35}
+.chip{height:34px;border-radius:17px;padding:0 12px 0 8px;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:500;background:var(--fill);color:var(--label);white-space:nowrap;flex:none}
+.chip.all{padding:0 14px}
+.chip .ct{font-size:13px;color:var(--label-2);font-variant-numeric:tabular-nums;font-weight:500}
+.chip.on-all{background:var(--label);color:var(--bg)}
+.chip.on-all .ct{color:var(--bg);opacity:.75}
+.chip.on{background:var(--acc);color:var(--on-color)}
+.chip.on .mi{background:var(--on-color);color:var(--acc)}
+.chip.on .ct{color:var(--on-color);opacity:.85}
+
+/* today's folder tiles (as built: 65 pt, bold counts) */
+.tiles{position:absolute;left:16px;right:16px;display:flex;gap:10px;z-index:5}
+.tile{flex:1;height:65px;border-radius:16px;background:var(--fill);padding:9px 12px;display:flex;flex-direction:column;justify-content:space-between}
+.tile .r1{display:flex;justify-content:space-between;align-items:center}
+.tile .r1 .i{font-size:22px;color:var(--tint,var(--label))}
+.tile .n{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+.tile .lb{font-size:15px;font-weight:600;color:var(--label-2);line-height:18px}
+
+/* chat rows (76 pt pitch, as built) */
+.list{position:absolute;left:0;right:0}
+.row{position:relative;display:flex;gap:12px;padding:10px 16px 0 22px;height:76px;background:var(--bg)}
+.row .dot{position:absolute;left:7px;top:31px;width:10px;height:10px;border-radius:50%;background:var(--label)}
+.row .tx{flex:1;min-width:0;border-bottom:.5px solid var(--sep);padding-bottom:8px}
+.row .l1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.row .nm{font-size:17px;font-weight:600;letter-spacing:-.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .tm{font-size:15px;color:var(--label-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.row .pv{font-size:15px;line-height:20px;color:var(--label-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:1px}
+.row.un .pv,.row.un .tm{color:var(--label)}
+.row .pv .i{font-size:15px;margin-top:-2px}
+.row .typing{font-style:italic}
+.row.req{height:122px}
+.rtag{display:inline-block;font-size:11px;line-height:16px;font-weight:600;letter-spacing:0;padding:0 7px;border-radius:8px;background:var(--fill-2);color:var(--label);margin-left:6px;vertical-align:2px}
+.rbtns{display:flex;gap:8px;margin-top:8px}
+
+/* bottom bar */
+.bb{position:absolute;left:16px;right:16px;bottom:30px;display:flex;gap:10px;z-index:40}
+.srch{flex:1;height:48px;border-radius:24px;display:flex;align-items:center;gap:8px;padding:0 16px;color:var(--label-2);font-size:17px;white-space:nowrap;overflow:hidden}
+.srch .i{font-size:19px}
+.bb .gb{width:48px;height:48px}
+
+/* ---------- new in v2 ---------- */
+.stk{padding:0 9px}
+.stk .av{--z:26px;--gap:1.5px;--rw:1.5px;font-size:12px}
+.stk .av + .av{margin-left:-5px}
+.bdg{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--label);color:var(--bg);
+  font:600 12px/20px var(--font);letter-spacing:0;text-align:center;font-variant-numeric:tabular-nums;box-shadow:0 0 0 2px var(--bg)}
+/* Requests card: a place, not a chat */
+.rqcard{display:flex;align-items:center;gap:12px;margin:4px 16px 10px;padding:10px 12px;min-height:56px;border-radius:16px;background:var(--fill)}
+.rqcard .ic{width:36px;height:36px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:20px;flex:none}
+.rqcard .t{flex:1;min-width:0}
+.rqcard b{display:block;font-size:15px;line-height:20px;font-weight:600}
+.rqcard .t > span{display:flex;align-items:center;gap:4px;font-size:13px;line-height:18px;color:var(--label-2);white-space:nowrap;overflow:hidden}
+.rqcard > .i{font-size:14px;color:var(--label-2)}
+/* option A pills */
+.pills{position:absolute;left:16px;right:16px;display:flex;gap:8px;z-index:5}
+.pill{height:32px;border-radius:16px;padding:0 12px 0 10px;display:inline-flex;align-items:center;gap:6px;background:var(--fill);font-size:15px;font-weight:500}
+.pill .i{font-size:17px}
+.pill b{font-weight:700;font-variant-numeric:tabular-nums}
+/* option C rows */
+.brow{display:flex;align-items:center;gap:12px;height:56px;padding:0 16px 0 22px;background:var(--bg)}
+.brow .ic{width:40px;height:40px;border-radius:50%;background:var(--fill);display:grid;place-items:center;font-size:21px;flex:none;margin-left:6px}
+.brow .grow{flex:1;min-width:0;border-bottom:.5px solid var(--sep);height:56px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.brow b{font-size:17px;font-weight:600;letter-spacing:-.4px}
+.brow .ct{font-size:15px;color:var(--label);font-weight:600;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px}
+.brow .ct .i{font-size:13px;color:var(--label-3)}
+.fh{padding:18px 22px 6px;font-size:13px;line-height:18px;color:var(--label-2);text-transform:uppercase;letter-spacing:.2px;background:var(--bg)}
+.frow{display:flex;align-items:center;gap:14px;height:48px;padding:0 16px 0 22px;background:var(--bg)}
+.frow > .i{font-size:22px}
+.frow .grow{flex:1;font-size:17px;display:flex;justify-content:space-between;align-items:center;border-bottom:.5px solid var(--sep);height:48px}
+.frow .ct{color:var(--label-2);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px;font-size:17px}
+.frow .ct .i{font-size:13px;color:var(--label-3)}
+/* option D segmented */
+.segc{position:absolute;left:16px;right:16px;height:32px;border-radius:16px;background:var(--fill);display:flex;padding:2px;z-index:5}
+.segc span{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:14px;font-size:14px;font-weight:600;color:var(--label)}
+.segc span.on{background:var(--bg);box-shadow:0 1px 3px var(--glass-drop)}
+/* menus (iOS 26 glass menu) */
+.dim{position:absolute;inset:0;z-index:55;background:var(--menu-dim)}
+.mpop{position:absolute;z-index:60;width:248px;border-radius:24px;padding:6px 0;background:var(--menu-bg);
+  -webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);box-shadow:0 14px 44px rgba(0,0,0,.24),inset 0 0 0 .5px var(--glass-edge)}
+.mpop .it{display:flex;align-items:center;gap:12px;padding:8px 16px;min-height:50px}
+.mpop .it > .i{font-size:21px;width:24px}
+.mpop .it div{flex:1;min-width:0}
+.mpop .it b{display:block;font-size:17px;font-weight:400;line-height:22px}
+.mpop .it small{display:block;font-size:13px;line-height:17px;color:var(--label-2)}
+.mpop .it + .it{border-top:.5px solid var(--sep)}
+.mpop .it .ck{font-size:17px;width:auto;stroke-width:2.4}
+/* thread */
+.thh{position:absolute;top:56px;left:70px;right:70px;height:44px;display:flex;align-items:center;gap:8px;z-index:42}
+.thh .tt{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.thh b{font-size:15px;line-height:19px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.msgs{position:absolute;left:0;right:0;top:0;bottom:92px;display:flex;flex-direction:column;justify-content:flex-end;padding:0 12px;gap:2px;z-index:2}
+.b{position:relative;max-width:75%;padding:8px 12px;font-size:17px;line-height:22px;border-radius:20px;letter-spacing:-.3px}
+.b.in{align-self:flex-start;background:var(--bubble-in);color:var(--label)}
+.b.out{align-self:flex-end;background:var(--acc);color:var(--on-color)}
+.in.first{border-bottom-left-radius:6px}.in.last{border-top-left-radius:6px}
+.out.first{border-bottom-right-radius:6px}.out.last{border-top-right-radius:6px}
+.gap{height:var(--g,10px);flex:none}
+.day{align-self:center;font-size:12px;line-height:16px;color:var(--label-2);margin:4px 0 6px}
+.meta-r{align-self:flex-end;font-size:11px;line-height:13px;color:var(--label-2);margin:3px 6px 0}
+.comp{position:absolute;left:12px;right:12px;bottom:30px;display:flex;align-items:flex-end;gap:8px;z-index:40}
+.field{flex:1;min-height:44px;border-radius:22px;display:flex;align-items:center;gap:9px;padding:0 6px 0 8px;font-size:17px;min-width:0}
+.field .ph{flex:1;color:var(--label-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* grouped lists */
+.grp-h{font-size:13px;line-height:18px;color:var(--label-2);margin:0 20px 7px}
+.grp-f{font-size:13px;line-height:18px;color:var(--label-2);margin:7px 20px 0}
+.cells{margin:0 16px;background:var(--cell);border-radius:24px;overflow:hidden}
+.cell{position:relative;display:flex;align-items:center;gap:12px;min-height:46px;padding:10px 16px}
+.cell + .cell::before{content:"";position:absolute;top:0;left:var(--sep-l,16px);right:0;border-top:.5px solid var(--sep)}
+.cell .grow{flex:1;min-width:0}
+.acct .nm{font-size:17px;font-weight:600;line-height:21px;letter-spacing:-.4px}
+.acct .hd{font-size:15px;line-height:19px;color:var(--label-2)}
+.st{display:flex;align-items:center;gap:5px;font-size:13px;line-height:17px;font-weight:500;margin-top:3px}
+.st .i{font-size:14px}
+.st.ok{color:var(--ok)}.st.ok .i{color:var(--ok-g)}
+.big{height:52px;border-radius:26px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;background:var(--label);color:var(--bg)}
+.txtbtn{display:flex;justify-content:center;font-size:17px;font-weight:500;color:var(--label)}
+.sbtn{height:30px;border-radius:15px;padding:0 13px;display:inline-flex;align-items:center;font-size:14px;font-weight:600;background:var(--fill);color:var(--label);white-space:nowrap}
+.sbtn.dark{background:var(--label);color:var(--bg)}
+.sbtn.del{color:var(--err)}
+.sbtn.sel{box-shadow:inset 0 0 0 1.5px var(--label);background:transparent}
+.swg{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 0;justify-items:center;padding:16px 8px}
+.sw{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--on-color);font:700 15px/1 var(--font-round)}
+.sw.sel{box-shadow:0 0 0 2px var(--cell),0 0 0 4px var(--ocean)}
+.sw.taken{opacity:.38}
+/* annotation bands (spec layer, not app UI) */
+.anno{position:absolute;left:0;right:0;z-index:70;pointer-events:none;border-top:1px dashed var(--anno-line);
+  background:repeating-linear-gradient(135deg,var(--anno-fill) 0 6px,transparent 6px 12px)}
+.anno span{position:absolute;right:8px;top:50%;transform:translateY(-50%);font:600 11px/1.2 var(--font);letter-spacing:0;padding:4px 7px;border-radius:8px;background:var(--anno-tag);color:var(--anno-tag-ink);white-space:nowrap}
+.anno.total{background:none;border-top:2px solid var(--anno-tag);height:0}
+.anno.total span{top:0;transform:translateY(-50%);right:auto;left:8px}
+
+/* panels */
+.panels{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:24px;align-items:start;margin-top:28px}
+.panel{background:var(--page-surface);border:1px solid var(--page-line);border-radius:28px;padding:20px;min-width:0}
+.panel.wide{grid-column:1 / -1}
+.panel h3{margin:0;font-size:17px;letter-spacing:-.2px}
+.panel > p{margin:4px 0 14px;color:var(--page-muted);font-size:14px}
+.ios{background:var(--bg);color:var(--label);border-radius:22px;padding:16px 0;font-family:var(--font);font-size:17px;line-height:22px;letter-spacing:-.2px;position:relative;overflow:hidden}
+.ios.gbg{background:var(--bg-grouped)}
+.tw{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;line-height:1.4}
+.tbl th,.tbl td{text-align:left;vertical-align:top;padding:7px 8px;border-top:1px solid var(--page-line)}
+.tbl th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--page-muted);font-weight:700;border-top:none}
+.tbl td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl tr.hl td{font-weight:600}
+.notes{margin:0;padding-left:18px;color:var(--page-muted);font-size:14px}
+.notes li{margin:5px 0}
+.notes b{color:var(--page-ink)}
+.foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--page-line);color:var(--page-muted);font-size:13px}
+
+/* ---------- v3 tokens: the app icon as it appears inside the app (O1 lockup) follows the theme ---------- */
+:root{--lk-ink:#16161A;--lk-sec:#8E8E95;--lk-bg:linear-gradient(#FFFFFF,#E8E8ED);--lk-rim:rgba(0,0,0,.10)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--lk-ink:#F4F4F6;--lk-sec:#7C7C84;--lk-bg:linear-gradient(#323236,#151517);--lk-rim:rgba(255,255,255,.10)}
+}
+:root[data-theme="dark"]{--lk-ink:#F4F4F6;--lk-sec:#7C7C84;--lk-bg:linear-gradient(#323236,#151517);--lk-rim:rgba(255,255,255,.10)}
+
+/* ---------- v3: accounts used only in the 3+ account cases ---------- */
+.a-grape{--acc:var(--grape)}.a-teal{--acc:var(--teal)}.a-berry{--acc:var(--berry)}.a-moss{--acc:var(--moss)}
+.own-a{background:radial-gradient(circle at 34% 30%,#d5e4f6 0 17%,transparent 50%),radial-gradient(ellipse 60% 40% at 50% 96%,#24364f 0 60%,transparent 64%),linear-gradient(150deg,#86a4ca,#46648c)}
+.own-s{background:radial-gradient(circle at 30% 28%,#ffd76a 0 17%,transparent 40%),radial-gradient(circle at 72% 70%,#7fc8ff 0 19%,transparent 44%),linear-gradient(140deg,#f7a1c4,#9b7bd8)}
+.own-b{background:radial-gradient(circle at 30% 30%,#efe6ff 0 15%,transparent 46%),linear-gradient(140deg,#c4afee,#5f43a0)}
+.own-m{background:radial-gradient(circle at 70% 30%,#e3fff7 0 14%,transparent 44%),linear-gradient(140deg,#9fd8ca,#2a7266)}
+.own-c{background:linear-gradient(140deg,#f3b9cc,#9c3e63)}
+.own-d{background:linear-gradient(140deg,#d3e6ad,#587a24)}
+
+/* ---------- v3: icons and Home Screens ---------- */
+.icon{position:relative;display:block;flex:none;width:var(--is,60px);height:var(--is,60px);border-radius:22.5%;overflow:hidden}
+.icon svg{position:absolute;inset:0;width:100%;height:100%}
+.ic-l{--i-ink:#16161A;--i-sec:#8E8E95;background:linear-gradient(#FFFFFF,#E8E8ED);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.10)}
+.ic-d{--i-ink:#F4F4F6;--i-sec:#7C7C84;background:linear-gradient(#323236,#151517)}
+.ic-t{--i-ink:#8EC8FF;--i-sec:rgba(142,200,255,.55);background:linear-gradient(#2A2B2E,#111214)}
+.big3{display:flex;flex-wrap:wrap;gap:14px 18px;margin:4px 0 18px}
+.big3 figure{width:auto}
+.big3 .icon{--is:clamp(88px,26vw,120px)}
+.big3 figcaption{margin-top:7px;font-size:12px;color:var(--page-muted);text-align:center}
+.hsrow{display:flex;flex-wrap:wrap;gap:16px}
+.hs{width:min(100%,318px);border-radius:30px;padding:20px 14px 16px;display:grid;grid-template-columns:repeat(4,60px);justify-content:space-between;row-gap:14px}
+.hs.l{background:radial-gradient(120% 90% at 10% 0%,#f4efe6 0 30%,transparent 70%),linear-gradient(160deg,#cdd7e2,#e7e1d7 55%,#d2dae4)}
+.hs.d{background:radial-gradient(120% 90% at 10% 0%,#2a3442 0 25%,transparent 70%),linear-gradient(160deg,#18202a,#101215 55%,#1c222a)}
+.hs.t{background:radial-gradient(120% 90% at 10% 0%,#1f2733 0 25%,transparent 70%),linear-gradient(160deg,#121820,#0b0d10 55%,#151a21)}
+.hs .app{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.hs .lb{font:500 11px/13px var(--font);letter-spacing:0;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4);white-space:nowrap}
+.hs.l .lb{color:#1d1d1f;text-shadow:none}
+.hs .mode{grid-column:1/-1;font:600 11px/1 var(--font);letter-spacing:.06em;text-transform:uppercase;color:#fff;opacity:.75}
+.hs.l .mode{color:#1d1d1f}
+.ph{position:relative;width:60px;height:60px;border-radius:22.5%;flex:none;display:block}
+.ph::before{content:"";position:absolute;inset:0;margin:auto;width:26px;height:26px}
+.hs.l .ph{background:linear-gradient(#e6e9ee,#c9ced6)}.hs.l .ph::before{background:#fff}
+.hs.d .ph{background:linear-gradient(#3b3d42,#24262a)}.hs.d .ph::before{background:#a3a6ad}
+.hs.t .ph{background:linear-gradient(#2a2b2e,#111214)}.hs.t .ph::before{background:rgba(142,200,255,.85)}
+.ph.p1::before{border-radius:50%}
+.ph.p2::before{border-radius:8px;width:24px;height:24px}
+.ph.p3::before{height:8px;border-radius:4px;box-shadow:0 -11px 0 currentColor;width:28px;top:14px;color:inherit}
+.hs.l .ph.p3::before{box-shadow:0 -11px 0 #fff}.hs.d .ph.p3::before{box-shadow:0 -11px 0 #a3a6ad}.hs.t .ph.p3::before{box-shadow:0 -11px 0 rgba(142,200,255,.85)}
+.ph.p4::before{width:0;height:0;background:none!important;border-left:15px solid transparent;border-right:15px solid transparent;border-bottom:26px solid #fff}
+.hs.d .ph.p4::before{border-bottom-color:#a3a6ad}.hs.t .ph.p4::before{border-bottom-color:rgba(142,200,255,.85)}
+
+/* ---------- v3: account stack (side by side) ---------- */
+.stk3{gap:4px;padding:0 7px}
+.sa{position:relative;width:30px;height:30px;flex:none;display:grid;place-items:center}
+.sa > .av{--z:24px;--gap:1.5px;--rw:1.5px;--ring-bg:var(--bg)}
+.sa.more{border-radius:50%;background:var(--fill-2);color:var(--label);font:600 13px/1 var(--font-round);letter-spacing:-.3px}
+.sbg{position:absolute;right:0;bottom:0;width:14px;height:14px;border-radius:50%;background:var(--bg);display:grid;place-items:center;z-index:3}
+.sbg svg{width:10px;height:10px;color:var(--warn-g)}
+.sbg .spin{width:9px;height:9px;border-radius:50%;border:1.6px solid var(--label-3);border-top-color:var(--label)}
+.stk .warn{width:20px;height:20px;margin-left:11px;color:var(--warn-g);flex:none}
+.stkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,262px),1fr));gap:14px}
+.case{background:var(--page-surface);border:1px solid var(--page-line);border-radius:22px;padding:12px;min-width:0}
+.case .bar{background:var(--bg);border-radius:14px;height:112px;display:flex;align-items:center;padding:0 14px;overflow:hidden;position:relative}
+.case .bar.wide{justify-content:flex-start}
+.case .z2{zoom:2;display:flex;align-items:center}
+.case h4{margin:10px 2px 2px;font-size:14px;line-height:1.3}
+.case p{margin:0 2px;font-size:12.5px;line-height:1.4;color:var(--page-muted)}
+.case .w{font-variant-numeric:tabular-nums;color:var(--page-ink);font-weight:600}
+.case.before .bar{outline:1.5px dashed var(--anno-line);outline-offset:-1.5px}
+
+/* ---------- v3: thread pieces ---------- */
+.media{position:relative;flex:none;border-radius:18px;overflow:hidden}
+.media .play{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:24px}
+.media .play .i{fill:currentColor;stroke:none}
+.media .dur{position:absolute;right:8px;bottom:8px;font:600 12px/1 var(--font);color:#fff;background:rgba(0,0,0,.42);padding:4px 7px;border-radius:9px;font-variant-numeric:tabular-nums}
+.media .auth{position:absolute;left:0;right:0;top:0;padding:10px 10px 22px;display:flex;align-items:center;gap:6px;color:#fff;font:600 13px/1 var(--font);background:linear-gradient(rgba(0,0,0,.45),transparent)}
+.media .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 10px 30px;color:#fff;font:400 13px/17px var(--font);background:linear-gradient(transparent,rgba(0,0,0,.5))}
+.ph-desert{background:radial-gradient(circle at 70% 20%,#fff3d6 0 8%,transparent 26%),linear-gradient(180deg,#f6cf98 0%,#eda662 34%,#c9773f 58%,#8d4b27 82%,#5c2f19 100%)}
+.ph-sea{background:radial-gradient(circle at 30% 24%,#f4fbff 0 7%,transparent 24%),linear-gradient(180deg,#b9def0 0%,#69aed3 40%,#2f6f9e 70%,#1b3f62 100%)}
+.ph-dusk{background:radial-gradient(circle at 50% 62%,#ffd59a 0 10%,transparent 30%),linear-gradient(180deg,#3a4a7a 0%,#c0628a 55%,#f0a46a 100%)}
+.edge-soft{position:absolute;left:0;right:0;top:0;height:128px;z-index:30;pointer-events:none;background:linear-gradient(color-mix(in srgb,var(--bg) 55%,transparent),transparent)}
+.edge-hard{position:absolute;left:0;right:0;top:0;height:112px;z-index:30;pointer-events:none;background:linear-gradient(color-mix(in srgb,var(--bg) 94%,transparent) 0 92%,transparent)}
+.thcap{position:absolute;top:56px;left:50%;transform:translateX(-50%);height:44px;max-width:233px;border-radius:22px;display:flex;align-items:center;gap:8px;padding:0 14px 0 6px;z-index:42}
+.thcap .tt{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0}
+.thcap b{font-size:15px;line-height:18px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.tag.sm{height:18px;font-size:12px;padding:0 7px 0 2px;gap:4px;border-radius:9px}
+.gav{display:grid;place-items:center;border-radius:50%;background:var(--fill-2);color:var(--label-2);flex:none;width:var(--z);height:var(--z)}
+.gav .i{font-size:calc(var(--z) * .5)}
+.mono{display:grid;place-items:center;border-radius:50%;background:var(--fill-2);color:var(--label-2);font:600 calc(var(--z) * .45)/1 var(--font);flex:none;width:var(--z);height:var(--z)}
+.msgs.top{justify-content:flex-start;padding-top:108px}
+.start{align-self:stretch;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;padding:22px 0 20px}
+.start b{font-size:20px;line-height:25px;font-weight:600;letter-spacing:-.3px;margin-top:6px}
+.start .sub{font-size:13px;line-height:18px;color:var(--label-2)}
+.start0{align-self:stretch;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:0 0 18px}
+.start0 b{font-size:17px;line-height:21px;font-weight:600;color:var(--label-2)}
+.start0 .sub{font-size:13px;color:var(--label-2)}
+.sn{font-size:12px;line-height:15px;color:var(--label-2);margin:8px 0 3px 44px}
+.grow-row{display:flex;align-items:flex-end;gap:8px}
+.grow-row .av{--z:24px;flex:none}
+.grow-row .b{max-width:72%}
+.grow-row .sp{width:24px;flex:none}
+.react{position:absolute;bottom:-14px;left:-6px;width:28px;height:28px;border-radius:50%;background:var(--bubble-in);display:grid;place-items:center;font-size:15px;box-shadow:0 0 0 2px var(--bg)}
+.voice{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px}
+.voice .pb{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--on-color);color:var(--acc)}
+.voice .pb .i{fill:currentColor;stroke:none;font-size:15px;margin-left:2px}
+.voice .wf{display:flex;align-items:center;gap:2px;height:24px}
+.voice .wf i{display:block;width:3px;border-radius:2px;background:currentColor;opacity:.9}
+.voice .d{font-size:13px;font-variant-numeric:tabular-nums;opacity:.9}
+.b.in .voice .pb{background:var(--label);color:var(--bg)}
+
+/* request bar */
+.rqbar{position:absolute;left:12px;right:12px;bottom:28px;border-radius:28px;padding:14px 16px 12px;z-index:40}
+.rqbar .t{font-size:15px;line-height:20px;font-weight:600}
+.rqbar .t .tag{vertical-align:-4px;margin-left:2px}
+.rqbar .s{font-size:13px;line-height:18px;color:var(--label-2);margin-top:3px}
+.rqbar .btns{display:flex;gap:10px;margin-top:12px}
+.rqbar .btn{flex:1;height:var(--bh,44px);border-radius:999px;display:grid;place-items:center;font-size:17px;font-weight:600}
+.btn.del{background:var(--fill);color:var(--err)}
+.btn.acc{background:var(--acc);color:var(--on-color)}
+.rqbar .lnk{text-align:center;font-size:13px;line-height:18px;margin-top:10px;color:var(--label-2)}
+.rqbar .lnk b{color:var(--acc-ink);font-weight:600}
+
+/* player */
+.phone.black{--label:#FFFFFF;--label-2:rgba(235,235,245,.72);--bg:#000;--glass:rgba(60,60,64,.55);--glass-sheen:rgba(255,255,255,.08);--glass-rim:rgba(255,255,255,.18);--glass-edge:rgba(255,255,255,.08);--glass-drop:rgba(0,0,0,.5);background:#000;color:#fff}
+.pl-c{position:absolute;left:24px;right:24px;top:360px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.pl-c b{font-size:17px;line-height:22px;font-weight:600}
+.pl-c .row2{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.pill-btn{height:40px;border-radius:20px;padding:0 16px;display:inline-flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:#fff}
+.pl-f{position:absolute;left:16px;right:16px;bottom:56px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--label-2)}
+.grabber{position:absolute;top:62px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:rgba(255,255,255,.4);z-index:41}
+
+/* welcome */
+.wl-ill{position:absolute;left:0;right:0;top:70px;height:300px}
+.wl-ill .b{position:absolute;max-width:none;white-space:nowrap;font-size:16px;padding:7px 14px}
+.wl-ill .mk{width:18px;height:18px;font-size:10px;line-height:18px;right:-6px;bottom:-6px}
+.wl-reel{position:absolute;left:28px;top:96px;width:130px;height:190px;border-radius:20px;transform:rotate(-5deg);box-shadow:0 18px 30px -12px rgba(0,0,0,.35)}
+.lockup{position:absolute;left:24px;top:394px;display:flex;align-items:center;gap:10px}
+.lockup .icon{--is:34px}
+.lockup span{font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.3px}
+.wl-t{position:absolute;left:24px;right:20px;top:440px;font-size:32px;line-height:38px;font-weight:700;letter-spacing:-.6px}
+.wl-f{position:absolute;left:24px;right:24px;top:548px;display:flex;flex-direction:column;gap:16px}
+.wl-f div{display:flex;align-items:center;gap:14px;font-size:17px}
+.wl-f .ic{width:32px;height:32px;border-radius:50%;background:var(--fill);display:grid;place-items:center;font-size:17px;flex:none}
+.wl-cta{position:absolute;left:20px;right:20px;bottom:76px}
+.wl-legal{position:absolute;left:0;right:0;bottom:44px;text-align:center;font-size:12px;color:var(--label-2)}
+
+/* sheet */
+.sheet{position:absolute;left:0;right:0;top:58px;bottom:0;border-radius:38px 38px 0 0;background:var(--bg-grouped);z-index:50;overflow:hidden}
+.sheet .stb{position:absolute;top:14px;left:16px;right:16px;height:44px;display:flex;justify-content:space-between;align-items:center}
+.sheet .stb b{position:absolute;left:0;right:0;text-align:center;font-size:17px;font-weight:600;pointer-events:none}
+.acct .pro{font-size:13px;line-height:17px;color:var(--label-2);margin-top:1px}
+
+/* launch */
+.phone.lchl{--bg:#FFFFFF;--label:#000;background:#FFFFFF}
+.phone.dk{--bg:#000000;--label:#FFF;background:#000000}
+.lmark{position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px}
+.lmark svg{width:100%;height:100%;display:block}
+.lchl .lmark{--i-ink:#16161A;--i-sec:#8E8E95}
+.dk .lmark{--i-ink:#F4F4F6;--i-sec:#7C7C84}
+.lbox{position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px;outline:1px dashed var(--anno-line);z-index:5}
+.lchl .lbox{outline-color:rgba(18,19,23,.4)}.dk .lbox{outline-color:rgba(241,242,244,.45)}
+.lbox span{position:absolute;left:0;right:0;top:calc(100% + 8px);text-align:center;font:600 11px/1 var(--font);letter-spacing:0;color:inherit;opacity:.6}
+
+/* annotations inside frames */
+.callout{position:absolute;z-index:75;font:600 11px/1.25 var(--font);letter-spacing:0;padding:5px 8px;border-radius:9px;background:var(--anno-tag);color:var(--anno-tag-ink);max-width:180px;pointer-events:none}
+.ring-hl{position:absolute;z-index:74;border:2px dashed var(--anno-tag);border-radius:26px;pointer-events:none}
+.sev{display:inline-block;font:700 10.5px/1 var(--font);letter-spacing:.05em;text-transform:uppercase;padding:4px 7px;border-radius:7px;border:1px solid var(--page-line);color:var(--page-muted);white-space:nowrap}
+.sev.hi{background:var(--page-ink);color:var(--page-bg);border-color:transparent}
+.sev.med{border-color:var(--page-ink);color:var(--page-ink)}
+code{font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--fill);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+.tbl code{font-size:12px}
+.sw-chip{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px;box-shadow:inset 0 0 0 1px var(--page-line)}
+
+.icon.ic-lk{--i-ink:var(--lk-ink);--i-sec:var(--lk-sec);background:var(--lk-bg);box-shadow:inset 0 0 0 .5px var(--lk-rim)}
+.hl{outline:2px dashed var(--anno-tag);outline-offset:4px;border-radius:8px}
+.acct .hl,.grp-f.hl{outline-width:1.5px;outline-offset:1px;border-radius:4px}
+.rqbar .callout{position:absolute}
+
+/* ================= Round 2 (15 Oct, after the user's answers) =================
+   The sea is Ferry's own colour, used only as scenery: the app icon, the launch screen and Welcome's picture. Never a
+   tint, a control or text. Inside the app, colour still means account. --w-* is Welcome's scene and follows the theme. */
+:root{
+  --sea-top:#1A7893; --sea-deep:#0A2E47; --sea-mid:#12536D; --foam:#9ED6E2; --sea-bright:#2F9CC5; --foam-dim:#8FCBD9;
+  --harbour-ink:#0D3D5C; --harbour-sea:#2E8DB5;
+  --w-sea-h:#1A7893; --w-sea-f:#0D3F5B; --w-haze:#E4F0F3; --w-swell:.5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--w-sea-h:#0F4561;--w-sea-f:#05192A;--w-haze:#0B1C27;--w-swell:.4}
+}
+:root[data-theme="dark"]{--w-sea-h:#0F4561;--w-sea-f:#05192A;--w-haze:#0B1C27;--w-swell:.4}
+/* frames forced to one appearance, whatever the page theme */
+.phone.fl{--bg:#FFFFFF;--bg-grouped:#F2F2F7;--cell:#FFFFFF;--label:#000000;--label-2:#6C6C72;--label-3:#AEAEB2;--sep:rgba(60,60,67,.20);--fill:rgba(120,120,128,.12);--fill-2:rgba(120,120,128,.24);
+  --w-sea-h:#1A7893;--w-sea-f:#0D3F5B;--w-haze:#E4F0F3;--w-swell:.5;color-scheme:light}
+.phone.fd{--bg:#000000;--bg-grouped:#000000;--cell:#1C1C1E;--label:#FFFFFF;--label-2:#A1A1A8;--label-3:#5C5C61;--sep:rgba(84,84,88,.62);--fill:rgba(120,120,128,.26);--fill-2:rgba(120,120,128,.40);
+  --w-sea-h:#0F4561;--w-sea-f:#05192A;--w-haze:#0B1C27;--w-swell:.4;color-scheme:dark}
+
+.round{display:flex;align-items:center;gap:12px;margin-top:64px;font:700 12px/1 var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--page-muted)}
+.round::after{content:"";flex:1;border-top:1px solid var(--page-line)}
+.sup{display:block;margin:0 0 10px;max-width:80ch;font-size:14px;color:var(--page-ink)}
+.sup b{display:inline-block;font:700 10.5px/1 var(--font);letter-spacing:.05em;text-transform:uppercase;padding:4px 7px;border-radius:7px;border:1px solid var(--page-ink);margin-right:6px;vertical-align:1px}
+.tbl td:first-child code{white-space:nowrap;overflow-wrap:normal}
+.code{margin:0;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--fill);padding:12px 14px;border-radius:14px;overflow-x:auto;white-space:pre;color:var(--page-ink)}
+
+/* coloured icon: four fills (front bubble, back bubble, hull, wave) */
+.dw-l{background:linear-gradient(#1A7893,#0A2E47);--c-front:#FFFFFF;--c-back:#9ED6E2;--c-hull:#FFFFFF;--c-wave:#9ED6E2}
+.dw-d,.hb-d,.nc-d{background:linear-gradient(#323236,#151517)}
+.dw-d{--c-front:#F4F9FA;--c-back:#8FCBD9;--c-hull:#2F9CC5;--c-wave:#2F9CC5}
+.dw-t,.hb-t,.nc-t{background:linear-gradient(#2A2B2E,#111214);--c-front:#8EC8FF;--c-back:rgba(142,200,255,.55);--c-hull:#8EC8FF;--c-wave:rgba(142,200,255,.55)}
+.hb-l{background:linear-gradient(#FFFFFF,#E2EFF2);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.10);--c-front:#0D3D5C;--c-back:#2E8DB5;--c-hull:#0D3D5C;--c-wave:#2E8DB5}
+.hb-d{--c-front:#EAF4F7;--c-back:#3FA6CB;--c-hull:#EAF4F7;--c-wave:#3FA6CB}
+.nc-l{background:linear-gradient(#1C2D44,#0B1A24);--c-front:#A6DCEA;--c-back:#3F91B3;--c-hull:#A6DCEA;--c-wave:#3F91B3}
+.nc-d{--c-front:#A6DCEA;--c-back:#3F91B3;--c-hull:#A6DCEA;--c-wave:#3F91B3}
+.hsrow.cmp .hs{width:min(100%,318px)}
+
+/* launch, round 2 */
+.phone.lsea{--bg:#12536D;--label:#FFFFFF;background:#12536D;--c-front:#FFFFFF;--c-back:#9ED6E2;--c-hull:#FFFFFF;--c-wave:#9ED6E2}
+.phone.ldk2{--bg:#000000;--label:#FFFFFF;background:#000000;--c-front:#F4F9FA;--c-back:#8FCBD9;--c-hull:#2F9CC5;--c-wave:#2F9CC5}
+.phone.lwh2{--bg:#FFFFFF;--label:#000000;background:#FFFFFF;--c-front:#0D3D5C;--c-back:#2E8DB5;--c-hull:#0D3D5C;--c-wave:#2E8DB5}
+.lsea .lbox{outline-color:rgba(255,255,255,.45)}.ldk2 .lbox{outline-color:rgba(241,242,244,.45)}.lwh2 .lbox{outline-color:rgba(18,19,23,.4)}
+
+/* Welcome A: the crossing */
+.wa{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;z-index:5}
+.wa-brand{font:700 48px/57px var(--font-round);letter-spacing:-.5px;color:var(--label)}
+.wa-head{margin-top:8px;max-width:320px;padding:0 24px;box-sizing:content-box;text-align:center;font-size:20px;line-height:25px;letter-spacing:-.3px}
+.wa-scene{margin-top:16px;align-self:stretch;line-height:0}
+.wa-list{margin-top:28px;width:300px;display:flex;flex-direction:column;gap:16px}
+.wa-row{display:flex;align-items:center;gap:14px;font-size:17px;line-height:22px}
+.wa-row .ic{width:36px;height:36px;border-radius:50%;background:var(--fill);display:grid;place-items:center;font-size:19px;flex:none}
+.wa-legal{text-align:center;font-size:12px;line-height:16px;color:var(--label-2)}
+.wa-bar{position:absolute;left:20px;right:20px;bottom:42px;display:flex;flex-direction:column;gap:12px;z-index:40}
+.wa-btn{min-height:50px;border-radius:25px;display:grid;place-items:center;text-align:center;padding:0 16px;font-size:17px;line-height:22px;font-weight:600;background:var(--label);color:var(--bg)}
+.wa.ax .wa-brand{font-size:62px;line-height:74px}
+.wa.ax .wa-head{font-size:43px;line-height:51px;max-width:345px;padding:0 24px}
+.wa.ax .wa-list{width:345px;gap:20px}
+.wa.ax .wa-row{font-size:40px;line-height:48px;align-items:flex-start}
+.wa.ax .wa-row .ic{width:50px;height:50px;font-size:27px}
+.wa-bar.ax .wa-btn{font-size:40px;line-height:48px;padding:12px 16px;border-radius:40px}
+
+/* the scene (SVG); the motion approximates the SwiftUI spec */
+.r2s{display:block;overflow:hidden}
+.r2s .swell{fill:none;stroke:var(--foam);stroke-width:1.5;stroke-linecap:round}
+.r2s .wake{fill:none;stroke:var(--foam);stroke-width:2;stroke-linecap:round;opacity:.5}
+.r2s .mk2{font-family:var(--font-round);font-weight:700;fill:#FFFFFF;text-anchor:middle;dominant-baseline:central}
+.r2s.anim .glide{animation:r2-glide .7s cubic-bezier(.22,1,.36,1) both}
+.r2s.anim .bob{animation:r2-bob 4.8s ease-in-out infinite}
+.r2s.anim .roll{transform-box:fill-box;transform-origin:50% 100%;animation:r2-roll 6.4s ease-in-out -1.1s infinite}
+.r2s.anim .brd{transform-box:fill-box;transform-origin:50% 100%;animation:r2-board .55s cubic-bezier(.34,1.45,.64,1) both}
+.r2s.anim .brd.b1{animation-delay:.25s}.r2s.anim .brd.b2{animation-delay:.4s}
+.r2s.anim .drift{animation-timing-function:linear;animation-iteration-count:infinite}
+.r2s.anim .wake{animation:r2-wake 2.4s ease-in-out infinite}
+@keyframes r2-glide{from{transform:translateX(-28px);opacity:0}to{transform:none;opacity:1}}
+@keyframes r2-bob{0%,100%{transform:translateY(1.5px)}50%{transform:translateY(-1.5px)}}
+@keyframes r2-roll{0%,100%{transform:rotate(-.8deg)}50%{transform:rotate(.8deg)}}
+@keyframes r2-board{from{opacity:0;transform:translateY(40px) scale(.6)}to{opacity:1;transform:none}}
+@keyframes r2-wake{0%,100%{opacity:.35}50%{opacity:.7}}
+@keyframes r2-d120{to{transform:translateX(-120px)}}
+@keyframes r2-d160{to{transform:translateX(-160px)}}
+@keyframes r2-d131{to{transform:translateX(-131px)}}
+@media (prefers-reduced-motion: reduce){.r2s.anim *{animation:none!important}}
+
+/* Welcome B: postcards */
+.pc-lock{position:absolute;left:24px;top:70px;display:flex;align-items:center;gap:10px;font:700 22px/28px var(--font-round);letter-spacing:-.3px;z-index:5}
+.pc-card{position:absolute;top:124px;width:333px;height:452px;border-radius:32px;background:var(--cell);overflow:hidden;z-index:5}
+.pc-card .sc{position:absolute;left:0;top:28px;line-height:0}
+.pc-card .t{position:absolute;left:20px;right:20px;top:300px}
+.pc-card .t b{display:block;font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.3px}
+.pc-card .t p{margin:6px 0 0;font-size:15px;line-height:20px;color:var(--label-2)}
+.pc-dots{position:absolute;left:0;right:0;top:596px;display:flex;justify-content:center;gap:8px;z-index:5}
+.pc-dots i{width:7px;height:7px;border-radius:50%;background:var(--label-3)}
+.pc-dots i.on{background:var(--label)}
+
+/* Welcome C: boarding pass */
+.tk-head{position:absolute;left:20px;top:72px;display:flex;align-items:center;gap:8px;font:700 22px/28px var(--font-round);letter-spacing:-.3px;z-index:5}
+.tk-title{position:absolute;left:20px;right:20px;top:116px;font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.4px;z-index:5}
+.tk{position:absolute;left:16px;right:16px;top:240px;height:390px;border-radius:24px;background:var(--cell);z-index:5}
+.tk .sec{position:absolute;left:20px;right:20px}
+.tk .lab{display:block;font-size:11px;line-height:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--label-2);font-weight:600;margin-bottom:4px}
+.tk .val{display:block;font-size:20px;line-height:26px;font-weight:700;letter-spacing:-.3px}
+.tk .val.s{font-size:16px;line-height:21px;font-weight:600;letter-spacing:-.2px}
+.tk .hr{position:absolute;left:20px;right:20px;border-top:.5px solid var(--sep)}
+.tk .perf{position:absolute;left:18px;right:18px;top:290px;border-top:1.5px dashed var(--sep)}
+.tk .notch{position:absolute;top:279px;width:24px;height:24px;border-radius:50%;background:var(--bg-grouped)}
+.tk .route{position:absolute;left:118px;right:112px;top:42px;border-top:1.5px dashed var(--label-3)}
+.tk .route svg{position:absolute;left:50%;top:-26px;margin-left:-18px}
+.tk .seats{display:flex;align-items:center;gap:8px}
+.tk .seats .mi{width:28px;height:28px;font-size:14px}
+.tk .seats .add{width:28px;height:28px;border-radius:50%;border:1.5px dashed var(--label-3);display:grid;place-items:center;color:var(--label-2);font-size:14px}
+.tk .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* onboarding echoes: the deck */
+.deck{position:absolute;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:5}
+.deck .seats{display:flex;gap:12px}
+.deck svg{display:block}
+.seat-empty{width:88px;height:88px;border-radius:50%;border:2px dashed var(--label-3);display:grid;place-items:center;color:var(--label-2);font-size:30px;flex:none}
+.o-title{position:absolute;left:24px;right:24px;text-align:center;font-weight:700;letter-spacing:-.4px;z-index:5}
+.o-body{position:absolute;left:28px;right:28px;text-align:center;font-size:17px;line-height:22px;color:var(--label-2);z-index:5}
+.chk{position:absolute;left:24px;right:24px;border-radius:20px;background:var(--fill);padding:20px;display:flex;flex-direction:column;gap:16px;z-index:5}
+.chk div{display:flex;align-items:center;gap:12px;font-size:17px;line-height:22px;font-weight:600}
+.chk div small{display:block;font-size:13px;line-height:18px;font-weight:400;color:var(--label-2)}
+.chk .g{width:28px;font-size:22px;display:grid;place-items:center;color:var(--ok-g);flex:none}
+.chk .spin{width:20px;height:20px;border-radius:50%;border:2.4px solid var(--label-3);border-top-color:var(--label)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M15 4.5 7.5 12l7.5 7.5" stroke-width="2.2"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.2"/></symbol>
+    <symbol id="i-chev-d" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7" stroke-width="2.2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.3" stroke-width="2"/><path d="M15.6 15.6 20 20" stroke-width="2.2"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+    <symbol id="i-compose" viewBox="0 0 24 24"><path d="M11 4.5H6.8A2.8 2.8 0 0 0 4 7.3v9.9A2.8 2.8 0 0 0 6.8 20h9.9a2.8 2.8 0 0 0 2.8-2.8V13"/><path d="M18.2 3.8a1.9 1.9 0 0 1 2.7 2.7l-8.6 8.6-3.6.9.9-3.6z"/></symbol>
+    <symbol id="i-ellipsis" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.8" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-width="2.1"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7.5" stroke-width="2.4"/></symbol>
+    <symbol id="i-checkc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="currentColor" stroke="none"/><path d="M7.8 12.3l2.9 2.9 5.5-5.8" stroke="#fff" stroke-width="2.2"/></symbol>
+    <symbol id="i-reel" viewBox="0 0 24 24"><rect x="7" y="7" width="13" height="13" rx="3"/><path d="M4 16.5V7.5A3.5 3.5 0 0 1 7.5 4h9"/><path d="M11.8 10.6v5.8l4.6-2.9z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.8"/><circle cx="9" cy="10" r="1.6"/><path d="M3.8 17.2l5-4.4 4 3.4 2.8-2.3 4.6 4"/></symbol>
+    <symbol id="i-tray" viewBox="0 0 24 24"><path d="M4 13.5 6.3 6.4A2 2 0 0 1 8.2 5h7.6a2 2 0 0 1 1.9 1.4L20 13.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 13.5h4.5l1.2 2.2h4.6l1.2-2.2H20"/></symbol>
+    <symbol id="i-folders" viewBox="0 0 24 24"><path d="M4 14.6 5.9 9.5A2 2 0 0 1 7.8 8.2h8.4a2 2 0 0 1 1.9 1.3l1.9 5.1V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 14.6h4.3l1.1 2h5.2l1.1-2H20"/><path d="M7.2 4.6h9.6"/></symbol>
+    <symbol id="i-req" viewBox="0 0 24 24"><circle cx="9" cy="8.2" r="3.4"/><path d="M3.2 19.5c.7-3.4 3-5.4 5.8-5.4s5.1 2 5.8 5.4"/><path d="M16.4 7.6a2.4 2.4 0 1 1 3.2 2.3c-.6.2-1 .7-1 1.3v.5"/><circle cx="18.6" cy="14.9" r=".6" fill="currentColor"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="4.5" rx="1.2"/><path d="M5 9v9.2A1.8 1.8 0 0 0 6.8 20h10.4a1.8 1.8 0 0 0 1.8-1.8V9M10 12.8h4"/></symbol>
+    <symbol id="i-eyeslash" viewBox="0 0 24 24"><path d="M3 12s3.3-6 9-6 9 6 9 6-3.3 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.7"/><path d="M4.5 4.5l15 15"/></symbol>
+    <symbol id="i-signal" viewBox="0 0 19 12"><rect x="0" y="8" width="3.2" height="4" rx="1"/><rect x="5.2" y="5.5" width="3.2" height="6.5" rx="1"/><rect x="10.4" y="3" width="3.2" height="9" rx="1"/><rect x="15.6" y="0" width="3.2" height="12" rx="1"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 17 12"><path d="M8.5 2.3c2.5 0 4.8 1 6.5 2.6l1.3-1.3A11 11 0 0 0 8.5.4 11 11 0 0 0 .7 3.6L2 4.9a9.2 9.2 0 0 1 6.5-2.6z"/><path d="M8.5 5.9c1.5 0 2.9.6 3.9 1.6l1.3-1.3a7.4 7.4 0 0 0-10.4 0l1.3 1.3c1-1 2.4-1.6 3.9-1.6z"/><path d="M8.5 9.3c.6 0 1.1.2 1.5.6L8.5 11.5 7 9.9c.4-.4.9-.6 1.5-.6z"/></symbol>
+    <symbol id="i-batt" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.6" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.2"/><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2z" opacity=".45"/></symbol>
+    <symbol id="i-warnf" viewBox="0 0 24 24"><path d="M10.27 3.6a2 2 0 0 1 3.46 0l8.5 14.9a2 2 0 0 1-1.73 3H3.5a2 2 0 0 1-1.73-3z" fill="currentColor" stroke="none"/><path d="M12 9.2v4.9" stroke="#fff" stroke-width="2.4"/><circle cx="12" cy="17.4" r="1.35" fill="#fff" stroke="none"/></symbol>
+    <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.6" fill="currentColor" stroke="none"/><path d="M2.2 19.6c.6-3.7 3.4-5.9 6.8-5.9s6.2 2.2 6.8 5.9z" fill="currentColor" stroke="none"/><circle cx="16.6" cy="9.2" r="2.9" fill="currentColor" stroke="none" opacity=".75"/><path d="M15.3 13.9c.4-.1.9-.2 1.3-.2 2.7 0 4.9 1.8 5.4 4.9h-4.6c-.4-1.8-1.1-3.4-2.1-4.7z" fill="currentColor" stroke="none" opacity=".75"/></symbol>
+    <symbol id="i-playf" viewBox="0 0 24 24"><path d="M8 5.6v12.8c0 .8.9 1.3 1.6.9l10-6.4a1 1 0 0 0 0-1.8l-10-6.4C8.9 4.3 8 4.8 8 5.6z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-xmark" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" stroke-width="2.2"/></symbol>
+    <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9.5h3l4.5-4v13L7 14.5H4z" fill="currentColor" stroke="none"/><path d="M15 9.2a4 4 0 0 1 0 5.6M17.6 6.8a7.5 7.5 0 0 1 0 10.4"/></symbol>
+    <symbol id="i-arrow-ur" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8" stroke-width="2"/></symbol>
+    <symbol id="i-retry" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.05-4.95" stroke-width="2"/><path d="M19 4.5v4.2h-4.2" stroke-width="2"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 13.5 6.3 6.4A2 2 0 0 1 8.2 5h7.6a2 2 0 0 1 1.9 1.4L20 13.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 13.5h4.5l1.2 2.2h4.6l1.2-2.2H20"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5 5 6v5.5c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V6z"/><path d="M8.8 12.2l2.3 2.3 4.2-4.6"/></symbol>
+    <symbol id="ic-aboard" viewBox="0 0 1024 1024"><path d="M650 216 H722 C766.2 216 802 251.8 802 296 V316 C802 368 795.2 402.1 815.6 436.8 C785.7 418.4 727.2 396 666 396 H650 C605.8 396 570 360.2 570 316 V296 C570 251.8 605.8 216 650 216Z" style="fill:var(--i-sec)"/><path d="M306 252 H430 C485.2 252 530 296.8 530 352 V384 C530 439.2 485.2 484 430 484 H376 C299.5 484 226.4 512 189 535 C214.5 491.6 206 449 206 384 V352 C206 296.8 250.8 252 306 252Z" style="fill:var(--i-ink)"/><path d="M162 572 H862 C836 614 808 654 784 684 C776 694 766 700 752 700 H250 C208 700 178 648 162 572Z" style="fill:var(--i-ink)"/><path d="M242 794 C291.5 772.7 328.5 772.7 378 794 C427.5 815.3 464.5 815.3 514 794 C563.5 772.7 600.5 772.7 650 794 C699.5 815.3 736.5 815.3 786 794" style="fill:none;stroke:var(--i-sec);stroke-width:36;stroke-linecap:round;stroke-linejoin:round"/></symbol>
+    <symbol id="ic-afloat" viewBox="0 0 1024 1024"><path d="M372 202 H652 C740.4 202 812 273.6 812 362 V402 C812 490.4 740.4 562 652 562 H432 C333 562 238.4 598.3 190 628 C223 571.9 212 513 212 422 V362 C212 273.6 283.6 202 372 202Z M416 382 C416 406.3 396.3 426 372 426 C347.7 426 328 406.3 328 382 C328 357.7 347.7 338 372 338 C396.3 338 416 357.7 416 382Z M556 382 C556 406.3 536.3 426 512 426 C487.7 426 468 406.3 468 382 C468 357.7 487.7 338 512 338 C536.3 338 556 357.7 556 382Z M716 382 C716 406.3 696.3 426 672 426 C647.7 426 628 406.3 628 382 C628 357.7 647.7 338 672 338 C696.3 338 716 357.7 716 382Z" style="fill:var(--i-ink)" fill-rule="evenodd"/><path d="M212 706 C248.4 679.3 275.6 679.3 312 706 C348.4 732.7 375.6 732.7 412 706 C448.4 679.3 475.6 679.3 512 706 C548.4 732.7 575.6 732.7 612 706 C648.4 679.3 675.6 679.3 712 706 C748.4 732.7 775.6 732.7 812 706" style="fill:none;stroke:var(--i-ink);stroke-width:40;stroke-linecap:round;stroke-linejoin:round"/><path d="M312 790 C348.4 763.3 375.6 763.3 412 790 C448.4 816.7 475.6 816.7 512 790 C548.4 763.3 575.6 763.3 612 790 C648.4 816.7 675.6 816.7 712 790" style="fill:none;stroke:var(--i-sec);stroke-width:40;stroke-linecap:round;stroke-linejoin:round"/></symbol>
+    <symbol id="ic-shores" viewBox="0 0 1024 1024"><path d="M228 500 H320 C375.2 500 420 544.8 420 600 V628 C420 683.2 375.2 728 320 728 H298 C221.5 728 148.4 756 111 779 C136.5 735.6 128 693 128 628 V600 C128 544.8 172.8 500 228 500Z" style="fill:var(--i-sec)"/><path d="M704 252 H796 C851.2 252 896 296.8 896 352 V380 C896 445 887.5 487.6 913 531 C875.6 508.1 802.5 480 726 480 H704 C648.8 480 604 435.2 604 380 V352 C604 296.8 648.8 252 704 252Z" style="fill:var(--i-ink)"/><circle cx="370" cy="470" r="26" style="fill:var(--i-sec)"/><circle cx="450" cy="412" r="26" style="fill:var(--i-sec)"/><circle cx="534" cy="372" r="26" style="fill:var(--i-sec)"/><path d="M128 866 C174.6 847.3 209.4 847.3 256 866 C302.6 884.7 337.4 884.7 384 866 C430.6 847.3 465.4 847.3 512 866 C558.6 884.7 593.4 884.7 640 866 C686.6 847.3 721.4 847.3 768 866 C814.6 884.7 849.4 884.7 896 866" style="fill:none;stroke:var(--i-sec);stroke-width:32;stroke-linecap:round;stroke-linejoin:round"/></symbol>
+    <symbol id="ic-still" viewBox="0 0 1024 1024"><path d="M390 196 H634 C716.8 196 784 263.2 784 346 V386 C784 468.8 716.8 536 634 536 H470 C366.5 536 267.6 574 217 605 C251.5 546.4 240 483.5 240 386 V346 C240 263.2 307.2 196 390 196Z" style="fill:var(--i-ink)"/><path d="M156 644 H868" style="fill:none;stroke:var(--i-ink);stroke-width:32;stroke-linecap:round;stroke-linejoin:round"/><rect x="272" y="716" width="480" height="36" rx="18" style="fill:var(--i-sec)"/><rect x="362" y="788" width="300" height="36" rx="18" style="fill:var(--i-sec)"/></symbol>
+    <!-- Round 2: the icon's four shapes, unfilled, so the coloured icon and Welcome's scene can colour each one -->
+    <path id="pp-back" d="M650 216 H722 C766.2 216 802 251.8 802 296 V316 C802 368 795.2 402.1 815.6 436.8 C785.7 418.4 727.2 396 666 396 H650 C605.8 396 570 360.2 570 316 V296 C570 251.8 605.8 216 650 216Z"/>
+    <path id="pp-front" d="M306 252 H430 C485.2 252 530 296.8 530 352 V384 C530 439.2 485.2 484 430 484 H376 C299.5 484 226.4 512 189 535 C214.5 491.6 206 449 206 384 V352 C206 296.8 250.8 252 306 252Z"/>
+    <path id="pp-hull" d="M162 572 H862 C836 614 808 654 784 684 C776 694 766 700 752 700 H250 C208 700 178 648 162 572Z"/>
+    <path id="pp-wave" d="M242 794 C291.5 772.7 328.5 772.7 378 794 C427.5 815.3 464.5 815.3 514 794 C563.5 772.7 600.5 772.7 650 794 C699.5 815.3 736.5 815.3 786 794"/>
+    <symbol id="ic-aboard-c" viewBox="0 0 1024 1024"><use href="#pp-back" style="fill:var(--c-back)"/><use href="#pp-front" style="fill:var(--c-front)"/><use href="#pp-hull" style="fill:var(--c-hull)"/><use href="#pp-wave" style="fill:none;stroke:var(--c-wave);stroke-width:36;stroke-linecap:round;stroke-linejoin:round"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header class="head">
+    <div>
+      <h1>Ferry Design v3</h1>
+      <p class="sub"><b>Round 2</b>, after your answers: a complete redesign of Welcome and the icon in colour, with the launch screen to match. Below them, round 1 as you saw it: the app icon, the launch screen, an account stack that no longer overlaps, and a pass over the rest of the app. Reasoning, measurements and every finding are in REVIEW-2026-10-15.md. Earlier: mockups-v2.html (inbox density), mockups.html (v1).</p>
+      <div class="pr" aria-label="Design principles">
+        <span>Color means account</span><span>The sea is Ferry’s, and only scenery</span><span>Accounts side by side, never stacked</span><span>The account stays legible over media</span>
+      </div>
+    </div>
+    <div class="seg" role="group" aria-label="Theme">
+      <button type="button" data-t="auto" aria-pressed="true">Auto</button>
+      <button type="button" data-t="light" aria-pressed="false">Light</button>
+      <button type="button" data-t="dark" aria-pressed="false">Dark</button>
+    </div>
+  </header>
+  <div class="legend">
+    <span class="k">Accounts (fictional)</span>
+    <span class="tag a-ocean"><span class="mi s16">A</span>Alex <span class="h">· @alex.personal</span></span>
+    <span class="tag a-ember"><span class="mi s16">S</span>Alex Studio <span class="h">· @alexstudio · professional</span></span>
+    <span style="margin-left:8px;font-size:13px;color:var(--page-muted)">Band, Market, Club and Dogs appear only in the 3–6 account cases. Contacts are fictional; avatars and photos are CSS placeholders.</span>
+  </div>
+
+<main>
+  <!-- ======================= ROUND 2 · WELCOME ======================= -->
+  <section id="welcome">
+    <h2>Round 2 · Welcome</h2>
+    <p class="lead">You asked for a complete redesign of Welcome. Here are three directions, all built from the new icon’s ferry. Each one says “Ferry”, keeps the three promises, makes “Connect Instagram account” the only primary action and keeps “Not affiliated with Instagram or Meta.” Motion is subtle, stops under Reduce Motion and never holds back the button.</p>
+
+    <div class="opt">
+      <h3>A · The crossing <span class="verdict yes">Recommended</span></h3>
+      <p>The name, then the picture that explains it: the icon’s ferry on a calm sea, carrying your accounts as two bubbles in their own colours. The swell drifts, the ferry rides it, and the bubbles come aboard once when the screen opens. Words and the button sit on the plain background, so the sea stays a picture and colour in the app still means account.</p>
+      <div class="frames" data-cap=".62">
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="wa-light"></div></div></div><figcaption><span class="id">A · LIGHT</span><b>The crossing</b><p>Wordmark, headline, the scene, three promises, one button. The bubbles carry the accounts’ marks (A, S), so the identity system is taught before the first login. The swell and the ferry move here as specified.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="wa-dark"></div></div></div><figcaption><span class="id">A · DARK</span><b>The same crossing at night</b><p>Black sky, a deeper sea. The white ferry and the account colours don’t change; only the sea and the haze have dark values.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="wa-ax"></div></div></div><figcaption><span class="id">A · AX3</span><b>Accessibility size AX3</b><p>Text grows; the wordmark stops growing at AX1; the scene shrinks to 70% and stays still here. The legal line moves into the scroll, so the pinned bar holds only the button.</p></figcaption></figure>
+      </div>
+      <div class="facts">
+        <div><b>In one screen</b>Name, the crossing, two accounts, three promises, one button. Nothing behind a swipe.</div>
+        <div><b>Build</b>One <code>Canvas</code> for the sea and the icon’s three shapes as SwiftUI <code>Shape</code>s, in a <code>TimelineView</code>. No assets, no dependencies.</div>
+        <div><b>Risk</b>The most motion of the three. It pauses under Reduce Motion, in Low Power Mode and when the app isn’t active, and never touches text or the button.</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>B · Postcards</h3>
+      <p>The name at the top, then one card per promise in a pager, with the button always below. Each promise gets its own picture (the ferry, a reel playing in a chat, an empty sea). But two of the three promises are hidden until you swipe, people tend to skip pagers, and it costs three scenes instead of one.</p>
+      <div class="frames" data-cap=".62">
+        <figure><div class="dw"><div class="device"><div class="phone grouped" data-f="wb"></div></div></div><figcaption><span class="id">B · CARD 1 OF 3</span><b>One promise per card</b><p>The next card peeks in from the right, with dots below. No auto-advance. Each card’s scene plays once when it arrives.</p></figcaption></figure>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>C · Boarding pass</h3>
+      <p>Typographic and nearly monochrome: a ticket for the crossing. From Instagram, to one inbox, via your own server. The passengers are your accounts, and the feed, Explore and the algorithm are left on shore. It explains the bridge better than A or B and needs no illustration. But a ticket is a joke you only enjoy once, and “From Instagram” on a ticket can read as an Instagram product.</p>
+      <div class="frames" data-cap=".62">
+        <figure><div class="dw"><div class="device"><div class="phone grouped" data-f="wc"></div></div></div><figcaption><span class="id">C · TICKET</span><b>The crossing as a ticket</b><p>When the screen opens, the small ferry sails along the route once (1.6 s). With Reduce Motion it waits at the end. At accessibility sizes, the two columns stack.</p></figcaption></figure>
+      </div>
+    </div>
+
+    <div class="panels">
+      <div class="panel">
+        <h3>Why A</h3>
+        <ul class="notes">
+          <li><b>It explains the name with the icon’s own ferry.</b> Icon, launch screen and Welcome tell one story: the ferry you tapped is the one on the screen.</li>
+          <li><b>Everything is visible at once.</b> The three promises and the button need no swipe. B hides two of the three.</li>
+          <li><b>It teaches the identity system before the first login:</b> two accounts aboard, side by side, each in its colour with its mark.</li>
+          <li><b>The motion is ambient and cheap:</b> one <code>TimelineView</code> at 30 fps, paused whenever it shouldn’t run. Nothing waits for it.</li>
+          <li><b>The sea stays a picture.</b> Text and the button sit on the system background, so “colour means account” still holds for everything you read or tap.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Copy</h3>
+        <div class="tw"><table class="tbl">
+          <tr><th>Key</th><th>String</th></tr>
+          <tr><td><code>welcome.brand</code></td><td>Ferry</td></tr>
+          <tr><td><code>welcome.title</code></td><td>All your Instagram DMs.⏎None of the feed. (unchanged words, now on two lines)</td></tr>
+          <tr><td><code>welcome.feature1–3</code></td><td>Every account, one inbox · Reels play right in the chat · No feed, no Explore, no algorithm</td></tr>
+          <tr><td><code>welcome.cta</code></td><td>Connect Instagram account</td></tr>
+          <tr><td><code>welcome.legal</code></td><td>Not affiliated with Instagram or Meta.</td></tr>
+          <tr><td><code>welcome.scene</code></td><td>A ferry carrying messages across calm water. (VoiceOver only)</td></tr>
+        </table></div>
+      </div>
+      <div class="panel wide">
+        <h3>A · Layout (393 × 852 pt, Large text)</h3>
+        <div class="tw"><table class="tbl">
+          <tr><th>Part</th><th>Where</th><th>Detail</th></tr>
+          <tr><td>Wordmark</td><td class="n">y 116, 57 tall</td><td>“Ferry”, SF Pro Rounded Bold 48 pt (<code>@ScaledMetric(relativeTo: .largeTitle)</code>, capped at 62 pt, its AX1 size), tracking −0.5, <code>.primary</code>, centred</td></tr>
+          <tr><td>Headline</td><td class="n">8 below, 2 lines</td><td><code>.title3</code> regular, <code>.primary</code>, centred, at most 320 wide; line break after “DMs.”</td></tr>
+          <tr><td>Scene</td><td class="n">16 below, 393 × 224</td><td>Full bleed. Horizon at 132; the ferry is the icon’s paths × 0.3 (hull 210 wide), deck 6 below the horizon; the sea band runs from the horizon to a wave edge at 214 (amplitude 5, wavelength 131)</td></tr>
+          <tr><td>Promises</td><td class="n">28 below, 3 × 36, 16 apart</td><td>A 300-wide column, centred, rows leading-aligned. 36 pt disc in <code>tertiarySystemFill</code> with the SF Symbol at <code>.body</code> (<code>tray</code>, <code>play.rectangle.on.rectangle</code>, <code>eye.slash</code>); text <code>.body</code></td></tr>
+          <tr><td>Space</td><td class="n">flexible</td><td><code>Spacer(minLength: 24)</code>. On taller phones the extra height splits 1 : 1 above the wordmark and here.</td></tr>
+          <tr><td>Bar</td><td class="n">button 732–782, legal 794–810</td><td><code>safeAreaBar(edge: .bottom)</code>: button 50 tall, 20 side margins, <code>.glassProminent</code>, <code>.tint(.primary)</code>, <code>.labelOnTint()</code> (unchanged); legal <code>.caption</code> <code>.inkSecondary</code>, 12 below</td></tr>
+          <tr><td>iPhone SE (375 × 667)</td><td colspan="2">Fits without scrolling: wordmark at 44, promises end at 549, button at 581.</td></tr>
+        </table></div>
+      </div>
+      <div class="panel wide">
+        <h3>A · The scene, back to front</h3>
+        <div class="tw"><table class="tbl">
+          <tr><th>Layer</th><th>Shape</th><th>Light</th><th>Dark</th></tr>
+          <tr><td>Sky</td><td>nothing: the screen’s <code>systemBackground</code></td><td class="n">#FFFFFF</td><td class="n">#000000</td></tr>
+          <tr><td>Haze</td><td>40 pt above the horizon, clear → <code>seaHaze</code></td><td class="n"><span class="sw-chip" style="background:#E4F0F3"></span>#E4F0F3</td><td class="n"><span class="sw-chip" style="background:#0B1C27"></span>#0B1C27</td></tr>
+          <tr><td>Sea band</td><td>horizon to the wave edge; vertical gradient <code>seaHorizon</code> → <code>seaFloor</code></td><td class="n"><span class="sw-chip" style="background:#1A7893"></span>#1A7893 → <span class="sw-chip" style="background:#0D3F5B"></span>#0D3F5B</td><td class="n"><span class="sw-chip" style="background:#0F4561"></span>#0F4561 → <span class="sw-chip" style="background:#05192A"></span>#05192A</td></tr>
+          <tr><td>Swell</td><td>2 sine strokes, 1.5 pt, round caps, at 186 and 202; wavelength 120 and 160, amplitude 2.5</td><td class="n"><span class="sw-chip" style="background:#9ED6E2"></span><code>foam</code> #9ED6E2 at 50% and 35%</td><td class="n">foam at 40% and 28%</td></tr>
+          <tr><td>Wake</td><td>2 short strokes, 2 pt, behind the stern at the waterline</td><td class="n">foam, 35–70%</td><td class="n">same</td></tr>
+          <tr><td>Hull</td><td>icon hull × 0.3</td><td class="n">#FFFFFF (5.1 : 1 on the horizon)</td><td class="n">#FFFFFF (10.4 : 1)</td></tr>
+          <tr><td>Bubbles</td><td>icon bubbles × 0.3, front then back; marks centred, SF Pro Rounded Bold 36 and 29 pt, white</td><td colspan="2"><code>AccountColor.ocean</code> “A” (front) and <code>.ember</code> “S” (back): the same fills in both modes. In the app the picture uses fixed sample identities, not the user’s.</td></tr>
+        </table></div>
+      </div>
+      <div class="panel wide">
+        <h3>A · Motion</h3>
+        <div class="tw"><table class="tbl">
+          <tr><th>Moment</th><th>What moves</th><th>Timing</th><th>Curve</th></tr>
+          <tr><td>Arrive (once per appearance)</td><td>The ferry glides in 28 pt from the left and fades in</td><td class="n">0 → 0.7 s</td><td><code>.smooth(duration: 0.7)</code></td></tr>
+          <tr><td>Board</td><td>Each bubble rises 12 pt from the deck, scales 0.6 → 1 and fades in; its mark comes with it</td><td class="n">front 0.25 s, back 0.40 s; 0.55 s each</td><td><code>.spring(duration: 0.55, bounce: 0.3)</code></td></tr>
+          <tr><td>Bob</td><td>The ferry with its bubbles, ±1.5 pt</td><td class="n">4.8 s period</td><td>sine of the timeline date</td></tr>
+          <tr><td>Roll</td><td>±0.8° around the keel’s centre</td><td class="n">6.4 s period, phase +1.1 rad</td><td>sine</td></tr>
+          <tr><td>Swell</td><td>The two lines drift left, so the ferry seems to move toward its bow; the edge drifts too</td><td class="n">8 and 5 pt/s; edge 3 pt/s; wraps every wavelength</td><td>linear</td></tr>
+          <tr><td>Wake</td><td>Opacity 0.35 ↔ 0.7, the two strokes out of phase</td><td class="n">2.4 s</td><td>sine</td></tr>
+          <tr><td>Never</td><td colspan="3">Text, promises and the button never animate. The button is enabled on the first frame, and nothing waits for the entrance.</td></tr>
+          <tr><td>Paused</td><td colspan="3">Reduce Motion, Low Power Mode, <code>scenePhase != .active</code>, or Welcome covered by a pushed step. 30 fps at most.</td></tr>
+          <tr><td>Reduce Motion</td><td colspan="3">No glide, no boarding, no bob, roll, swell or wake: the scene is drawn once at rest (level ferry, bubbles already in colour) and appears with the screen.</td></tr>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h3>A · Accessibility</h3>
+        <ul class="notes">
+          <li><b>Order:</b> (1) “Ferry. All your Instagram DMs. None of the feed.”, one element with the header trait; (2) the scene, one image: “A ferry carrying messages across calm water.”; (3–5) the promises, one element each, glyphs hidden; (6) “Connect Instagram account”, button; (7) the legal line.</li>
+          <li><b>Dynamic Type:</b> every text style scales. The wordmark stops at 62 pt. The scene keeps its marks at Large (<code>.dynamicTypeSize(.large)</code>, as today) and shrinks to 70% (157 pt) at accessibility sizes. The button’s label may wrap to two or three lines (<code>minHeight: 50</code>). At accessibility sizes the legal line moves to the end of the scroll content.</li>
+          <li><b>Contrast:</b> all text is on <code>systemBackground</code> in label or <code>inkSecondary</code>. Marks are white on account fills (5.18 : 1 or more).</li>
+          <li><b>Increase Contrast:</b> no haze; swell lines at full foam. <b>Reduce Transparency:</b> nothing changes (no glass in the scene).</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>A · SwiftUI mapping</h3>
+<pre class="code">ScrollView {
+  VStack(spacing: 0) {
+    Header()         // wordmark + headline
+    CrossingScene()  // the picture
+      .padding(.top, 16)
+    PromiseList()    // 300 wide
+      .padding(.top, 28)
+  }
+  .frame(minHeight: viewport, alignment: .top)
+}
+.scrollBounceBehavior(.basedOnSize)
+.safeAreaBar(edge: .bottom) { ConnectBar() }
+.toolbar(.hidden, for: .navigationBar)
+
+// CrossingScene
+TimelineView(.animation(minimumInterval: 1/30,
+                        paused: still)) { tl in
+  let t = tl.date.timeIntervalSince(start)
+  ZStack(alignment: .top) {
+    Canvas { ctx, size in sea(&amp;ctx, size, t) }
+    Ferry(front: .ocean, back: .ember)
+      .offset(y: 1.5 * sin(2 * .pi * t / 4.8))
+      .rotationEffect(.degrees(0.8 *
+         sin(2 * .pi * t / 6.4 + 1.1)),
+         anchor: .bottom)
+  }
+}
+.frame(height: 224 * (ax ? 0.7 : 1))
+// still = reduceMotion || lowPower
+//         || scenePhase != .active</pre>
+        <p style="margin:10px 0 0;font-size:13px;color:var(--page-muted)"><code>FerryShape</code> (one new file) holds the three paths from <code>ferry-icon-color.svg</code> in 1024 units, scaled to its rect. O4 and O6 reuse the hull. Tokens go in <code>Tokens.swift</code>: <code>seaHorizon</code>, <code>seaFloor</code>, <code>seaHaze</code>, <code>foam</code>, with the comment “scenery only”.</p>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>How O2–O6 echo it</h3>
+      <p>No redesign: one shared detail and the same rules. The ferry’s deck carries the account through onboarding, the sea stays on Welcome, and from O2 on the screens are monochrome until O5 gives the account its colour.</p>
+      <div class="frames" data-cap=".5">
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="e-o4"></div></div></div><figcaption><span class="id">O4 · ECHO</span><b>The account on deck</b><p>The 88 pt avatar sits on a 150 pt hull in <code>systemFill</code>, with a 2 pt wave in <code>tertiaryLabel</code>. While “Syncing” runs, avatar and hull bob (±1.5 pt, 4.8 s); they settle when synced. Static with Reduce Motion.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="e-o6"></div></div></div><figcaption><span class="id">O6 · ECHO</span><b>Room aboard for another</b><p>The real avatar (now in its O5 colour) and the dashed seat side by side, 16 pt apart, on one 210 pt hull. The current build already removed the old −14 pt overlap (principle 9).</p></figcaption></figure>
+      </div>
+      <div class="panels">
+        <div class="panel wide">
+          <div class="tw"><table class="tbl">
+            <tr><th>Screen</th><th>Echo</th><th>Unchanged</th></tr>
+            <tr><td>O2 Sign in</td><td>The ferry glyph, monochrome (ink and <code>inkSecondary</code>, no sea), 44 pt, centred as the form’s first row above the explanation, background clear</td><td>Fields, copy, the pinned Sign In button</td></tr>
+            <tr><td>O3 Connect</td><td>Nothing: it’s instagram.com in a sheet</td><td>Everything</td></tr>
+            <tr><td>O4 Connecting</td><td>The deck under the avatar, bobbing only while syncing</td><td>Checklist, copy, Continue</td></tr>
+            <tr><td>O5 Name and color</td><td>Nothing new: its preview already shows the account’s bubble taking its colour, which is the boarding moment</td><td>Everything</td></tr>
+            <tr><td>O6 Add another?</td><td>Two seats side by side on one deck, 16 pt apart (as the current build has them)</td><td>Copy, buttons</td></tr>
+            <tr><td>All steps</td><td colspan="2">The rounded face is for the wordmark only; titles stay SF Pro. Same 50 pt button and 20 pt margins in a <code>safeAreaBar</code>. The only motion is the same bob, with the same pause rules.</td></tr>
+          </table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= ROUND 2 · ICON IN COLOUR ======================= -->
+  <section id="color">
+    <h2>Round 2 · Icon in colour</h2>
+    <p class="lead">You chose “Two aboard” with tint, so the icon is now in colour. That replaces round 1’s rule that the icon is monochrome. The new rule: the sea is Ferry’s colour and appears only as scenery (the icon, the launch screen and Welcome’s picture). Colour in the UI still means account. Three treatments of the same paths, each in light, dark and tinted at 120 pt, then at 60 pt among placeholder icons.</p>
+
+    <div class="opt">
+      <h3>1 · Deep water <span class="verdict yes">Recommended</span></h3>
+      <p>A white ferry on deep water. The tile is the sea, a petrol-blue gradient that is lighter at the top. The ferry and the first bubble are white; the second bubble and the wave are foam. In dark mode the colour moves onto the glyph, as Apple’s own icons do: a sea-blue ferry under white and foam bubbles.</p>
+      <div class="big3" data-cicon="dw"></div>
+      <div class="hsrow" data-chs="dw"></div>
+      <div class="facts">
+        <div><b>At 60 pt</b>It reads as a boat first. White on the sea is 5 : 1 at the tile’s lightest point and 8 : 1 around the hull.</div>
+        <div><b>Tinted</b>iOS drops colour there, so it matches round 1: ferry and front bubble take the full tint, the rest about half.</div>
+        <div><b>Risk</b>A white glyph on a blue tile is Signal’s and Telegram’s family. A deeper, greener blue and a hull instead of a bubble or a plane keep it apart.</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>2 · Harbour</h3>
+      <p>Round 1’s white tile with the glyph in sea colours: a deep-sea ferry and front bubble, a sea-blue second bubble and wave. It’s the closest to what you saw in round 1, and it opens into the white inbox with nothing to jump. But the colour lives only in the glyph, and a light tile fades into light wallpapers.</p>
+      <div class="big3" data-cicon="hb"></div>
+      <div class="hsrow" data-chs="hb"></div>
+    </div>
+
+    <div class="opt">
+      <h3>3 · Night crossing</h3>
+      <p>A night sea: the tile goes from night blue to deep teal, with a pale sea-blue glyph. It’s round 1’s Tinted preview (pale blue on a dark tile) made the default, so if that preview is what “with tint” meant, this is the one. It’s quiet and elegant, but close to today’s black icon: it sinks into dark wallpapers, and its dark variant hardly differs from the default.</p>
+      <div class="big3" data-cicon="nc"></div>
+      <div class="hsrow" data-chs="nc"></div>
+    </div>
+
+    <div class="opt">
+      <h3>Side by side</h3>
+      <p>The three on one Home Screen, in light and dark, among the same placeholders.</p>
+      <div class="hsrow cmp" data-cmp></div>
+    </div>
+
+    <div class="panels">
+      <div class="panel">
+        <h3>Why Deep water</h3>
+        <ul class="notes">
+          <li><b>It pictures the name:</b> a white ferry on the sea. No other treatment says “ferry” as fast.</li>
+          <li><b>It holds up at small sizes</b> (60 pt, and 40 pt in Spotlight and 29 pt in Settings): a white silhouette on a deep tile.</li>
+          <li><b>Its colour belongs to no account.</b> The sea sits between Ocean and Teal and is darker than both, and it never appears as UI.</li>
+          <li><b>Dark mode follows Apple’s pattern</b> (Messages, Mail): the colour moves from the tile to the glyph.</li>
+          <li><b>It’s ownable.</b> The blue messaging icons are bright, flat and bubble-shaped; this one is deep, graded, and a boat.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Ruled out</h3>
+        <ul class="notes">
+          <li><b>A warm dusk</b> (orange, pink and violet sky): that’s Instagram’s gradient, the one thing we must not resemble.</li>
+          <li><b>Bright sky blue</b> (#0099FF to #2AABEE): Messenger’s and Telegram’s territory.</li>
+          <li><b>Sky above, sea below</b> (a two-tone tile): at 60 pt the glyph splits in two, with dark bubbles above the horizon and a white hull below, and stops reading as one mark.</li>
+          <li><b>Account colours on the bubbles</b> (Ocean and Ember): people choose their own colours, so a fixed pair would teach the wrong thing.</li>
+        </ul>
+      </div>
+      <div class="panel wide">
+        <h3>Recommended icon: the files</h3>
+        <p><code>docs/design/ferry-icon-color.svg</code>, <code>ferry-icon-color-dark.svg</code>, <code>ferry-icon-color-tinted.svg</code>. 1024 × 1024, the same paths as round 1, one linear gradient, no filters, masks or text. The dark file now has four fills: the hull no longer matches the front bubble.</p>
+        <div class="tw"><table class="tbl">
+          <tr><th>Variant</th><th>Background</th><th>Front bubble</th><th>Hull</th><th>Back bubble</th><th>Wave</th></tr>
+          <tr><td>Light (default)</td><td><span class="sw-chip" style="background:#1A7893"></span>#1A7893 → <span class="sw-chip" style="background:#0A2E47"></span>#0A2E47, top to bottom, opaque</td><td class="n">#FFFFFF</td><td class="n">#FFFFFF</td><td class="n"><span class="sw-chip" style="background:#9ED6E2"></span>#9ED6E2</td><td class="n">#9ED6E2</td></tr>
+          <tr><td>Dark</td><td>transparent (iOS backdrop)</td><td class="n"><span class="sw-chip" style="background:#F4F9FA"></span>#F4F9FA</td><td class="n"><span class="sw-chip" style="background:#2F9CC5"></span>#2F9CC5</td><td class="n"><span class="sw-chip" style="background:#8FCBD9"></span>#8FCBD9</td><td class="n">#2F9CC5</td></tr>
+          <tr><td>Tinted</td><td>transparent</td><td class="n">#FFFFFF</td><td class="n">#FFFFFF</td><td class="n">#8A8A8A</td><td class="n">#8A8A8A</td></tr>
+        </table></div>
+        <ul class="notes">
+          <li>Same CoreGraphics rules as round 1: top-left origin, absolute <code>M H V C Z</code>, each shape one closed outline filled nonzero, the wave a 36 px stroke with round caps and joins. Light: <code>noneSkipLast</code> and <code>drawLinearGradient</code> from (0, 0) to (0, 1024). Dark and tinted: <code>premultipliedLast</code> on a cleared context.</li>
+          <li>Contrast: on dark, the hull is 5.4 : 1 and the back bubble 9.5 : 1 against #1C1C1E. On light, the back bubble is about 4 : 1 against the tile behind it.</li>
+          <li>Look-alike check: no camera outline and no warm hue gradient (Instagram); no bolt and no blue-to-pink gradient bubble (Messenger); no loop (Meta); no paper plane (Telegram, Instagram Direct).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>Launch screen, matched</h3>
+      <p>Still static (<code>UILaunchScreen</code>), still the mark centred at 120 × 120 pt. In light mode the background takes the icon’s sea, so the icon opens into the same colour and mark. Dark mode stays black with the dark icon’s glyph, which matches both the dark icon and the black inbox. All three frames are forced to their mode, whatever this page’s theme.</p>
+      <div class="frames" data-cap=".5">
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="l2-sea"></div></div></div><figcaption><span class="id">LAUNCH · LIGHT</span><b>Sea, white mark</b><p>#12536D, the icon gradient’s midpoint, where the glyph sits. The status bar is white here (<code>UIStatusBarStyleLightContent</code>).</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="l2-dark"></div></div></div><figcaption><span class="id">LAUNCH · DARK</span><b>Black, the dark icon’s glyph</b><p>White and foam bubbles, a sea-blue ferry and wave, on the inbox’s black.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="l2-alt"></div></div></div><figcaption><span class="id">ALTERNATIVE · LIGHT</span><b>White, sea-coloured mark</b><p>Hands off to the white inbox with nothing to jump, but the sea icon then opens into white. Choose this if the hand-off matters more than the zoom.</p></figcaption></figure>
+      </div>
+      <div class="panels">
+        <div class="panel wide">
+          <h3>Spec</h3>
+          <div class="tw"><table class="tbl">
+            <tr><th>Item</th><th>Value</th></tr>
+            <tr><td>Info.plist</td><td><code>UILaunchScreen</code> = { <code>UIColorName</code>: <code>LaunchBackground</code>, <code>UIImageName</code>: <code>LaunchMark</code> } (unchanged), plus <code>UIStatusBarStyle</code> = <code>UIStatusBarStyleLightContent</code>, which applies at launch only while the app’s screens set their own status bar. <b>Verify</b> on device.</td></tr>
+            <tr><td>LaunchBackground (color set)</td><td>Any <span class="sw-chip" style="background:#12536D"></span>#12536D · Dark <span class="sw-chip" style="background:#000"></span>#000000</td></tr>
+            <tr><td>LaunchMark (image set)</td><td>120 × 120 pt: @2x 240 px, @3x 360 px, transparent. Any = <code>ferry-icon-color.svg</code> without step 1 (white and foam). Dark = <code>ferry-icon-color-dark.svg</code> as is. Render with the icon script.</td></tr>
+            <tr><td>Placement</td><td>Unchanged: centred by iOS, glyph about 82 × 72 pt, no safe-area offset</td></tr>
+            <tr><td>After launch</td><td>No transition, as approved. In light mode the colour changes once whichever background you pick: from the sea to the white inbox here (iOS cross-fades it, on cold launches only), or from the sea icon to a white screen during the zoom with the alternative.</td></tr>
+          </table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="round">Round 1 · v3 as first published, 15 Oct</div>
+
+  <!-- ======================= 1. ICON ======================= -->
+  <section id="icon">
+    <h2>1 · App icon</h2>
+    <p class="sup"><b>Superseded</b>You chose A in colour: see “Round 2 · Icon in colour”. The monochrome files below stay for reference.</p>
+    <p class="lead">Four directions on the name: Ferry carries your messages across, from Instagram, through your own bridge, into one calm inbox. All four are monochrome (color means account, so the icon has none), built from plain paths, and checked at 60 pt next to neutral placeholder icons. None uses a camera, a gradient of hues or a lightning bolt.</p>
+
+    <div class="opt">
+      <h3>A · Two aboard <span class="verdict yes">Recommended</span></h3>
+      <p>A ferry with two bubbles on deck, side by side, over one wave. It says the name (a boat), the job (messages carried across) and the product’s one idea (several accounts, kept apart, travelling together). It keeps today’s two bubbles, so people who know the current icon still recognize it.</p>
+      <div class="big3" data-icon="ic-aboard"></div>
+      <div class="hsrow" data-hs="ic-aboard"></div>
+      <div class="facts">
+        <div><b>At 60 pt</b>Hull and bubbles read as a boat at a glance; the wave is 2 pt thick and still visible.</div>
+        <div><b>Tinted</b>Front bubble and hull take the full tint, back bubble and wave about half: two accounts, one boat.</div>
+        <div><b>Risk</b>The most detailed of the four (four shapes). It must stay a silhouette: no portholes, no mast.</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>B · Afloat <span class="verdict">Runner-up</span></h3>
+      <p>One bubble riding the water. The three dots say “on its way” and double as portholes. The boldest at 60 pt, but it’s a chat bubble first and a ferry second, and a three-dot bubble is a common chat glyph. It doesn’t say “several accounts”.</p>
+      <div class="big3" data-icon="ic-afloat"></div>
+      <div class="hsrow" data-hs="ic-afloat"></div>
+    </div>
+
+    <div class="opt">
+      <h3>C · Two shores</h3>
+      <p>Two bubbles on opposite shores, with a dotted crossing between them. A clear story at full size. At 60 pt the dots fade, and the picture reads as “sync” or “transfer”, which many apps already use.</p>
+      <div class="big3" data-icon="ic-shores"></div>
+      <div class="hsrow" data-hs="ic-shores"></div>
+    </div>
+
+    <div class="opt">
+      <h3>D · Still water</h3>
+      <p>A bubble on the horizon and its reflection: the calmest of the four. At 60 pt the reflection bars look like lines of text under a bubble, so it reads as “a message” rather than “a crossing”.</p>
+      <div class="big3" data-icon="ic-still"></div>
+      <div class="hsrow" data-hs="ic-still"></div>
+    </div>
+
+    <div class="panels">
+      <div class="panel">
+        <h3>Why A</h3>
+        <ul class="notes">
+          <li><b>It explains the name.</b> “Ferry” is unusual for a chat app; a boat makes it click at once. B, C and D need the name to explain the picture.</li>
+          <li><b>It carries the product’s idea:</b> two accounts aboard one ferry, side by side, never merged. The account stack (section 3) now follows the same rule.</li>
+          <li><b>It stands out in a grid of bubbles.</b> Messages, WhatsApp, Signal and Messenger are all bubbles; a hull is not.</li>
+          <li><b>Continuity:</b> today’s icon is two bubbles. A keeps them and adds the boat.</li>
+          <li><b>Light by default.</b> The default appearance is white, like the app’s light chrome, so the launch zoom from icon to launch screen is seamless. Dark mode gets the dark variant on iOS’s own backdrop. Today’s icon is black in both.</li>
+        </ul>
+      </div>
+      <div class="panel wide">
+        <h3>Recommended icon: the files</h3>
+        <p><code>docs/design/ferry-icon.svg</code>, <code>ferry-icon-dark.svg</code>, <code>ferry-icon-tinted.svg</code>. 1024 × 1024, paths and one linear gradient, no filters, masks or text. Each file lists the shapes in drawing order.</p>
+        <div class="tw"><table class="tbl">
+          <tr><th>Variant</th><th>Background</th><th>Ink (front bubble, hull)</th><th>Second (back bubble, wave)</th></tr>
+          <tr><td>Light (default)</td><td><span class="sw-chip" style="background:#fff"></span>#FFFFFF → <span class="sw-chip" style="background:#E8E8ED"></span>#E8E8ED, top to bottom, opaque</td><td class="n"><span class="sw-chip" style="background:#16161A"></span>#16161A</td><td class="n"><span class="sw-chip" style="background:#8E8E95"></span>#8E8E95</td></tr>
+          <tr><td>Dark</td><td>transparent (iOS draws its dark backdrop)</td><td class="n"><span class="sw-chip" style="background:#F4F4F6"></span>#F4F4F6</td><td class="n"><span class="sw-chip" style="background:#7C7C84"></span>#7C7C84</td></tr>
+          <tr><td>Tinted</td><td>transparent</td><td class="n">#FFFFFF (full tint)</td><td class="n">#8A8A8A (about half)</td></tr>
+        </table></div>
+        <ul class="notes">
+          <li>CoreGraphics: top-left origin, absolute <code>M H V C Z</code> only; each shape is one closed outline filled nonzero; the wave is a 36 px stroke with round caps and joins.</li>
+          <li>Look-alike check: no camera outline (Instagram), no hue gradient (Instagram), no bubble with a zigzag (Messenger: our wave is smooth and outside the bubble), no loop (Meta).</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 2. LAUNCH ======================= -->
+  <section id="launch">
+    <h2>2 · Launch screen</h2>
+    <p class="sup"><b>Updated</b>Same layout, recoloured to match the colour icon: see “Launch screen, matched” in Round 2.</p>
+    <p class="lead">Static, through <code>UILaunchScreen</code>: the inbox’s background color with the icon’s glyph centred, at 120 × 120 pt. Both frames are forced to their mode, whatever this page’s theme. The dashed box is the image’s bounds (not drawn on device).</p>
+    <div class="frames" data-cap=".5">
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="launch-light"></div></div></div><figcaption><span class="id">LAUNCH · LIGHT</span><b>White, ink glyph</b><p>Same white as the default icon and the inbox, so the zoom from the Home Screen has nothing to jump.</p></figcaption></figure>
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="launch-dark"></div></div></div><figcaption><span class="id">LAUNCH · DARK</span><b>Black, light glyph</b><p>Same black as the inbox in dark mode; the glyph uses the dark icon’s two grays.</p></figcaption></figure>
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="inbox-after-2"></div></div></div><figcaption><span class="id">FIRST FRAME</span><b>Then the inbox, with no transition</b><p>iOS swaps the launch screen for the first frame. No in-app animation: it would add time to every open.</p></figcaption></figure>
+    </div>
+    <div class="panels">
+      <div class="panel wide">
+        <h3>Spec</h3>
+        <div class="tw"><table class="tbl">
+          <tr><th>Item</th><th>Value</th></tr>
+          <tr><td>Info.plist</td><td><code>UILaunchScreen</code> = { <code>UIColorName</code>: <code>LaunchBackground</code>, <code>UIImageName</code>: <code>LaunchMark</code> } in <code>Config/Info.plist</code>; drop <code>INFOPLIST_KEY_UILaunchScreen_Generation</code>, which writes an empty one</td></tr>
+          <tr><td>LaunchBackground (color set)</td><td>Any <span class="sw-chip" style="background:#fff"></span>#FFFFFF · Dark <span class="sw-chip" style="background:#000"></span>#000000 (= <code>systemBackground</code>)</td></tr>
+          <tr><td>LaunchMark (image set)</td><td>120 × 120 pt: @2x 240 px, @3x 360 px, transparent. Any = <code>ferry-icon.svg</code> without step 1 (the background); Dark = <code>ferry-icon-dark.svg</code> as is. Render with the icon script.</td></tr>
+          <tr><td>Placement</td><td>Centred by iOS (glyph about 82 × 72 pt inside the box, twice its Home Screen size), no safe-area offset</td></tr>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h3>Transition after launch: no</h3>
+        <ul class="notes">
+          <li>The app opens to the inbox, usually with chats already cached. A logo animation would delay the one thing people opened it for, every time.</li>
+          <li>iOS already cross-fades from the launch screen to the first frame.</li>
+          <li>If it’s ever added: a 0.2 s opacity fade of the glyph only, never with Reduce Motion, never blocking input. I don’t recommend it.</li>
+          <li>Verify on device: iOS caches launch screens; delete the app (or restart the simulator) to see a change.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 3. STACK ======================= -->
+  <section id="stack">
+    <h2>3 · The account stack, without overlap</h2>
+    <p class="lead">Today the avatars overlap by 5 pt (their rings by 11 pt), like a stack of faces. New rule: your accounts sit side by side, 4 pt apart, never over each other. Up to three show; from four on, the first two and a count. A problem shows as a badge on the account it belongs to. All cases at 2×; widths are the capsule’s.</p>
+    <div class="stkgrid" id="stack-cases"></div>
+    <div class="frames" data-cap=".62" style="margin-top:28px">
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="inbox-before"></div></div></div><figcaption><span class="id">NOW</span><b>Overlapping, glyph after the stack</b><p>Two 26 pt avatars, −5 pt spacing; the triangle sits after them and doesn’t say which account.</p></figcaption></figure>
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="inbox-after-warn"></div></div></div><figcaption><span class="id">AFTER</span><b>Side by side, badge on the account</b><p>78 pt capsule. Alex Studio needs you, so its avatar carries the badge; the banner names it and the fix.</p></figcaption></figure>
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="inbox-after-4"></div></div></div><figcaption><span class="id">AFTER · 4 ACCOUNTS</span><b>Two and a count</b><p>112 pt, the most it gets. In a professional account’s scope the subtitle drops the handle to fit (“Primary”).</p></figcaption></figure>
+    </div>
+    <div class="panels">
+      <div class="panel wide">
+        <h3>Spec</h3>
+        <div class="tw"><table class="tbl">
+          <tr><th>Part</th><th>Value</th><th>SwiftUI</th></tr>
+          <tr><td>Avatar</td><td>24 pt photo, 1.5 pt gap, 1.5 pt ring in the account fill → 30 pt</td><td><code>AccountAvatar(size: 24, showsMark: false).frame(width: 30, height: 30)</code></td></tr>
+          <tr><td>Spacing</td><td>4 pt between rings</td><td><code>HStack(spacing: 4)</code></td></tr>
+          <tr><td>Capsule</td><td>44 pt tall, 7 pt side padding (= the vertical margin, (44 − 30) / 2)</td><td><code>.padding(.horizontal, 7).frame(height: 44).glassEffect(.regular.interactive(), in: .capsule)</code>; the <code>ToolbarItem</code> gets <code>.sharedBackgroundVisibility(.hidden)</code> so the system doesn’t add its own capsule and padding</td></tr>
+          <tr><td>Widths</td><td>1 account 44 (a circle) · 2 → 78 · 3 → 112 · 4+ → 112</td><td>today: 75 for two</td></tr>
+          <tr><td>4+ accounts</td><td>first two (Accounts order), then a 30 pt count disc “+2”: <code>tertiarySystemFill</code>, <code>.footnote.weight(.semibold)</code> rounded, label color</td><td><code>let shown = n &lt;= 3 ? all : Array(all.prefix(2))</code></td></tr>
+          <tr><td>Status</td><td>14 pt disc in the background color at the avatar’s bottom-right, inside its 30 pt frame: <code>exclamationmark.triangle.fill</code> 9 pt in <code>statusWarn</code> (needs you), or a 9 pt spinner (connecting). Needs-you wins. A hidden account’s status goes on the count disc.</td><td><code>.overlay(alignment: .bottomTrailing)</code>; replaces the trailing glyph and its 11 pt padding</td></tr>
+          <tr><td>VoiceOver</td><td colspan="2">“Accounts: Alex, Alex Studio, and 2 more. Alex Studio needs attention.” One element, button trait.</td></tr>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 4. PASS ======================= -->
+  <section id="pass">
+    <h2>4 · Design pass: key screens</h2>
+    <p class="lead">From the 14–15 Oct captures (inbox, DM and group threads, media, player, Chat Info, Accounts, onboarding, requests, folders). Each NOW frame redraws what the capture shows; each FIX is buildable as described. Numbers match the findings table below and the write-up.</p>
+
+    <div class="opt">
+      <h3>#1 · The account disappears over media <span class="sev hi">High</span></h3>
+      <p>The thread header (contact name and AccountTag) sits on the scroll edge with no backing. When a photo, a video card or one of your own colored bubbles scrolls under it, the tag that says which account you’re in becomes unreadable, which breaks principle 2 exactly where threads are busiest.</p>
+      <div class="frames" data-cap=".62">
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="t1-now"></div></div></div><figcaption><span class="id">T1 · NOW</span><b>Tag over a reel</b><p>“Alex Studio” in ember ink on a warm photo, with a soft edge only.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="t1-fix"></div></div></div><figcaption><span class="id">T1 · FIX</span><b>On glass, hard edge</b><p>Avatar, name and tag in one 44 pt glass capsule (taps to Chat Info), and <code>.scrollEdgeEffectStyle(.hard, for: .top)</code> on the thread.</p></figcaption></figure>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>#3 · Group threads: the title appears twice <span class="sev med">Medium</span></h3>
+      <p>In a short group thread, the start-of-chat header sits right under the toolbar in the same size as the toolbar’s own name and tag, so it reads as a doubled title, and “You’re messaging from Alex.” repeats the composer. Groups without a photo show a gray monogram of the group name, which looks like a contact called “S” (#9).</p>
+      <div class="frames" data-cap=".62">
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="g-now"></div></div></div><figcaption><span class="id">GROUP · NOW</span><b>Doubled title</b><p>Toolbar: “Saturday Climbs / A Alex”. Right under it: the same again.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="g-fix"></div></div></div><figcaption><span class="id">GROUP · FIX</span><b>A start block, not a second header</b><p>64 pt group avatar, name in <code>.title3</code>, “4 members”, 22 pt above and 20 below. The “messaging from” line only in an empty thread.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="info-fix"></div></div></div><figcaption><span class="id">T3 · FIX</span><b>Chat Info: “Account”, not “In”</b><p><code>LabeledContent("Account")</code> with the tag (#6), the people glyph for groups without a photo (#9), members unchanged.</p></figcaption></figure>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>#5 · The request bar still takes a quarter of the screen <span class="sev med">Medium</span></h3>
+      <p>Open since the 14 Oct review (its #6): about 200 pt with 54 pt buttons, so a long first message leaves little history visible, and the request is where you most need to read before deciding.</p>
+      <div class="frames" data-cap=".62">
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="t2-now"></div></div></div><figcaption><span class="id">T2 · NOW</span><b>About 200 pt</b><p>Tag on its own line, two 54 pt buttons, then the link.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="t2-fix"></div></div></div><figcaption><span class="id">T2 · FIX</span><b>About 150 pt</b><p>Tag inline in the title, 44 pt buttons (<code>.frame(maxWidth: .infinity, minHeight: 44)</code>, were 54), same copy.</p></figcaption></figure>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>#4 · The rename: Welcome never says “Ferry” <span class="sev med">Medium</span></h3>
+      <p class="sup"><b>Replaced</b>You asked for a complete Welcome redesign instead of this lockup: see “Round 2 · Welcome”. The A1 and M1 frames in this row still apply.</p>
+      <p>O1 has no product name at all; the first time people meet “Ferry” is the Home Screen label. Add a small lockup above the headline and keep the headline: it says what the app does better than any pun. Other screens only need string changes (table in section 5).</p>
+      <div class="frames" data-cap=".62">
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="o1-fix"></div></div></div><figcaption><span class="id">O1 · FIX</span><b>Lockup, same headline</b><p>The icon at 34 pt and “Ferry” in <code>.title2.bold()</code>, 16 pt above the headline; illustration, features and button unchanged.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="a1-fix"></div></div></div><figcaption><span class="id">A1 · FIX</span><b>Accounts: type and footer</b><p>“Professional · Primary and General” under Alex Studio (#8); the footer names the app and the server.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="m1-fix"></div></div></div><figcaption><span class="id">M1 · FIX</span><b>Player: a failure without a scrubber</b><p>No “0:00 / −0:00” track when nothing loaded; Try Again plus Open in Instagram for shares (#7).</p></figcaption></figure>
+      </div>
+    </div>
+
+    <div class="panels">
+      <div class="panel wide">
+        <h3>All findings</h3>
+        <div class="tw"><table class="tbl">
+          <tr><th>#</th><th>Severity</th><th>Screen</th><th>Finding</th><th>Fix</th></tr>
+          <tr><td class="n">1</td><td><span class="sev hi">High</span></td><td>T1, T2 header</td><td>Name and AccountTag illegible when media or own bubbles scroll under the toolbar.</td><td>One glass capsule for the principal; <code>.scrollEdgeEffectStyle(.hard, for: .top)</code>.</td></tr>
+          <tr><td class="n">2</td><td><span class="sev med">Medium</span></td><td>I1 toolbar</td><td>Account avatars overlap (the user’s note); the status glyph doesn’t say which account.</td><td>Section 3.</td></tr>
+          <tr><td class="n">3</td><td><span class="sev med">Medium</span></td><td>Group thread</td><td>Start-of-chat header doubles the toolbar title; “messaging from” repeats the composer.</td><td>Start block: 64 pt avatar, <code>.title3</code>, member count, 22/20 pt spacing; the line only when empty.</td></tr>
+          <tr><td class="n">4</td><td><span class="sev med">Medium</span></td><td>O1, copy</td><td>No product name on Welcome; “IG Messenger” in eight places.</td><td>Lockup; strings in section 5.</td></tr>
+          <tr><td class="n">5</td><td><span class="sev med">Medium</span></td><td>T2</td><td>Request bar about 200 pt (carried over).</td><td>Inline tag, 44 pt buttons: about 150 pt.</td></tr>
+          <tr><td class="n">6</td><td>Low</td><td>T3</td><td>“In [tag]” reads oddly (carried over).</td><td><code>LabeledContent("Account")</code>; “Folder: General” when it applies.</td></tr>
+          <tr><td class="n">7</td><td>Low</td><td>M1</td><td>Failed player keeps an empty scrubber; no way out to Instagram.</td><td>Hide the track until a duration exists; add Open in Instagram for shares.</td></tr>
+          <tr><td class="n">8</td><td>Low</td><td>A1</td><td>Rows don’t say which account is professional (carried over).</td><td>Second line “Professional · Primary and General”.</td></tr>
+          <tr><td class="n">9</td><td>Low</td><td>Groups</td><td>A group without a photo shows a gray monogram that looks like a contact.</td><td><code>person.2.fill</code> on <code>tertiarySystemFill</code>, glyph 0.5 × the avatar.</td></tr>
+          <tr><td class="n">10</td><td>Low</td><td>Banner</td><td>Title wraps after the account name beside the Log in button (capture predates v2; check).</td><td>Title and body full width; Log in under the body.</td></tr>
+          <tr><td class="n">11</td><td>Low</td><td>Voice note</td><td>“Can’t play” has no retry affordance.</td><td><code>arrow.clockwise</code> in the play circle; tap retries.</td></tr>
+          <tr><td class="n">12</td><td>Low</td><td>O5, A2</td><td>Mark suggestions offer 📷: a camera next to “Instagram”.</td><td>Replace with ⛵️ (or ★).</td></tr>
+          <tr><td class="n">13</td><td>Low</td><td>O5, A2</td><td>Name chips are cut hard at the card’s inner edge (“Stud”).</td><td><code>.scrollClipDisabled()</code>, <code>.contentMargins(.horizontal, 16)</code>, zero row insets.</td></tr>
+          <tr><td class="n">14</td><td>Low</td><td>Composer</td><td>“Hold to record” floats over the last message.</td><td>Show it as the field’s placeholder for 2 s instead of an overlay.</td></tr>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 5. RENAME ======================= -->
+  <section id="rename">
+    <h2>5 · Rename: strings</h2>
+    <p class="lead">Every user-facing “IG Messenger”, and the one place the name should newly appear. Identifiers such as <code>com.igmessenger.archived_at</code> are data on the server, not copy: keep them (or migrate) so existing archives survive.</p>
+    <div class="panels">
+      <div class="panel wide">
+        <div class="tw"><table class="tbl">
+          <tr><th>Where</th><th>Was</th><th>Becomes</th></tr>
+          <tr><td>Home Screen, Settings, Photos access</td><td>IG Messenger</td><td>Ferry (<code>CFBundleDisplayName</code>)</td></tr>
+          <tr><td>O1 Welcome</td><td>(no name)</td><td>Lockup “Ferry” above “All your Instagram DMs. None of the feed.”</td></tr>
+          <tr><td>O2 Sign in</td><td>Use the account on your IG Messenger server. …</td><td>Use the account on your Ferry server. This isn’t your Instagram login: that comes next, on instagram.com.</td></tr>
+          <tr><td>O3 Connect footer</td><td>… IG Messenger keeps the session it needs …</td><td>Your password goes only to Instagram. Ferry keeps the session it needs to sync your messages.</td></tr>
+          <tr><td>Microphone (Info.plist and the denied alert)</td><td>IG Messenger records voice messages …</td><td>Ferry records voice messages only while you hold the mic button. (Alert: “… turn on Microphone for Ferry in Settings.”)</td></tr>
+          <tr><td>A1 Sign out</td><td>Sign out of IG Messenger?</td><td>Sign out of Ferry?</td></tr>
+          <tr><td>A2 Remove account</td><td>… deleted from IG Messenger and your server …</td><td>Chats from @alexstudio will be deleted from Ferry and your server. …</td></tr>
+          <tr><td>Matrix session name</td><td>IG Messenger (iOS)</td><td>Ferry (iOS)</td></tr>
+          <tr><td>Unchanged</td><td colspan="2">“Not affiliated with Instagram or Meta.”, “Connect Instagram account”, “Open in Instagram”: they name Instagram as the service, which is accurate and needed.</td></tr>
+        </table></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+  <div class="foot">Mockups are illustrative: placeholder avatars and photos, fictional contacts and accounts. Phone frames are 393 × 852 pt; captures were 402 × 874 (iPhone 17), and values in captions are device values. Icons are drawn live from the same paths as the SVG files.</div>
+</div>
+
+<script>
+(function(){
+  /* ---------- theme toggle (per-viewer convenience; storage may be unavailable) ---------- */
+  var KEY = 'ferry-design-v3-theme', root = document.documentElement;
+  var buttons = document.querySelectorAll('.seg button');
+  function apply(t){
+    if (t === 'light' || t === 'dark') root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+    buttons.forEach(function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-t') === (t || 'auto'))); });
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  apply(saved || 'auto');
+  buttons.forEach(function(b){
+    b.addEventListener('click', function(){
+      var t = b.getAttribute('data-t'); apply(t);
+      try { localStorage.setItem(KEY, t); } catch (e) {}
+    });
+  });
+
+  function I(id, extra){ return '<svg class="i"' + (extra ? ' ' + extra : '') + '><use href="#i-' + id + '"/></svg>'; }
+  function icon(sym, mode, size){ return '<span class="icon ic-' + mode + '"' + (size ? ' style="--is:' + size + 'px"' : '') + '><svg viewBox="0 0 1024 1024" aria-hidden="true"><use href="#' + sym + '"/></svg></span>'; }
+
+  /* ---------- icon sections ---------- */
+  var MODES = [['l', 'Light'], ['d', 'Dark'], ['t', 'Tinted']];
+  document.querySelectorAll('[data-icon]').forEach(function(el){
+    var sym = el.getAttribute('data-icon');
+    el.innerHTML = MODES.map(function(m){ return '<figure>' + icon(sym, m[0]) + '<figcaption>' + m[1] + '</figcaption></figure>'; }).join('');
+  });
+  document.querySelectorAll('[data-hs]').forEach(function(el){
+    var sym = el.getAttribute('data-hs');
+    el.innerHTML = MODES.map(function(m){
+      function ph(k, lb){ return '<span class="app"><span class="ph p' + k + '"></span><span class="lb">' + lb + '</span></span>'; }
+      return '<div class="hs ' + m[0] + '" role="img" aria-label="Home Screen, ' + m[1] + ', Ferry next to placeholder apps"><span class="mode">' + m[1] + ' · 60 pt</span>' +
+        ph(1, 'App') + '<span class="app">' + icon(sym, m[0], 60) + '<span class="lb">Ferry</span></span>' + ph(2, 'App') + ph(3, 'App') +
+        ph(4, 'App') + ph(2, 'App') + ph(1, 'App') + ph(3, 'App') + '</div>';
+    }).join('');
+  });
+
+  /* ---------- Round 2: coloured icon treatments (dw Deep water, hb Harbour, nc Night crossing) ---------- */
+  function cicon(tr, mode, size){ return '<span class="icon ' + tr + '-' + mode + '"' + (size ? ' style="--is:' + size + 'px"' : '') + '><svg viewBox="0 0 1024 1024" aria-hidden="true"><use href="#ic-aboard-c"/></svg></span>'; }
+  function phApp(k){ return '<span class="app"><span class="ph p' + k + '"></span><span class="lb">App</span></span>'; }
+  document.querySelectorAll('[data-cicon]').forEach(function(el){
+    var tr = el.getAttribute('data-cicon');
+    el.innerHTML = MODES.map(function(m){ return '<figure>' + cicon(tr, m[0]) + '<figcaption>' + m[1] + '</figcaption></figure>'; }).join('');
+  });
+  document.querySelectorAll('[data-chs]').forEach(function(el){
+    var tr = el.getAttribute('data-chs');
+    el.innerHTML = MODES.map(function(m){
+      return '<div class="hs ' + m[0] + '" role="img" aria-label="Home Screen, ' + m[1] + ', Ferry next to placeholder apps"><span class="mode">' + m[1] + ' · 60 pt</span>' +
+        phApp(1) + '<span class="app">' + cicon(tr, m[0], 60) + '<span class="lb">Ferry</span></span>' + phApp(2) + phApp(3) + phApp(4) + phApp(2) + phApp(1) + phApp(3) + '</div>';
+    }).join('');
+  });
+  document.querySelectorAll('[data-cmp]').forEach(function(el){
+    el.innerHTML = MODES.slice(0, 2).map(function(m){
+      function ap(tr, lb){ return '<span class="app">' + cicon(tr, m[0], 60) + '<span class="lb">' + lb + '</span></span>'; }
+      return '<div class="hs ' + m[0] + '" role="img" aria-label="Home Screen, ' + m[1] + ', the three treatments side by side"><span class="mode">' + m[1] + ' · 60 pt</span>' +
+        phApp(1) + ap('dw', 'Deep water') + phApp(2) + ap('hb', 'Harbour') + phApp(3) + ap('nc', 'Night') + phApp(4) + phApp(2) + '</div>';
+    }).join('');
+  });
+
+  /* ---------- data: fictional accounts and contacts ---------- */
+  var ACC = {
+    A: {cls:'a-ocean', mk:'A', name:'Alex', handle:'alex.personal', av:'own-a'},
+    S: {cls:'a-ember', mk:'S', name:'Alex Studio', handle:'alexstudio', av:'own-s', pro:true},
+    B: {cls:'a-grape', mk:'B', name:'Band', handle:'nightowls.band', av:'own-b'},
+    M: {cls:'a-teal', mk:'M', name:'Market', handle:'alex.market', av:'own-m'},
+    C: {cls:'a-berry', mk:'C', name:'Club', handle:'alex.club', av:'own-c'},
+    D: {cls:'a-moss', mk:'D', name:'Dogs', handle:'alex.dogs', av:'own-d'}
+  };
+  var CHATS = [
+    {n:'Maya Chen', a:'S', av:'pp pp-maya', t:'9:41', un:1, pv:I('reel') + ' Sent a reel by @tidepool.films'},
+    {n:'Northwind Coffee', a:'S', av:'br-north', g:'☕', t:'9:12', un:1, pv:'Could you send the invoice for the menu shoot when you get a sec?'},
+    {n:'Priya Raman', a:'A', av:'pp pp-priya', t:'8:50', typing:1, pv:'typing…'},
+    {n:'Jonah Reyes', a:'A', av:'pp pp-jonah', t:'8:31', pv:'You: see you there'},
+    {n:'Saturday Climbs', a:'A', grp:['pp-theo','pp-sam'], t:'Yesterday', pv:'Theo: ' + I('mic') + ' Voice message · 0:21'},
+    {n:'Ana Lucía', a:'S', av:'pp pp-ana', t:'Yesterday', pv:I('photo') + ' Photo'},
+    {n:'Dev Patel', a:'A', av:'pp pp-dev', t:'Mon', pv:'You: Here’s the moodboard'},
+    {n:'Sam Okafor', a:'S', av:'pp pp-sam', t:'Sun', pv:'Thanks again, the prints look great'},
+    {n:'Kestrel Bikes', a:'S', av:'br-kestrel', g:'🚲', t:'Fri', pv:'You: selects tonight'}
+  ];
+
+  /* ---------- pieces ---------- */
+  function avatar(c, mark){
+    var m = mark ? '<span class="mk">' + ACC[c.a].mk + '</span>' : '';
+    if (c.grp) return '<div class="grp"><div class="av pp ' + c.grp[0] + '"></div><div class="av pp ' + c.grp[1] + '"></div>' + m + '</div>';
+    return '<div class="av ' + c.av + '">' + (c.g || '') + m + '</div>';
+  }
+  function row(c, mark){
+    return '<div class="row' + (c.un ? ' un' : '') + ' ' + ACC[c.a].cls + '">' + (c.un ? '<span class="dot"></span>' : '') + avatar(c, mark) +
+      '<div class="tx"><div class="l1"><span class="nm">' + c.n + '</span><span class="tm">' + c.t + '</span></div><div class="pv' + (c.typing ? ' typing' : '') + '">' + c.pv + '</div></div></div>';
+  }
+  function tag(id, sm, withHandle){
+    var a = ACC[id];
+    return '<span class="tag' + (sm ? ' sm' : '') + ' ' + a.cls + '"><span class="mi ' + (sm ? 's14' : 's16') + '">' + a.mk + '</span><span class="tx">' + a.name +
+      (withHandle ? ' <span class="h">· @' + a.handle + '</span>' : '') + '</span></span>';
+  }
+  function badge(kind){ return kind === 'warn' ? '<span class="sbg">' + I('warnf', 'style="font-size:10px"') + '</span>' : '<span class="sbg"><span class="spin"></span></span>'; }
+  function sa(id, st){ var a = ACC[id]; return '<span class="sa ' + a.cls + '"><span class="av own ' + a.av + '"></span>' + (st ? badge(st) : '') + '</span>'; }
+  /* The new stack: side by side, 4 pt apart; 4+ accounts = first two + a count. st maps account id → 'warn' | 'busy'. */
+  function stack3(ids, st){
+    st = st || {};
+    var shown = ids.length <= 3 ? ids : ids.slice(0, 2), hidden = ids.slice(shown.length);
+    var h = shown.map(function(id){ return sa(id, st[id]); }).join('');
+    if (hidden.length){
+      var hb = null;
+      hidden.forEach(function(id){ if (st[id] === 'warn') hb = 'warn'; else if (st[id] === 'busy' && !hb) hb = 'busy'; });
+      h += '<span class="sa more">+' + hidden.length + (hb ? badge(hb) : '') + '</span>';
+    }
+    return '<span class="gcap glass stk3">' + h + '</span>';
+  }
+  function stackW(n){ return n <= 1 ? 44 : 14 + Math.min(n <= 3 ? n : 3, 3) * 30 + (Math.min(n <= 3 ? n : 3, 3) - 1) * 4; }
+  /* As built: 26 pt avatars at −5 pt, a status glyph after them. */
+  function stackOld(ids, warn){
+    return '<span class="gcap glass stk">' + ids.slice(0, 3).map(function(id){ var a = ACC[id];
+      return '<span class="av own ' + a.av + ' ' + a.cls + '"></span>'; }).join('') + (warn ? '<svg class="warn"><use href="#i-warnf"/></svg>' : '') + '</span>';
+  }
+  function fbtn(badgeN){ return '<span class="gb glass">' + I('folders') + (badgeN ? '<span class="bdg">' + badgeN + '</span>' : '') + '</span>'; }
+  function chips(ids, sc, top){
+    var h = '<span class="chip all' + (sc === 'all' ? ' on-all' : '') + '">All <span class="ct">3</span></span>';
+    ids.forEach(function(id){ var a = ACC[id];
+      h += '<span class="chip ' + a.cls + (sc === id ? ' on' : '') + '"><span class="mi">' + a.mk + '</span>' + a.name + (id === 'S' ? ' <span class="ct">2</span>' : '') + '</span>'; });
+    return '<div class="scope" style="top:' + top + 'px">' + h + '</div>';
+  }
+  function bottomBar(sc){
+    var a = sc !== 'all' ? ACC[sc] : null;
+    return '<div class="bb"><div class="srch glass">' + I('search') + 'Search' + (a ? ' ' + a.name : '') + '</div><span class="gb glass">' + I('compose') + '</span></div>';
+  }
+  function banner(id){
+    var a = ACC[id];
+    return '<div style="position:absolute;left:12px;right:12px;top:160px;z-index:36;border-radius:22px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start" class="glass ' + a.cls + '">' +
+      '<span class="av own ' + a.av + '" style="--z:32px;--ring-bg:var(--bg)"></span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;font-size:15px;font-weight:600;line-height:20px">' +
+      '<svg class="i" style="color:var(--warn-g);font-size:15px"><use href="#i-warnf"/></svg>' + a.name + ' is signed out</div>' +
+      '<div style="font-size:13px;line-height:18px;color:var(--label-2)">New messages to @' + a.handle + ' aren’t arriving.</div>' +
+      '<div style="display:flex;gap:8px;margin-top:8px"><span class="sbtn dark">Log In</span><span class="sbtn">Later</span></div></div></div>';
+  }
+  function inbox(o){
+    var ids = o.accs || ['A', 'S'], sc = o.scope || 'all', acc = sc !== 'all' ? ACC[sc] : null;
+    var rows = CHATS.filter(function(c){ return sc === 'all' || c.a === sc; }).slice(0, 9);
+    var top = o.banner ? 268 : 160;
+    var sw = o.old ? 75 : stackW(ids.length);
+    var inset = Math.max(sw + 10, 56);
+    var title = acc ? '<b>' + acc.name + '</b><span>' + (o.subShort ? 'Primary' : '@' + acc.handle + (acc.pro ? ' · Primary' : '')) + '</span>' : '<b>Chats</b>';
+    var h = '<div class="list" style="top:' + top + 'px">' + rows.map(function(c){ return row(c, sc === 'all'); }).join('') + '</div>' +
+      '<div class="edge-top" style="--eh:' + (o.banner ? 280 : 170) + 'px"></div>' + (acc ? '<div class="wash"></div>' : '') +
+      '<div class="tb">' + (o.old ? stackOld(ids, o.warn) : stack3(ids, o.st)) +
+      '<div class="ntitle" style="left:' + inset + 'px;right:' + inset + 'px">' + title + '</div>' + fbtn(o.badge) + '</div>' +
+      chips(ids, sc, 108) + (o.banner ? banner(o.banner) : '') + bottomBar(sc);
+    return {cls: acc ? acc.cls : '', html: h};
+  }
+
+  /* ---------- the stack cases (section 3) ---------- */
+  var CASES = [
+    {t:'Now · two accounts', p:'26 pt photos at −5 pt: photos overlap 5 pt, rings 11 pt.', w:'75', old:true, ids:['A','S']},
+    {t:'Now · needs attention', p:'A triangle after the stack, 11 pt away; it doesn’t say whose.', w:'≈ 106', old:true, ids:['A','S'], warn:true},
+    {t:'One account', p:'A circle, like the other glass buttons.', ids:['A']},
+    {t:'Two accounts', p:'The common case. 3 pt wider than today.', ids:['A','S']},
+    {t:'Three accounts', p:'All three, still side by side.', ids:['A','S','B']},
+    {t:'Four accounts', p:'First two in Accounts order, then “+2”.', ids:['A','S','B','M']},
+    {t:'Six accounts', p:'Never wider than three discs.', ids:['A','S','B','M','C','D']},
+    {t:'One needs you', p:'The badge sits on that account’s avatar.', ids:['A','S'], st:{S:'warn'}},
+    {t:'Connecting', p:'A small spinner badge; needs-you wins over it.', ids:['A','S'], st:{A:'busy'}},
+    {t:'A hidden account needs you', p:'The count disc carries the badge.', ids:['A','S','B','M'], st:{M:'warn'}}
+  ];
+  var grid = document.getElementById('stack-cases');
+  if (grid) grid.innerHTML = CASES.map(function(c){
+    var w = c.w || String(stackW(c.ids.length));
+    return '<div class="case' + (c.old ? ' before' : '') + '"><div class="bar"><div class="z2">' + (c.old ? stackOld(c.ids, c.warn) : stack3(c.ids, c.st)) + '</div></div>' +
+      '<h4>' + c.t + '</h4><p><span class="w">' + w + ' pt</span> · ' + c.p + '</p></div>';
+  }).join('');
+
+  /* ---------- thread pieces ---------- */
+  function back(){ return '<span class="gb glass">' + I('chev-l') + '</span>'; }
+  function more(){ return '<span class="gb glass" style="color:var(--acc-ink)">' + I('ellipsis') + '</span>'; }
+  function composer(id){
+    var a = ACC[id];
+    return '<div class="comp"><span class="gb glass">' + I('plus') + '</span><div class="field glass"><span class="av own ' + a.av + '" style="--z:28px;--gap:1.5px;--rw:1.5px;--ring-bg:var(--bg)"></span><span class="ph">Message as ' + a.name + '</span>' + I('mic', 'style="font-size:21px;margin-right:6px;color:var(--label-2)"') + '</div></div>';
+  }
+  function headerPlain(avHTML, name, id, hl){
+    return '<div class="thh' + (hl ? ' hl' : '') + '" style="left:72px;right:72px">' + avHTML + '<div class="tt"><b>' + name + '</b>' + tag(id, true) + '</div></div>';
+  }
+  function headerCap(avHTML, name, id){
+    return '<div class="thcap glass">' + avHTML + '<div class="tt"><b>' + name + '</b>' + tag(id, true) + '</div></div>';
+  }
+  function voice(dir, d){
+    var bars = [8,14,10,18,12,20,9,16,22,11,15,7,13,19,10,17,8,12,16,9,14,11];
+    return '<div class="b ' + dir + '" style="padding:0"><div class="voice"><span class="pb">' + I('playf') + '</span><span class="wf">' +
+      bars.map(function(h){ return '<i style="height:' + h + 'px"></i>'; }).join('') + '</span><span class="d">' + d + '</span></div></div>';
+  }
+
+  function t1(fix){
+    var id = 'S';
+    var msgs = '<div class="msgs">' +
+      '<div class="media ph-desert" style="width:232px;height:330px;align-self:flex-start"><span class="auth"><span class="av pp pp-dev" style="--z:22px"></span>@tidepool.films</span>' +
+        '<span class="play glass">' + I('playf') + '</span><span class="cap">golden hour at the dunes</span><span class="dur">0:42</span></div>' +
+      '<div class="gap" style="--g:2px"></div><div class="b in last">this is the spot for the shoot</div><div class="gap"></div>' +
+      '<div class="day">9:34</div>' +
+      '<div class="b out first">oh that light</div><div class="gap" style="--g:2px"></div><div class="b out last">book it for saturday</div><div class="meta-r">Seen</div><div class="gap"></div>' +
+      '<div class="media ph-sea" style="width:190px;height:240px;align-self:flex-end"><span class="play glass">' + I('playf') + '</span><span class="dur">0:06</span></div>' +
+      '<div class="meta-r">Delivered</div></div>';
+    var av = '<div class="av pp pp-maya" style="--z:' + (fix ? 32 : 30) + 'px"></div>';
+    var h = msgs + (fix ? '<div class="edge-hard"></div>' : '<div class="edge-soft"></div>') +
+      '<div class="tb" style="z-index:41">' + back() + more() + '</div>' +
+      (fix ? headerCap(av, 'Maya Chen', id) : headerPlain(av, 'Maya Chen', id, true)) + composer(id);
+    if (!fix) h += '<div class="callout" style="left:150px;top:116px">The tag on a photo</div>';
+    return {cls:'a-ember', html:h};
+  }
+
+  function group(fix){
+    var id = 'A';
+    var gavS = fix ? '<span class="gav" style="--z:32px">' + I('people') + '</span>' : '<span class="mono" style="--z:30px">S</span>';
+    var start = fix
+      ? '<div class="start"><span class="gav" style="--z:64px">' + I('people') + '</span><b>Saturday Climbs</b><span class="sub">4 members</span>' + tag(id, true) + '</div>'
+      : '<div class="start0 hl"><b>Saturday Climbs</b>' + tag(id, true) + '<span class="sub">You’re messaging from Alex.</span></div>';
+    function inRow(av, text, cls, last){ return '<div class="grow-row">' + (last ? '<div class="av pp ' + av + '"></div>' : '<span class="sp"></span>') + '<div class="b in ' + cls + '">' + text + '</div></div>'; }
+    var msgs = '<div class="msgs top">' + start + '<div class="day">Today 14:51</div>' +
+      '<div class="sn">Theo Park</div>' + inRow('pp-theo', 'Who’s in for Saturday?', 'first', false) + '<div class="gap" style="--g:2px"></div>' + inRow('pp-theo', 'Thinking the north wall at 9', 'last', true) +
+      '<div class="sn">Maya Chen</div>' + inRow('pp-maya', 'In! I’ll bring the rope', '', true) +
+      '<div class="sn">Priya Raman</div>' + inRow('pp-priya', 'Can’t this week, have fun', '', true) + '<div class="gap"></div>' +
+      '<div class="b out" style="position:relative">Count me in<span class="react">❤️</span></div><div class="meta-r" style="margin-top:6px">Sent</div>' +
+      '<div class="sn">Sam Okafor</div>' + inRow('pp-sam', 'I can drive, 3 seats', '', true) +
+      '</div>';
+    var h = msgs + '<div class="edge-top" style="--eh:112px"></div><div class="wash" style="height:150px"></div>' +
+      '<div class="tb" style="z-index:41">' + back() + more() + '</div>' +
+      (fix ? headerCap(gavS, 'Saturday Climbs', id) : headerPlain(gavS, 'Saturday Climbs', id, true)) + composer(id);
+    return {cls:'a-ocean', html:h};
+  }
+
+  function chatInfo(){
+    var id = 'A';
+    function mem(av, n, hd, you){ return '<div class="cell" style="--sep-l:68px">' + (you ? '<span class="sa ' + ACC.A.cls + '" style="width:40px;height:40px"><span class="av own own-a" style="--z:34px;--ring-bg:var(--cell)"><span class="mk s18" style="--ring-bg:var(--cell)">A</span></span></span>' : '<div class="av pp ' + av + '" style="--z:40px"></div>') +
+      '<div class="grow"><div style="font-size:17px">' + n + '</div>' + (hd ? '<div style="font-size:15px;color:var(--label-2)">@' + hd + '</div>' : '') + '</div></div>'; }
+    var h = '<div class="tb">' + back() + '<div class="ntitle"><b>Chat Info</b></div><span></span></div>' +
+      '<div style="position:absolute;left:0;right:0;top:118px;display:flex;flex-direction:column;align-items:center;gap:6px"><span class="gav" style="--z:96px">' + I('people') + '</span>' +
+      '<div style="font-size:22px;line-height:28px;font-weight:700;margin-top:8px">Saturday Climbs</div><div style="font-size:15px;color:var(--label-2)">4 members</div></div>' +
+      '<div style="position:absolute;left:0;right:0;top:300px"><div class="cells"><div class="cell" style="justify-content:space-between"><span>Account</span>' + tag(id, false) + '</div></div>' +
+      '<div class="grp-f">Replies always come from this account.</div>' +
+      '<div class="grp-h" style="margin-top:22px;font-size:15px;font-weight:600;color:var(--label)">Members</div><div class="cells">' +
+      mem('pp-maya', 'Maya Chen', 'maya.chen') + mem('pp-sam', 'Sam Okafor') + mem('pp-theo', 'Theo Park', 'theo.climbs') + mem('', 'You', 'alex.personal', true) + '</div>' +
+      '<div class="grp-f">To add or remove people, use Instagram.</div>' +
+      '<div class="cells" style="margin-top:22px"><div class="cell">Archive Chat</div></div></div>';
+    return {cls:'grouped a-ocean', html:h};
+  }
+
+  function t2(fix){
+    var id = 'S';
+    var msgs = '<div class="msgs" style="bottom:' + (fix ? 196 : 250) + 'px">' +
+      '<div class="day">Yesterday 18:02</div>' +
+      '<div class="b in first">Hi! I found your work through the gallery show last month</div><div class="gap" style="--g:2px"></div>' +
+      '<div class="b in">Is the studio free for a portrait session the week of the 20th?</div><div class="gap" style="--g:2px"></div>' +
+      '<div class="b in last">Happy to work around your schedule, mornings are best for me</div></div>';
+    var bar = fix
+      ? '<div class="rqbar glass ' + ACC[id].cls + '"><div class="t">@lena.ortiz wants to message ' + tag(id, true) + '</div>' +
+        '<div class="s">They won’t see that you’ve read this until you accept.</div>' +
+        '<div class="btns"><span class="btn del">Delete</span><span class="btn acc">Accept</span></div><div class="lnk"><b>Reply instead</b> · replying accepts</div></div>'
+      : '<div class="rqbar glass ' + ACC[id].cls + '" style="--bh:54px;padding:16px 16px 14px">' + tag(id, false) + '<div class="t" style="margin-top:10px;font-size:17px;line-height:22px">@lena.ortiz wants to message Alex Studio.</div>' +
+        '<div class="s" style="margin-top:6px">They won’t see that you’ve read this until you accept.</div>' +
+        '<div class="btns" style="margin-top:14px"><span class="btn del">Delete</span><span class="btn acc">Accept</span></div><div class="lnk" style="margin-top:12px"><b>Reply instead</b> · replying accepts</div></div>';
+    var av = '<div class="av pp pp-lena" style="--z:32px"></div>';
+    var h = msgs + '<div class="edge-hard"></div>' + '<div class="tb" style="z-index:41">' + back() + more() + '</div>' + headerCap(av, 'Lena Ortiz', id) + bar;
+    h = h.replace(/<div class="rqbar([^"]*)"([^>]*)>/, '<div class="rqbar$1"$2><span class="callout" style="right:4px;top:-30px">' + (fix ? '≈ 150 pt' : '≈ 195 pt') + '</span>');
+    return {cls:'a-ember', html:h};
+  }
+
+  function o1(){
+    function wb(text, cls, mk, style){ return '<div class="b ' + (cls ? 'out ' + cls : 'in') + '" style="' + style + '">' + text + (mk ? '<span class="mk" style="--acc:var(--' + mk[1] + ')">' + mk[0] + '</span>' : '') + '</div>'; }
+    var h = '<div class="wl-ill">' +
+      wb('did you see the reel I sent?', '', null, 'left:24px;top:8px;transform:rotate(-3deg)') +
+      '<div class="wl-reel ph-dusk"><span class="play glass" style="position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:20px">' + I('playf', 'style="fill:currentColor;stroke:none"') + '</span></div>' +
+      wb('watching it now', 'a-ocean', ['A', 'ocean'], 'right:28px;top:84px;transform:rotate(2deg)') +
+      wb('brunch sunday?', 'a-ember', ['S', 'ember'], 'right:40px;top:150px;transform:rotate(-2deg)') +
+      wb('new single drops friday', 'a-grape', ['B', 'grape'], 'right:22px;top:216px;transform:rotate(3deg)') + '</div>' +
+      '<div class="lockup hl">' + icon('ic-aboard', 'lk', 34) + '<span>Ferry</span></div>' +
+      '<div class="wl-t">All your Instagram DMs. None of the feed.</div>' +
+      '<div class="wl-f"><div><span class="ic">' + I('inbox') + '</span>Every account, one inbox</div><div><span class="ic">' + I('reel') + '</span>Reels play right in the chat</div><div><span class="ic">' + I('eyeslash') + '</span>No feed, no Explore, no algorithm</div></div>' +
+      '<div class="wl-cta"><div class="big">Connect Instagram account</div></div><div class="wl-legal">Not affiliated with Instagram or Meta.</div>';
+    return {cls:'', html:h};
+  }
+
+  function a1(){
+    function acct(id, status, pro){ var a = ACC[id];
+      return '<div class="cell acct ' + a.cls + '" style="--sep-l:72px;padding:12px 16px"><span class="av own ' + a.av + '" style="--z:44px;--ring-bg:var(--cell)"><span class="mk s18" style="--ring-bg:var(--cell)">' + a.mk + '</span></span>' +
+        '<div class="grow"><div class="nm">' + a.name + '</div><div class="hd">@' + a.handle + '</div>' + (pro ? '<div class="pro hl">Professional · Primary and General</div>' : '') +
+        '<div class="st ok">' + I('checkc') + status + '</div></div>' + I('chev-r', 'style="color:var(--label-3);font-size:14px"') + '</div>'; }
+    var under = inbox({accs:['A','S']}).html;
+    var h = under + '<div class="dim" style="z-index:45;background:rgba(0,0,0,.25)"></div><div class="sheet"><div class="stb"><span></span><b>Accounts</b><span class="gb prom">' + I('check') + '</span></div>' +
+      '<div style="position:absolute;left:0;right:0;top:78px"><div class="grp-h" style="font-size:15px;font-weight:600;color:var(--label)">Instagram accounts</div><div class="cells">' +
+      acct('A', 'Connected') + acct('S', 'Connected', true) +
+      '<div class="cell" style="gap:14px">' + I('plus', 'style="font-size:20px"') + '<span>Add Instagram account</span></div></div>' +
+      '<div class="grp-f">Each chat stays tied to the account it belongs to. Touch and hold an account, then drag to reorder the scope bar.</div>' +
+      '<div class="cells" style="margin-top:22px"><div class="cell" style="color:var(--err)">Sign Out</div></div>' +
+      '<div class="grp-f hl" style="margin-top:12px">Ferry 1.3 · @me:home.example · matrix.home.example</div></div></div>';
+    return {cls:'', html:h};
+  }
+
+  function m1(){
+    var h = '<div class="grabber"></div><div class="tb" style="top:74px"><span class="gb glass">' + I('xmark') + '</span><span class="gb glass">' + I('speaker') + '</span></div>' +
+      '<div class="pl-c"><b>Couldn’t play this video</b><span style="font-size:13px;line-height:18px;color:var(--label-2)">It may be from a private account, or it was removed.</span>' +
+      '<div class="row2"><span class="pill-btn glass">' + I('retry') + 'Try Again</span><span class="pill-btn glass">' + I('arrow-ur') + 'Open in Instagram</span></div></div>' +
+      '<div class="pl-f">Shared by Maya Chen · 9:31 ' + tag('S', true) + '</div>';
+    return {cls:'black', html:h};
+  }
+
+  function launch(mode){
+    return {cls: mode === 'l' ? 'lchl' : 'dk', html: '<div class="lmark"><svg viewBox="0 0 1024 1024" aria-label="Ferry"><use href="#ic-aboard"/></svg></div><div class="lbox"><span>120 × 120 pt</span></div>'};
+  }
+
+  /* ---------- Round 2: Welcome ---------- */
+  var SID = 0;
+  function r1(n){ return Math.round(n * 10) / 10; }
+  /* Cubic arches along y; arch i bulges up when i is even. L may be negative, to run right to left. */
+  function arches(x0, y, L, A, n){
+    var d = '';
+    for (var i = 0; i < n; i++){
+      var cy = r1(y + (i % 2 ? 1 : -1) * 1.333 * A), xa = x0 + i * L;
+      d += ' C' + r1(xa + .364 * L) + ' ' + cy + ' ' + r1(xa + .636 * L) + ' ' + cy + ' ' + r1(xa + L) + ' ' + r1(y);
+    }
+    return d;
+  }
+  /* A · the crossing: transparent sky, haze, sea band with a wave edge, swell, wake, and the icon's ferry (× 0.3k)
+     with two accounts aboard. Same numbers as the spec: horizon 132k, deck 6k below it, edge at 214k. */
+  function sceneA(o){
+    o = o || {};
+    var W = o.w || 393, k = o.k || 1, H = o.h || Math.round(224 * k), id = 'sc' + (++SID);
+    var yh = 132 * k, s = .3 * k, tx = r1(W / 2 - 512 * s), ty = r1(yh + 6 * k - 572 * s), ye = 214 * k;
+    var L = 65.5, n = Math.ceil((W + 262) / L) + 1, x0 = -131, xe = x0 + n * L;
+    var band = o.edge === false
+      ? 'M' + x0 + ' ' + r1(yh) + ' H' + r1(xe) + ' V' + H + ' H' + x0 + ' Z'
+      : 'M' + x0 + ' ' + r1(yh) + ' H' + r1(xe) + ' V' + r1(ye) + arches(xe, ye, -L, 5 * k, n) + ' Z';
+    function drift(len, dur){ return o.anim ? ' style="animation-name:r2-d' + len + ';animation-duration:' + dur + 's"' : ''; }
+    function swell(y, len, dur, op){
+      var m = Math.ceil((W + 2 * len) / (len / 2)) + 1;
+      return '<g class="drift"' + drift(len, dur) + '><path class="swell" style="opacity:calc(var(--w-swell) * ' + op + ')" d="M' + (-len) + ' ' + r1(y) + arches(-len, y, len / 2, 2.5 * k, m) + '"/></g>';
+    }
+    var sx = tx + 175 * s, wy = yh + 26 * k;
+    var wake = '<path class="wake" d="M' + r1(sx + 6 * k) + ' ' + r1(wy) + ' C' + r1(sx - 10 * k) + ' ' + r1(wy + 4 * k) + ' ' + r1(sx - 26 * k) + ' ' + r1(wy + 4 * k) + ' ' + r1(sx - 40 * k) + ' ' + r1(wy + 2 * k) + '"/>' +
+      '<path class="wake" style="animation-delay:-1.2s" d="M' + r1(sx + 12 * k) + ' ' + r1(wy + 10 * k) + ' C' + r1(sx - 2 * k) + ' ' + r1(wy + 13 * k) + ' ' + r1(sx - 14 * k) + ' ' + r1(wy + 14 * k) + ' ' + r1(sx - 26 * k) + ' ' + r1(wy + 13 * k) + '"/>';
+    var ferry = '<g class="glide"><g class="bob"><g class="roll"><g transform="translate(' + tx + ' ' + ty + ') scale(' + (Math.round(s * 1000) / 1000) + ')">' +
+      '<use href="#pp-hull" style="fill:#FFFFFF"/>' +
+      '<g class="brd b2"><use href="#pp-back" style="fill:var(--ember)"/><text class="mk2" x="686" y="306" font-size="96">S</text></g>' +
+      '<g class="brd b1"><use href="#pp-front" style="fill:var(--ocean)"/><text class="mk2" x="368" y="368" font-size="120">A</text></g>' +
+      '</g></g></g></g>';
+    var defs = '<defs><linearGradient id="' + id + 'h" x1="0" y1="' + r1(yh - 40 * k) + '" x2="0" y2="' + r1(yh) + '" gradientUnits="userSpaceOnUse"><stop offset="0" style="stop-color:var(--w-haze);stop-opacity:0"/><stop offset="1" style="stop-color:var(--w-haze)"/></linearGradient>' +
+      '<linearGradient id="' + id + 's" x1="0" y1="' + r1(yh) + '" x2="0" y2="' + r1(o.edge === false ? H : ye) + '" gradientUnits="userSpaceOnUse"><stop offset="0" style="stop-color:var(--w-sea-h)"/><stop offset="1" style="stop-color:var(--w-sea-f)"/></linearGradient></defs>';
+    return '<svg class="r2s' + (o.anim ? ' anim' : '') + '" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" aria-hidden="true">' + defs +
+      '<rect x="0" y="' + r1(yh - 40 * k) + '" width="' + W + '" height="' + r1(40 * k) + '" fill="url(#' + id + 'h)"/>' +
+      '<g class="drift"' + drift(131, 44) + '><path d="' + band + '" fill="url(#' + id + 's)"/></g>' +
+      swell(yh + 54 * k, 120, 15, 1) + swell(yh + 70 * k, 160, 32, .7) + wake + ferry + '</svg>';
+  }
+  function promisesA(){
+    return '<div class="wa-list">' + [['inbox', 'Every account, one inbox'], ['reel', 'Reels play right in the chat'], ['eyeslash', 'No feed, no Explore, no algorithm']]
+      .map(function(p){ return '<div class="wa-row"><span class="ic">' + I(p[0]) + '</span><span>' + p[1] + '</span></div>'; }).join('') + '</div>';
+  }
+  var BAR = '<div class="wa-bar"><div class="wa-btn">Connect Instagram account</div><div class="wa-legal">Not affiliated with Instagram or Meta.</div></div>';
+  function welcomeA(mode){
+    return {cls: mode, html: '<div class="wa" style="padding-top:116px"><div class="wa-brand">Ferry</div><div class="wa-head">All your Instagram DMs.<br>None of the feed.</div>' +
+      '<div class="wa-scene">' + sceneA({anim: true}) + '</div>' + promisesA() + '</div>' + BAR};
+  }
+  function welcomeAX(){
+    return {cls: '', html: '<div class="wa ax" style="padding-top:83px"><div class="wa-brand">Ferry</div><div class="wa-head">All your Instagram DMs.<br>None of the feed.</div>' +
+      '<div class="wa-scene">' + sceneA({k: .7}) + '</div>' + promisesA() + '</div>' +
+      '<div class="edge-bot" style="height:300px"></div><div class="wa-bar ax"><div class="wa-btn">Connect Instagram account</div></div>'};
+  }
+  function welcomeB(){
+    return {cls: '', html: '<div class="pc-lock">' + cicon('dw', 'l', 30) + 'Ferry</div>' +
+      '<div class="pc-card" style="left:24px"><div class="sc">' + sceneA({w: 333, k: .85, h: 252, edge: false}) + '</div>' +
+        '<div class="t"><b>Every account, one inbox</b><p>Each account keeps its own colour, and every chat stays with the account it came to.</p></div></div>' +
+      '<div class="pc-card" style="left:369px"><div class="media ph-dusk" style="position:absolute;left:18px;top:56px;width:150px;height:210px"></div></div>' +
+      '<div class="pc-dots"><i class="on"></i><i></i><i></i></div>' + BAR};
+  }
+  function miniFerry(){ return '<svg width="36" height="25" viewBox="150 200 730 510" aria-hidden="true"><use href="#pp-back" style="fill:var(--label-2)"/><use href="#pp-front" style="fill:var(--label)"/><use href="#pp-hull" style="fill:var(--label)"/></svg>'; }
+  function welcomeC(){
+    var a = ACC.A, s = ACC.S;
+    return {cls: '', html: '<div class="tk-head">' + miniFerry() + 'Ferry</div>' +
+      '<div class="tk-title">All your Instagram DMs. None of the feed.</div>' +
+      '<div class="tk">' +
+        '<div class="sec" style="top:20px;display:flex;justify-content:space-between"><div><span class="lab">From</span><span class="val">Instagram</span></div><div style="text-align:right"><span class="lab">To</span><span class="val">One inbox</span></div></div>' +
+        '<div class="route">' + miniFerry() + '</div>' +
+        '<div class="hr" style="top:88px"></div>' +
+        '<div class="sec" style="top:104px"><span class="lab">Passengers</span><div class="seats"><span class="mi ' + a.cls + '">A</span><span class="mi ' + s.cls + '">S</span><span class="add">+</span><span style="font-size:15px;color:var(--label-2);margin-left:4px">Every account you add</span></div></div>' +
+        '<div class="hr" style="top:172px"></div>' +
+        '<div class="sec cols" style="top:188px"><div><span class="lab">On board</span><span class="val s">Reels play in the chat</span></div><div><span class="lab">Left on shore</span><span class="val s">Feed, Explore, algorithm</span></div></div>' +
+        '<span class="notch" style="left:-12px"></span><span class="notch" style="right:-12px"></span><div class="perf"></div>' +
+        '<div class="sec" style="top:310px;display:flex;justify-content:space-between;align-items:center"><div><span class="lab">Via</span><span class="val s">Your own server</span></div>' + cicon('dw', 'l', 44) + '</div>' +
+      '</div>' + BAR};
+  }
+  /* Onboarding echoes: a hull in systemFill and a wave in tertiaryLabel under the account. */
+  function deckHull(w){
+    var ww = r1(w * .78);
+    return '<svg width="' + w + '" height="' + r1(w * 128 / 700) + '" viewBox="162 572 700 128" aria-hidden="true"><use href="#pp-hull" style="fill:var(--fill-2)"/></svg>' +
+      '<svg width="' + ww + '" height="' + r1(ww * 48 / 556) + '" viewBox="236 770 556 48" aria-hidden="true" style="margin-top:2px"><use href="#pp-wave" style="fill:none;stroke:var(--label-3);stroke-width:' + r1(2 * 556 / ww) + ';stroke-linecap:round"/></svg>';
+  }
+  function echoO4(){
+    return {cls: '', html: '<div class="deck" style="top:96px"><span class="av own-s" style="--z:88px;box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--fill-2)"></span>' + deckHull(150) + '</div>' +
+      '<div class="o-title" style="top:246px;font-size:22px;line-height:28px">Connected as @' + ACC.S.handle + '</div>' +
+      '<div class="chk" style="top:294px"><div><span class="g">' + I('checkc') + '</span>Logged in</div><div><span class="g">' + I('checkc') + '</span>Connected to Instagram</div>' +
+      '<div><span class="g"><span class="spin"></span></span><span>Syncing recent chats<small>38 chats so far</small></span></div></div>' +
+      '<div class="o-body" style="top:472px;font-size:15px;line-height:20px">You can start chatting while older messages load.</div>' +
+      '<div class="wa-bar"><div class="wa-btn">Continue</div></div>'};
+  }
+  function echoO6(){
+    var s = ACC.S;
+    return {cls: s.cls, html: '<div class="deck" style="top:112px"><div class="seats" style="gap:16px"><span class="av own own-s" style="--z:88px;--gap:3px;--rw:3px"><span class="mk s30">' + s.mk + '</span></span><span class="seat-empty">' + I('plus') + '</span></div>' + deckHull(210) + '</div>' +
+      '<div class="o-title" style="top:292px;font-size:28px;line-height:34px">Add another account?</div>' +
+      '<div class="o-body" style="top:336px">Connect a second Instagram account. Each chat stays tied to the account it belongs to.</div>' +
+      '<div class="wa-bar" style="bottom:38px;gap:6px"><div class="wa-btn">Connect another account</div><div class="txtbtn" style="height:44px;align-items:center">Not now</div></div>'};
+  }
+  function launch2(cls){ return {cls: cls, html: '<div class="lmark"><svg viewBox="0 0 1024 1024" aria-label="Ferry"><use href="#ic-aboard-c"/></svg></div><div class="lbox"><span>120 × 120 pt</span></div>'}; }
+
+  var FR = {
+    'wa-light': function(){ return welcomeA('fl'); },
+    'wa-dark': function(){ return welcomeA('fd'); },
+    'wa-ax': welcomeAX,
+    'wb': welcomeB,
+    'wc': welcomeC,
+    'e-o4': echoO4,
+    'e-o6': echoO6,
+    'l2-sea': function(){ return launch2('lsea'); },
+    'l2-dark': function(){ return launch2('ldk2'); },
+    'l2-alt': function(){ return launch2('lwh2'); },
+    'launch-light': function(){ return launch('l'); },
+    'launch-dark': function(){ return launch('d'); },
+    'inbox-after-2': function(){ return inbox({accs:['A','S'], badge:2}); },
+    'inbox-before': function(){ return inbox({accs:['A','S'], old:true, warn:true, banner:'S'}); },
+    'inbox-after-warn': function(){ return inbox({accs:['A','S'], st:{S:'warn'}, banner:'S'}); },
+    'inbox-after-4': function(){ return inbox({accs:['A','S','B','M'], scope:'S', subShort:true}); },
+    't1-now': function(){ return t1(false); },
+    't1-fix': function(){ return t1(true); },
+    'g-now': function(){ return group(false); },
+    'g-fix': function(){ return group(true); },
+    'info-fix': chatInfo,
+    't2-now': function(){ return t2(false); },
+    't2-fix': function(){ return t2(true); },
+    'o1-fix': o1,
+    'a1-fix': a1,
+    'm1-fix': m1
+  };
+
+  document.querySelectorAll('.phone[data-f]').forEach(function(p){
+    var f = FR[p.getAttribute('data-f')];
+    if (!f) return;
+    var r = f();
+    if (r.cls) r.cls.split(' ').forEach(function(c){ if (c) p.classList.add(c); });
+    p.innerHTML = r.html;
+  });
+
+  var sbar = '<div class="sb" aria-hidden="true"><span class="sb-t">9:41</span><span class="sb-i">' +
+    '<svg width="19" height="12" viewBox="0 0 19 12"><use href="#i-signal"/></svg>' +
+    '<svg width="17" height="12" viewBox="0 0 17 12"><use href="#i-wifi"/></svg>' +
+    '<svg width="27" height="13" viewBox="0 0 27 13"><use href="#i-batt"/></svg></span></div>' +
+    '<div class="island" aria-hidden="true"></div><div class="home" aria-hidden="true"></div>';
+  document.querySelectorAll('.phone').forEach(function(p){ p.insertAdjacentHTML('beforeend', sbar); });
+
+  /* Frame scale: rows of frames compare side by side on wide screens (data-cap), one per line at phone width. */
+  function fit(){
+    document.querySelectorAll('.frames').forEach(function(f){
+      var w = f.clientWidth, cap = +(f.getAttribute('data-cap') || 1);
+      var s = w < 700 ? Math.min(1, w / 415) : Math.min(cap, w / 415);
+      f.style.setProperty('--s', s.toFixed(4));
+    });
+  }
+  fit();
+  window.addEventListener('resize', fit);
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(document.querySelector('main'));
+})();
+</script>
+</body>
+</html>

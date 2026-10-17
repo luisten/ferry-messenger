@@ -1,0 +1,43 @@
+[
+  {
+    "content": {
+      "body": "igm test (M3)",
+      "msgtype": "m.text"
+    },
+    "event_id": "$gojSOj1cj4yVpxhX6pnDHwpEu0X--qEaHmXeYl7vkd8",
+    "origin_server_ts": 1791827888074,
+    "room_id": "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA",
+    "sender": "@me:igm.home.arpa",
+    "type": "m.room.message",
+    "unsigned": {
+      "m.relations": {
+        "m.reference": {
+          "chunk": [
+            {
+              "event_id": "$HhVAZkU671iztRZTADCwW6sJ45_pI0twgCFcXDaY9Gk"
+            }
+          ]
+        }
+      },
+      "membership": "join",
+      "transaction_id": "07FA28D8-9050-49AC-920F-8C7D93EA5759"
+    }
+  },
+  {
+    "content": {
+      "m.relates_to": {
+        "event_id": "$gojSOj1cj4yVpxhX6pnDHwpEu0X--qEaHmXeYl7vkd8",
+        "rel_type": "m.reference"
+      },
+      "status": "SUCCESS"
+    },
+    "event_id": "$HhVAZkU671iztRZTADCwW6sJ45_pI0twgCFcXDaY9Gk",
+    "origin_server_ts": 1791827891032,
+    "room_id": "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA",
+    "sender": "@instagrambot:igm.home.arpa",
+    "type": "com.beeper.message_send_status",
+    "unsigned": {
+      "membership": "join"
+    }
+  }
+]

@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IG Messenger Design v2</title>
+<style>
+/* Review pass on v1.1 (2026-10-14). Same spec-sheet language as mockups.html: page header, rows of iPhone frames
+   (393 x 852 pt) with captions, then panels. Color plan unchanged: monochrome chrome; the only chromatic color belongs
+   to an account (Ocean = Alex "A", Ember = Alex Studio "S", professional). Annotation bands are page-level
+   (spec layer), monochrome too. Frames are drawn by the script at the bottom from a few builders, so the "current"
+   inbox is identical next to every option. */
+:root{
+  --page-bg:#E8EAEE; --page-surface:#F6F7F9; --page-ink:#121317; --page-muted:#5B5E66; --page-line:rgba(18,19,23,.10);
+  --bezel:#1C1C1F; --bezel-rim:#4B4B51; --shadow:rgba(20,22,30,.28);
+
+  --bg:#FFFFFF; --bg-grouped:#F2F2F7; --cell:#FFFFFF; --label:#000000; --label-2:#6C6C72; --label-3:#AEAEB2;
+  --sep:rgba(60,60,67,.20); --fill:rgba(120,120,128,.12); --fill-2:rgba(120,120,128,.24);
+  --bubble-in:#E9E9EB; --skel:rgba(120,120,128,.18);
+  --glass:rgba(255,255,255,.62); --glass-sheen:rgba(255,255,255,.60); --glass-rim:rgba(255,255,255,.95);
+  --glass-edge:rgba(0,0,0,.07); --glass-drop:rgba(0,0,0,.10);
+  --menu-bg:rgba(248,248,250,.94); --menu-dim:rgba(0,0,0,.06);
+  --ok:#1F7A35; --ok-g:#34C759; --warn:#B25000; --warn-g:#FF9500; --err:#D70015; --err-g:#FF3B30;
+  --on-color:#FFFFFF;
+
+  --ocean:#1F5FD6; --ocean-ink:#1F5FD6; --ocean-wash:rgba(31,95,214,.12);
+  --ember:#C2410C; --ember-ink:#C2410C; --ember-wash:rgba(194,65,12,.12);
+  --grape:#7A3FD1; --teal:#0F766E; --berry:#C2255C; --moss:#4D7C0F; --cocoa:#8A5A2B; --slate:#475B78;
+
+  --anno-line:rgba(18,19,23,.55); --anno-fill:rgba(18,19,23,.07); --anno-tag:#121317; --anno-tag-ink:#FFFFFF;
+
+  --font:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  --font-round:ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page-bg:#0D0E11; --page-surface:#16171B; --page-ink:#F1F2F4; --page-muted:#A3A6AD; --page-line:rgba(255,255,255,.10);
+    --bezel:#1A1A1D; --bezel-rim:#55555C; --shadow:rgba(0,0,0,.6);
+    --bg:#000000; --bg-grouped:#000000; --cell:#1C1C1E; --label:#FFFFFF; --label-2:#A1A1A8; --label-3:#5C5C61;
+    --sep:rgba(84,84,88,.62); --fill:rgba(120,120,128,.26); --fill-2:rgba(120,120,128,.40);
+    --bubble-in:#262629; --skel:rgba(120,120,128,.30);
+    --glass:rgba(40,40,44,.58); --glass-sheen:rgba(255,255,255,.07); --glass-rim:rgba(255,255,255,.16);
+    --glass-edge:rgba(255,255,255,.06); --glass-drop:rgba(0,0,0,.45);
+    --menu-bg:rgba(44,44,48,.94); --menu-dim:rgba(0,0,0,.30);
+    --ok:#30D158; --ok-g:#30D158; --warn:#FF9F0A; --warn-g:#FF9F0A; --err:#FF453A; --err-g:#FF453A;
+    --ocean-ink:#7FAAF7; --ocean-wash:rgba(31,95,214,.24);
+    --ember-ink:#F59A6B; --ember-wash:rgba(194,65,12,.24);
+    --anno-line:rgba(241,242,244,.60); --anno-fill:rgba(241,242,244,.09); --anno-tag:#F1F2F4; --anno-tag-ink:#0D0E11;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page-bg:#0D0E11; --page-surface:#16171B; --page-ink:#F1F2F4; --page-muted:#A3A6AD; --page-line:rgba(255,255,255,.10);
+  --bezel:#1A1A1D; --bezel-rim:#55555C; --shadow:rgba(0,0,0,.6);
+  --bg:#000000; --bg-grouped:#000000; --cell:#1C1C1E; --label:#FFFFFF; --label-2:#A1A1A8; --label-3:#5C5C61;
+  --sep:rgba(84,84,88,.62); --fill:rgba(120,120,128,.26); --fill-2:rgba(120,120,128,.40);
+  --bubble-in:#262629; --skel:rgba(120,120,128,.30);
+  --glass:rgba(40,40,44,.58); --glass-sheen:rgba(255,255,255,.07); --glass-rim:rgba(255,255,255,.16);
+  --glass-edge:rgba(255,255,255,.06); --glass-drop:rgba(0,0,0,.45);
+  --menu-bg:rgba(44,44,48,.94); --menu-dim:rgba(0,0,0,.30);
+  --ok:#30D158; --ok-g:#30D158; --warn:#FF9F0A; --warn-g:#FF9F0A; --err:#FF453A; --err-g:#FF453A;
+  --ocean-ink:#7FAAF7; --ocean-wash:rgba(31,95,214,.24);
+  --ember-ink:#F59A6B; --ember-wash:rgba(194,65,12,.24);
+  --anno-line:rgba(241,242,244,.60); --anno-fill:rgba(241,242,244,.09); --anno-tag:#F1F2F4; --anno-tag-ink:#0D0E11;
+  color-scheme:dark;
+}
+
+/* ---------- page ---------- */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page-bg);color:var(--page-ink);font-family:var(--font);font-size:15px;line-height:1.45;overflow-x:clip;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1480px;margin:0 auto;padding-inline:max(16px, env(safe-area-inset-left, 0px));padding-block:32px 72px}
+.head{display:flex;flex-wrap:wrap;gap:20px 32px;align-items:flex-end;justify-content:space-between;padding-bottom:24px;border-bottom:1px solid var(--page-line)}
+.head h1{margin:0;font-size:clamp(30px,5vw,44px);line-height:1.05;letter-spacing:-.02em;font-weight:750;text-wrap:balance}
+.head .sub{margin:8px 0 0;color:var(--page-muted);max-width:68ch}
+.seg{display:inline-flex;padding:3px;border-radius:12px;background:var(--fill);gap:2px}
+.seg button{all:unset;cursor:pointer;padding:6px 14px;border-radius:9px;font-size:13px;font-weight:600;color:var(--page-muted)}
+.seg button[aria-pressed="true"]{background:var(--page-surface);color:var(--page-ink);box-shadow:0 1px 3px var(--glass-drop)}
+.seg button:focus-visible{outline:2px solid var(--page-ink);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:20px;align-items:center}
+.legend .k{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--page-muted);font-weight:600}
+.pr{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.pr span{font-size:13px;padding:5px 11px;border-radius:999px;border:1px solid var(--page-line);color:var(--page-ink)}
+.pr span s{color:var(--page-muted)}
+section{margin-top:48px}
+section > h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--page-muted);margin:0 0 6px;font-weight:700}
+section > .lead{margin:0 0 20px;max-width:80ch;color:var(--page-muted)}
+.opt{margin-top:30px;padding-top:24px;border-top:1px solid var(--page-line)}
+.opt h3{margin:0 0 4px;font-size:21px;letter-spacing:-.2px;line-height:1.2}
+.opt > p{margin:0 0 18px;color:var(--page-muted);max-width:80ch}
+.verdict{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid var(--page-line);color:var(--page-muted);vertical-align:3px;margin-left:8px}
+.verdict.yes{background:var(--page-ink);color:var(--page-bg);border-color:transparent}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px 24px;margin:18px 0 0;max-width:1200px}
+.facts div{font-size:14px;line-height:1.4}
+.facts b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--page-muted);margin-bottom:2px}
+.frames{display:flex;flex-wrap:wrap;gap:36px 28px;align-items:flex-start}
+figure{margin:0;width:calc(415px * var(--s,1));max-width:100%}
+figcaption{margin-top:12px;max-width:100%}
+figcaption .id{font:600 12px/1 var(--font);letter-spacing:.04em;color:var(--page-muted);margin-right:8px;font-variant-numeric:tabular-nums}
+figcaption b{font-size:15px}
+figcaption p{margin:5px 0 0;color:var(--page-muted);font-size:13px;line-height:1.4}
+.dw{position:relative;width:calc(415px * var(--s,1));height:calc(874px * var(--s,1));max-width:100%}
+.device{position:absolute;left:0;top:0;width:415px;height:874px;padding:11px;border-radius:66px;background:var(--bezel);
+  box-shadow:inset 0 0 0 1.5px var(--bezel-rim),0 30px 60px -24px var(--shadow);transform:scale(var(--s,1));transform-origin:0 0}
+
+/* ---------- iOS primitives (from mockups.html) ---------- */
+.phone{position:relative;width:393px;height:852px;border-radius:55px;overflow:hidden;background:var(--bg);color:var(--label);isolation:isolate;
+  font-family:var(--font);font-size:17px;line-height:22px;letter-spacing:-.2px;text-align:left}
+.phone.grouped{background:var(--bg-grouped)}
+.sb{position:absolute;top:0;left:0;right:0;height:54px;display:flex;justify-content:space-between;align-items:center;z-index:80;color:var(--label);pointer-events:none}
+.sb-t,.sb-i{width:134px;display:flex;justify-content:center;align-items:center;gap:6px;padding-top:4px}
+.sb-t{font-weight:600;font-size:17px;letter-spacing:-.3px}
+.sb-i svg{fill:currentColor}
+.island{position:absolute;top:11px;left:50%;width:124px;height:36px;margin-left:-62px;border-radius:20px;background:#000;z-index:90}
+.home{position:absolute;bottom:8px;left:50%;width:139px;height:5px;margin-left:-69.5px;border-radius:3px;background:var(--label);z-index:90}
+
+.i{width:1em;height:1em;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.glass{background:linear-gradient(180deg,var(--glass-sheen),transparent 58%),var(--glass);
+  -webkit-backdrop-filter:blur(16px) saturate(1.8);backdrop-filter:blur(16px) saturate(1.8);
+  box-shadow:inset 0 .5px 0 var(--glass-rim),inset 0 0 0 .5px var(--glass-edge),0 6px 18px var(--glass-drop),0 1px 2px var(--glass-drop)}
+.gb{position:relative;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:21px;color:var(--label);flex:none}
+.gb.prom{background:var(--label);color:var(--bg);box-shadow:0 4px 14px var(--glass-drop)}
+.gcap{height:44px;border-radius:22px;display:flex;align-items:center;padding:0 4px;color:var(--label);flex:none}
+.tb{position:absolute;top:56px;left:16px;right:16px;height:44px;display:flex;justify-content:space-between;align-items:center;z-index:40}
+.lt{position:absolute;left:16px;right:16px;font-size:34px;line-height:41px;font-weight:700;letter-spacing:.2px;z-index:32}
+.lt small{display:block;font-size:15px;line-height:20px;font-weight:400;letter-spacing:-.2px;color:var(--label-2);margin-top:1px}
+.lt .tch{font-size:22px;color:var(--label-2);margin-left:6px;vertical-align:4px;stroke-width:2.4}
+.ntitle{position:absolute;left:96px;right:96px;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+.ntitle b{font-size:17px;line-height:21px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.ntitle span{font-size:12px;line-height:15px;color:var(--label-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.edge-top{position:absolute;left:0;right:0;top:0;height:var(--eh,160px);z-index:30;pointer-events:none;background:linear-gradient(var(--bg) 0%,var(--bg) 62%,transparent 100%)}
+.edge-bot{position:absolute;left:0;right:0;bottom:0;height:120px;z-index:30;pointer-events:none;background:linear-gradient(transparent,var(--bg) 78%)}
+.grouped .edge-bot{background:linear-gradient(transparent,var(--bg-grouped) 70%)}
+.wash{position:absolute;left:0;right:0;top:0;height:220px;z-index:31;pointer-events:none;background:linear-gradient(var(--acc-wash),transparent)}
+
+.a-ocean{--acc:var(--ocean);--acc-ink:var(--ocean-ink);--acc-wash:var(--ocean-wash)}
+.a-ember{--acc:var(--ember);--acc-ink:var(--ember-ink);--acc-wash:var(--ember-wash)}
+
+/* avatars: CSS placeholders only, no photos */
+.av{position:relative;flex:none;width:var(--z,52px);height:var(--z,52px);border-radius:50%;display:grid;place-items:center;font-size:calc(var(--z,52px) * .5);line-height:1}
+.av.pp::before{content:"";position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 50% 39%,rgba(255,255,255,.40) 0 15.5%,transparent 16.5%),radial-gradient(ellipse 31% 23% at 50% 89%,rgba(255,255,255,.34) 0 97%,transparent 100%)}
+.pp-maya{background:radial-gradient(circle at 28% 22%,#ffd9b8 0 18%,transparent 58%),radial-gradient(circle at 78% 84%,#6e3f30 0 22%,transparent 64%),linear-gradient(140deg,#e7a47c,#a3644d)}
+.pp-jonah{background:radial-gradient(circle at 25% 25%,#cfe3ee 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#2f4a5c 0 24%,transparent 66%),linear-gradient(140deg,#93b6ca,#4f6f83)}
+.pp-ana{background:radial-gradient(circle at 25% 25%,#ffd4df 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#7c3a55 0 24%,transparent 66%),linear-gradient(140deg,#e9a6b9,#9a5670)}
+.pp-priya{background:radial-gradient(circle at 25% 25%,#fbe7b2 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#7a5a22 0 24%,transparent 66%),linear-gradient(140deg,#e7c27a,#9b7636)}
+.pp-theo{background:radial-gradient(circle at 25% 25%,#e2ebc4 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#46592c 0 24%,transparent 66%),linear-gradient(140deg,#b5c58a,#61733f)}
+.pp-lena{background:radial-gradient(circle at 25% 25%,#ece3fb 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#4d3d78 0 24%,transparent 66%),linear-gradient(140deg,#c2b2e6,#6d5a9a)}
+.pp-sam{background:radial-gradient(circle at 25% 25%,#e7e7ea 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#45454d 0 24%,transparent 66%),linear-gradient(140deg,#b9b9c0,#6a6a73)}
+.pp-dev{background:radial-gradient(circle at 25% 25%,#d6f0ea 0 16%,transparent 58%),radial-gradient(circle at 80% 80%,#2c5b52 0 24%,transparent 66%),linear-gradient(140deg,#94c9bd,#4b8075)}
+.br-north{background:#3B2A20}
+.br-kestrel{background:linear-gradient(140deg,#e9f1e7,#c9dccb)}
+.br-crypto{background:linear-gradient(140deg,#2a2a2e,#111114)}
+.br-harbor{background:linear-gradient(150deg,#2c4a63,#162a3b)}
+.own-t{background:linear-gradient(150deg,#ececef,#d2d2d7);color:#5a5a62;font:600 calc(var(--z,52px) * .44)/1 var(--font)}
+.own-k{background:radial-gradient(circle at 30% 28%,#ffd76a 0 17%,transparent 40%),radial-gradient(circle at 72% 70%,#7fc8ff 0 19%,transparent 44%),linear-gradient(140deg,#f7a1c4,#9b7bd8)}
+.own{box-shadow:0 0 0 var(--gap,2px) var(--ring-bg,var(--bg)),0 0 0 calc(var(--gap,2px) + var(--rw,2px)) var(--acc)}
+.grp{position:relative;flex:none;width:52px;height:52px}
+.grp .av{position:absolute;--z:36px}
+.grp .av:first-child{left:0;top:0}
+.grp .av:nth-child(2){right:0;bottom:0;box-shadow:0 0 0 2px var(--bg)}
+
+/* AccountMark, tag */
+.mk{position:absolute;right:-2px;bottom:-2px;width:20px;height:20px;border-radius:50%;background:var(--acc);color:var(--on-color);
+  font:700 11px/20px var(--font-round);text-align:center;letter-spacing:0;box-shadow:0 0 0 2px var(--ring-bg,var(--bg));z-index:2}
+.mk.s18{width:18px;height:18px;font-size:10px;line-height:18px}
+.mk.s30{width:30px;height:30px;font-size:16px;line-height:30px;right:-4px;bottom:-4px;box-shadow:0 0 0 3px var(--ring-bg,var(--bg))}
+.mi{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;background:var(--acc);color:var(--on-color);font:700 10px/1 var(--font-round);letter-spacing:0}
+.mi.s16{width:16px;height:16px;font-size:9px}
+.mi.s14{width:14px;height:14px;font-size:8px}
+.tag{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px 0 3px;border-radius:11px;background:var(--acc-wash);color:var(--acc-ink);font-size:13px;line-height:1;font-weight:600;letter-spacing:-.1px;white-space:nowrap;max-width:100%;overflow:hidden}
+.tag .h{font-weight:400}
+.tag .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+
+/* scope chips */
+.scope{position:absolute;left:0;right:0;display:flex;align-items:center;gap:8px;padding:0 16px;overflow:hidden;z-index:35}
+.chip{height:34px;border-radius:17px;padding:0 12px 0 8px;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:500;background:var(--fill);color:var(--label);white-space:nowrap;flex:none}
+.chip.all{padding:0 14px}
+.chip .ct{font-size:13px;color:var(--label-2);font-variant-numeric:tabular-nums;font-weight:500}
+.chip.on-all{background:var(--label);color:var(--bg)}
+.chip.on-all .ct{color:var(--bg);opacity:.75}
+.chip.on{background:var(--acc);color:var(--on-color)}
+.chip.on .mi{background:var(--on-color);color:var(--acc)}
+.chip.on .ct{color:var(--on-color);opacity:.85}
+
+/* today's folder tiles (as built: 65 pt, bold counts) */
+.tiles{position:absolute;left:16px;right:16px;display:flex;gap:10px;z-index:5}
+.tile{flex:1;height:65px;border-radius:16px;background:var(--fill);padding:9px 12px;display:flex;flex-direction:column;justify-content:space-between}
+.tile .r1{display:flex;justify-content:space-between;align-items:center}
+.tile .r1 .i{font-size:22px;color:var(--tint,var(--label))}
+.tile .n{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+.tile .lb{font-size:15px;font-weight:600;color:var(--label-2);line-height:18px}
+
+/* chat rows (76 pt pitch, as built) */
+.list{position:absolute;left:0;right:0}
+.row{position:relative;display:flex;gap:12px;padding:10px 16px 0 22px;height:76px;background:var(--bg)}
+.row .dot{position:absolute;left:7px;top:31px;width:10px;height:10px;border-radius:50%;background:var(--label)}
+.row .tx{flex:1;min-width:0;border-bottom:.5px solid var(--sep);padding-bottom:8px}
+.row .l1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.row .nm{font-size:17px;font-weight:600;letter-spacing:-.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .tm{font-size:15px;color:var(--label-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.row .pv{font-size:15px;line-height:20px;color:var(--label-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:1px}
+.row.un .pv,.row.un .tm{color:var(--label)}
+.row .pv .i{font-size:15px;margin-top:-2px}
+.row .typing{font-style:italic}
+.row.req{height:122px}
+.rtag{display:inline-block;font-size:11px;line-height:16px;font-weight:600;letter-spacing:0;padding:0 7px;border-radius:8px;background:var(--fill-2);color:var(--label);margin-left:6px;vertical-align:2px}
+.rbtns{display:flex;gap:8px;margin-top:8px}
+
+/* bottom bar */
+.bb{position:absolute;left:16px;right:16px;bottom:30px;display:flex;gap:10px;z-index:40}
+.srch{flex:1;height:48px;border-radius:24px;display:flex;align-items:center;gap:8px;padding:0 16px;color:var(--label-2);font-size:17px;white-space:nowrap;overflow:hidden}
+.srch .i{font-size:19px}
+.bb .gb{width:48px;height:48px}
+
+/* ---------- new in v2 ---------- */
+.stk{padding:0 9px}
+.stk .av{--z:26px;--gap:1.5px;--rw:1.5px;font-size:12px}
+.stk .av + .av{margin-left:-5px}
+.bdg{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--label);color:var(--bg);
+  font:600 12px/20px var(--font);letter-spacing:0;text-align:center;font-variant-numeric:tabular-nums;box-shadow:0 0 0 2px var(--bg)}
+/* Requests card: a place, not a chat */
+.rqcard{display:flex;align-items:center;gap:12px;margin:4px 16px 10px;padding:10px 12px;min-height:56px;border-radius:16px;background:var(--fill)}
+.rqcard .ic{width:36px;height:36px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:20px;flex:none}
+.rqcard .t{flex:1;min-width:0}
+.rqcard b{display:block;font-size:15px;line-height:20px;font-weight:600}
+.rqcard .t > span{display:flex;align-items:center;gap:4px;font-size:13px;line-height:18px;color:var(--label-2);white-space:nowrap;overflow:hidden}
+.rqcard > .i{font-size:14px;color:var(--label-2)}
+/* option A pills */
+.pills{position:absolute;left:16px;right:16px;display:flex;gap:8px;z-index:5}
+.pill{height:32px;border-radius:16px;padding:0 12px 0 10px;display:inline-flex;align-items:center;gap:6px;background:var(--fill);font-size:15px;font-weight:500}
+.pill .i{font-size:17px}
+.pill b{font-weight:700;font-variant-numeric:tabular-nums}
+/* option C rows */
+.brow{display:flex;align-items:center;gap:12px;height:56px;padding:0 16px 0 22px;background:var(--bg)}
+.brow .ic{width:40px;height:40px;border-radius:50%;background:var(--fill);display:grid;place-items:center;font-size:21px;flex:none;margin-left:6px}
+.brow .grow{flex:1;min-width:0;border-bottom:.5px solid var(--sep);height:56px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.brow b{font-size:17px;font-weight:600;letter-spacing:-.4px}
+.brow .ct{font-size:15px;color:var(--label);font-weight:600;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px}
+.brow .ct .i{font-size:13px;color:var(--label-3)}
+.fh{padding:18px 22px 6px;font-size:13px;line-height:18px;color:var(--label-2);text-transform:uppercase;letter-spacing:.2px;background:var(--bg)}
+.frow{display:flex;align-items:center;gap:14px;height:48px;padding:0 16px 0 22px;background:var(--bg)}
+.frow > .i{font-size:22px}
+.frow .grow{flex:1;font-size:17px;display:flex;justify-content:space-between;align-items:center;border-bottom:.5px solid var(--sep);height:48px}
+.frow .ct{color:var(--label-2);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px;font-size:17px}
+.frow .ct .i{font-size:13px;color:var(--label-3)}
+/* option D segmented */
+.segc{position:absolute;left:16px;right:16px;height:32px;border-radius:16px;background:var(--fill);display:flex;padding:2px;z-index:5}
+.segc span{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:14px;font-size:14px;font-weight:600;color:var(--label)}
+.segc span.on{background:var(--bg);box-shadow:0 1px 3px var(--glass-drop)}
+/* menus (iOS 26 glass menu) */
+.dim{position:absolute;inset:0;z-index:55;background:var(--menu-dim)}
+.mpop{position:absolute;z-index:60;width:248px;border-radius:24px;padding:6px 0;background:var(--menu-bg);
+  -webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);box-shadow:0 14px 44px rgba(0,0,0,.24),inset 0 0 0 .5px var(--glass-edge)}
+.mpop .it{display:flex;align-items:center;gap:12px;padding:8px 16px;min-height:50px}
+.mpop .it > .i{font-size:21px;width:24px}
+.mpop .it div{flex:1;min-width:0}
+.mpop .it b{display:block;font-size:17px;font-weight:400;line-height:22px}
+.mpop .it small{display:block;font-size:13px;line-height:17px;color:var(--label-2)}
+.mpop .it + .it{border-top:.5px solid var(--sep)}
+.mpop .it .ck{font-size:17px;width:auto;stroke-width:2.4}
+/* thread */
+.thh{position:absolute;top:56px;left:70px;right:70px;height:44px;display:flex;align-items:center;gap:8px;z-index:42}
+.thh .tt{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.thh b{font-size:15px;line-height:19px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.msgs{position:absolute;left:0;right:0;top:0;bottom:92px;display:flex;flex-direction:column;justify-content:flex-end;padding:0 12px;gap:2px;z-index:2}
+.b{position:relative;max-width:75%;padding:8px 12px;font-size:17px;line-height:22px;border-radius:20px;letter-spacing:-.3px}
+.b.in{align-self:flex-start;background:var(--bubble-in);color:var(--label)}
+.b.out{align-self:flex-end;background:var(--acc);color:var(--on-color)}
+.in.first{border-bottom-left-radius:6px}.in.last{border-top-left-radius:6px}
+.out.first{border-bottom-right-radius:6px}.out.last{border-top-right-radius:6px}
+.gap{height:var(--g,10px);flex:none}
+.day{align-self:center;font-size:12px;line-height:16px;color:var(--label-2);margin:4px 0 6px}
+.meta-r{align-self:flex-end;font-size:11px;line-height:13px;color:var(--label-2);margin:3px 6px 0}
+.comp{position:absolute;left:12px;right:12px;bottom:30px;display:flex;align-items:flex-end;gap:8px;z-index:40}
+.field{flex:1;min-height:44px;border-radius:22px;display:flex;align-items:center;gap:9px;padding:0 6px 0 8px;font-size:17px;min-width:0}
+.field .ph{flex:1;color:var(--label-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* grouped lists */
+.grp-h{font-size:13px;line-height:18px;color:var(--label-2);margin:0 20px 7px}
+.grp-f{font-size:13px;line-height:18px;color:var(--label-2);margin:7px 20px 0}
+.cells{margin:0 16px;background:var(--cell);border-radius:24px;overflow:hidden}
+.cell{position:relative;display:flex;align-items:center;gap:12px;min-height:46px;padding:10px 16px}
+.cell + .cell::before{content:"";position:absolute;top:0;left:var(--sep-l,16px);right:0;border-top:.5px solid var(--sep)}
+.cell .grow{flex:1;min-width:0}
+.acct .nm{font-size:17px;font-weight:600;line-height:21px;letter-spacing:-.4px}
+.acct .hd{font-size:15px;line-height:19px;color:var(--label-2)}
+.st{display:flex;align-items:center;gap:5px;font-size:13px;line-height:17px;font-weight:500;margin-top:3px}
+.st .i{font-size:14px}
+.st.ok{color:var(--ok)}.st.ok .i{color:var(--ok-g)}
+.big{height:52px;border-radius:26px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;background:var(--label);color:var(--bg)}
+.txtbtn{display:flex;justify-content:center;font-size:17px;font-weight:500;color:var(--label)}
+.sbtn{height:30px;border-radius:15px;padding:0 13px;display:inline-flex;align-items:center;font-size:14px;font-weight:600;background:var(--fill);color:var(--label);white-space:nowrap}
+.sbtn.dark{background:var(--label);color:var(--bg)}
+.sbtn.del{color:var(--err)}
+.sbtn.sel{box-shadow:inset 0 0 0 1.5px var(--label);background:transparent}
+.swg{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 0;justify-items:center;padding:16px 8px}
+.sw{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--on-color);font:700 15px/1 var(--font-round)}
+.sw.sel{box-shadow:0 0 0 2px var(--cell),0 0 0 4px var(--ocean)}
+.sw.taken{opacity:.38}
+/* annotation bands (spec layer, not app UI) */
+.anno{position:absolute;left:0;right:0;z-index:70;pointer-events:none;border-top:1px dashed var(--anno-line);
+  background:repeating-linear-gradient(135deg,var(--anno-fill) 0 6px,transparent 6px 12px)}
+.anno span{position:absolute;right:8px;top:50%;transform:translateY(-50%);font:600 11px/1.2 var(--font);letter-spacing:0;padding:4px 7px;border-radius:8px;background:var(--anno-tag);color:var(--anno-tag-ink);white-space:nowrap}
+.anno.total{background:none;border-top:2px solid var(--anno-tag);height:0}
+.anno.total span{top:0;transform:translateY(-50%);right:auto;left:8px}
+
+/* panels */
+.panels{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:24px;align-items:start;margin-top:28px}
+.panel{background:var(--page-surface);border:1px solid var(--page-line);border-radius:28px;padding:20px;min-width:0}
+.panel.wide{grid-column:1 / -1}
+.panel h3{margin:0;font-size:17px;letter-spacing:-.2px}
+.panel > p{margin:4px 0 14px;color:var(--page-muted);font-size:14px}
+.ios{background:var(--bg);color:var(--label);border-radius:22px;padding:16px 0;font-family:var(--font);font-size:17px;line-height:22px;letter-spacing:-.2px;position:relative;overflow:hidden}
+.ios.gbg{background:var(--bg-grouped)}
+.tw{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;line-height:1.4}
+.tbl th,.tbl td{text-align:left;vertical-align:top;padding:7px 8px;border-top:1px solid var(--page-line)}
+.tbl th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--page-muted);font-weight:700;border-top:none}
+.tbl td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl tr.hl td{font-weight:600}
+.notes{margin:0;padding-left:18px;color:var(--page-muted);font-size:14px}
+.notes li{margin:5px 0}
+.notes b{color:var(--page-ink)}
+.foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--page-line);color:var(--page-muted);font-size:13px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M15 4.5 7.5 12l7.5 7.5" stroke-width="2.2"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.2"/></symbol>
+    <symbol id="i-chev-d" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7" stroke-width="2.2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.3" stroke-width="2"/><path d="M15.6 15.6 20 20" stroke-width="2.2"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+    <symbol id="i-compose" viewBox="0 0 24 24"><path d="M11 4.5H6.8A2.8 2.8 0 0 0 4 7.3v9.9A2.8 2.8 0 0 0 6.8 20h9.9a2.8 2.8 0 0 0 2.8-2.8V13"/><path d="M18.2 3.8a1.9 1.9 0 0 1 2.7 2.7l-8.6 8.6-3.6.9.9-3.6z"/></symbol>
+    <symbol id="i-ellipsis" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.8" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-width="2.1"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7.5" stroke-width="2.4"/></symbol>
+    <symbol id="i-checkc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="currentColor" stroke="none"/><path d="M7.8 12.3l2.9 2.9 5.5-5.8" stroke="#fff" stroke-width="2.2"/></symbol>
+    <symbol id="i-reel" viewBox="0 0 24 24"><rect x="7" y="7" width="13" height="13" rx="3"/><path d="M4 16.5V7.5A3.5 3.5 0 0 1 7.5 4h9"/><path d="M11.8 10.6v5.8l4.6-2.9z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.8"/><circle cx="9" cy="10" r="1.6"/><path d="M3.8 17.2l5-4.4 4 3.4 2.8-2.3 4.6 4"/></symbol>
+    <symbol id="i-tray" viewBox="0 0 24 24"><path d="M4 13.5 6.3 6.4A2 2 0 0 1 8.2 5h7.6a2 2 0 0 1 1.9 1.4L20 13.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 13.5h4.5l1.2 2.2h4.6l1.2-2.2H20"/></symbol>
+    <symbol id="i-folders" viewBox="0 0 24 24"><path d="M4 14.6 5.9 9.5A2 2 0 0 1 7.8 8.2h8.4a2 2 0 0 1 1.9 1.3l1.9 5.1V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 14.6h4.3l1.1 2h5.2l1.1-2H20"/><path d="M7.2 4.6h9.6"/></symbol>
+    <symbol id="i-req" viewBox="0 0 24 24"><circle cx="9" cy="8.2" r="3.4"/><path d="M3.2 19.5c.7-3.4 3-5.4 5.8-5.4s5.1 2 5.8 5.4"/><path d="M16.4 7.6a2.4 2.4 0 1 1 3.2 2.3c-.6.2-1 .7-1 1.3v.5"/><circle cx="18.6" cy="14.9" r=".6" fill="currentColor"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="4.5" rx="1.2"/><path d="M5 9v9.2A1.8 1.8 0 0 0 6.8 20h10.4a1.8 1.8 0 0 0 1.8-1.8V9M10 12.8h4"/></symbol>
+    <symbol id="i-eyeslash" viewBox="0 0 24 24"><path d="M3 12s3.3-6 9-6 9 6 9 6-3.3 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.7"/><path d="M4.5 4.5l15 15"/></symbol>
+    <symbol id="i-signal" viewBox="0 0 19 12"><rect x="0" y="8" width="3.2" height="4" rx="1"/><rect x="5.2" y="5.5" width="3.2" height="6.5" rx="1"/><rect x="10.4" y="3" width="3.2" height="9" rx="1"/><rect x="15.6" y="0" width="3.2" height="12" rx="1"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 17 12"><path d="M8.5 2.3c2.5 0 4.8 1 6.5 2.6l1.3-1.3A11 11 0 0 0 8.5.4 11 11 0 0 0 .7 3.6L2 4.9a9.2 9.2 0 0 1 6.5-2.6z"/><path d="M8.5 5.9c1.5 0 2.9.6 3.9 1.6l1.3-1.3a7.4 7.4 0 0 0-10.4 0l1.3 1.3c1-1 2.4-1.6 3.9-1.6z"/><path d="M8.5 9.3c.6 0 1.1.2 1.5.6L8.5 11.5 7 9.9c.4-.4.9-.6 1.5-.6z"/></symbol>
+    <symbol id="i-batt" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.6" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.2"/><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2z" opacity=".45"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header class="head">
+    <div>
+      <h1>IG Messenger Design v2</h1>
+      <p class="sub">Review pass on the shipped v1.1, 14 Oct 2026. Where General, Requests and Archived should live, and what the top of the inbox should hold. Measurements, reasoning and the full option write-ups are in REVIEW-2026-10-14.md. v1 mockups: mockups.html.</p>
+      <div class="pr" aria-label="Design principles">
+        <span>Color means account</span><span>One scope control</span><span>Folders are places <s>shown as tiles</s> reached from a menu</span><span>A folder speaks up only when someone is waiting</span>
+      </div>
+    </div>
+    <div class="seg" role="group" aria-label="Theme">
+      <button type="button" data-t="auto" aria-pressed="true">Auto</button>
+      <button type="button" data-t="light" aria-pressed="false">Light</button>
+      <button type="button" data-t="dark" aria-pressed="false">Dark</button>
+    </div>
+  </header>
+  <div class="legend">
+    <span class="k">Accounts (fictional)</span>
+    <span class="tag a-ocean"><span class="mi s16">A</span>Alex <span class="h">· @alex.personal</span></span>
+    <span class="tag a-ember"><span class="mi s16">S</span>Alex Studio <span class="h">· @alexstudio · professional</span></span>
+    <span class="k" style="margin-left:8px">Contacts are fictional; avatars are CSS placeholders</span>
+  </div>
+
+<main>
+  <!-- ======================= 1. TODAY ======================= -->
+  <section>
+    <h2>1 · Today (v1.1): where the space goes</h2>
+    <p class="lead">Measured on the iPhone 17 simulator (402 × 874 pt) and redrawn in 393 × 852 frames. Labels give the device values. The bands are the same in every scope.</p>
+    <div class="frames" data-cap=".62">
+      <figure>
+        <div class="dw"><div class="device"><div class="phone" data-f="cur-all-anno"></div></div></div>
+        <figcaption><span class="id">NOW</span><b>All, measured</b><p>242 pt between the status bar and the first chat; 6.7 rows fit. The 92 pt tile band says "0 · 0 · (blank)". The 295 pt beside the account stack are empty, and the title repeats the "All" chip.</p></figcaption>
+      </figure>
+      <figure>
+        <div class="dw"><div class="device"><div class="phone" data-f="cur-studio"></div></div></div>
+        <figcaption><span class="id">NOW</span><b>Alex Studio (professional)</b><p>Same geometry. The name appears three times (title, filled chip, search placeholder). General shows "0" in bold, and so do Requests.</p></figcaption>
+      </figure>
+      <figure>
+        <div class="dw"><div class="device"><div class="phone" data-f="cur-req"></div></div></div>
+        <figcaption><span class="id">NOW</span><b>2 requests waiting</b><p>The only difference is a "2" where the "0" was, in the same weight as General's "0". Waiting people don't stand out.</p></figcaption>
+      </figure>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <h3>Bands (iPhone 17, All scope)</h3>
+        <p>Pixel scans of full-size captures (÷ 3). The captures match m8-inbox-*.png.</p>
+        <div class="tw"><table class="tbl">
+          <thead><tr><th>Band</th><th>y</th><th>Height</th><th>Holds</th></tr></thead>
+          <tbody>
+            <tr><td>Status bar</td><td class="n">0–62</td><td class="n">62</td><td>system</td></tr>
+            <tr><td>Nav bar</td><td class="n">62–116</td><td class="n">54</td><td>account stack (75 × 44); 295 pt empty</td></tr>
+            <tr><td>Large title</td><td class="n">116–168</td><td class="n">52</td><td>"Chats" = the selected chip</td></tr>
+            <tr><td>Chips</td><td class="n">168–212</td><td class="n">44</td><td>the one control</td></tr>
+            <tr><td>Folder tiles</td><td class="n">212–304</td><td class="n">92</td><td>usually "0 · 0 · (blank)"</td></tr>
+            <tr class="hl"><td>Before first chat</td><td class="n">62–304</td><td class="n">242</td><td>3.2 rows; 6.7 rows visible</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h3>Why it happened</h3>
+        <ul class="notes">
+          <li><b>Tiles are permanent</b> and sized for content that's usually absent: icon, count and label take at least 62 pt (DESIGN said 52; they render at 65), drawn even at zero.</li>
+          <li><b>iOS 26 moved search to the bottom bar.</b> The space under the large title used to hold the search field. The trailing filter menu was cut in M3, so the bar holds one button.</li>
+          <li><b>The large title and the chips both say where you are.</b></li>
+          <li><b>Accessibility sizes:</b> tiles stack into 120 pt rows. Two take 250 pt (first chat at y 534); with General, about 370 pt.</li>
+          <li><b>Scrolled, it's fine</b> (164 pt): the title collapses and the tiles scroll off. But an inbox is at rest at the top almost every time.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 2. OPTIONS ======================= -->
+  <section>
+    <h2>2 · Options for General, Requests and Archived</h2>
+    <p class="lead">Each option is shown next to today's inbox, with the header left as it is so only the folder treatment changes. The header is a separate decision (section 3). Two accounts: Alex and Alex Studio (professional, so General exists in All and in its own scope).</p>
+
+    <div class="opt">
+      <h3>A · Compact pills, only when a folder has something</h3>
+      <p>A 32 pt pill row appears under the chips while Requests or General hold something. Archived moves to a row at the end of the list.</p>
+      <div class="frames" data-cap=".62">
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="cur-all"></div></div></div><figcaption><span class="id">NOW</span><b>Today</b></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="a-pills"></div></div></div><figcaption><span class="id">A</span><b>2 requests, 1 unread in General</b><p>Pills appear with a count; tap one to go there.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="a-zero"></div></div></div><figcaption><span class="id">A</span><b>Typical day</b><p>No row at all: 0 pt. Archived is a row after the last chat.</p></figcaption></figure>
+      </div>
+      <div class="facts">
+        <div><b>Reach</b>Tap a pill (1 tap). Archived: scroll to the end.</div>
+        <div><b>Noticing</b>The pill sliding in is the signal.</div>
+        <div><b>Zero</b>0 pt.</div>
+        <div><b>Cost</b>S. FolderTiles becomes a filtered FolderPills, plus one end row.</div>
+        <div><b>Catch</b>The list jumps 44 pt when a request arrives, and folders get two homes.</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>B · A Folders menu in the empty toolbar slot</h3>
+      <p>A glass button at the top right with a monochrome badge. Its menu lists General (professional scopes only), Requests and Archived, each with a count when it isn't zero.</p>
+      <div class="frames" data-cap=".62">
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="cur-all"></div></div></div><figcaption><span class="id">NOW</span><b>Today</b></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="b-badge"></div></div></div><figcaption><span class="id">B</span><b>2 requests waiting</b><p>A badge on the button, and nothing else.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="b-menu"></div></div></div><figcaption><span class="id">B</span><b>Menu open</b><p>Each item pushes the same folder screen as today.</p></figcaption></figure>
+      </div>
+      <div class="facts">
+        <div><b>Reach</b>2 taps for any folder.</div>
+        <div><b>Noticing</b>Badge only. It's small, so a waiting request is easy to miss.</div>
+        <div><b>Zero</b>0 pt; the button shows no badge.</div>
+        <div><b>Cost</b>S, about 30 lines; FolderTiles is deleted. Same idea as the filter menu in Messages on iOS 26.</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>C · Folder rows at the end of the list, plus a request row on top</h3>
+      <p>Mail and Signal style. General, Requests and Archived are plain rows after the last chat. A "message requests" row sits at the top only while requests exist.</p>
+      <div class="frames" data-cap=".62">
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="cur-all"></div></div></div><figcaption><span class="id">NOW</span><b>Today</b></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="c-top"></div></div></div><figcaption><span class="id">C</span><b>2 requests waiting</b><p>A row on top, shaped like a chat row.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="c-end"></div></div></div><figcaption><span class="id">C</span><b>Scrolled to the end</b><p>The folders live after the last chat: 144 pt, visible on short lists.</p></figcaption></figure>
+      </div>
+      <div class="facts">
+        <div><b>Reach</b>Top row when present; otherwise scroll to the end.</div>
+        <div><b>Noticing</b>The top row.</div>
+        <div><b>Zero</b>Nothing at the top; the end rows stay.</div>
+        <div><b>Cost</b>S.</div>
+        <div><b>Catch</b>General is far away in a busy professional scope.</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>D · General as a sub-filter of a professional account</h3>
+      <p>In Alex Studio's scope the title becomes a menu, Primary or General, and the list swaps in place. This covers General only. Requests and Archived use B here.</p>
+      <div class="frames" data-cap=".62">
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="cur-studio"></div></div></div><figcaption><span class="id">NOW</span><b>Today, Alex Studio</b></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="d-title"></div></div></div><figcaption><span class="id">D</span><b>Title menu open</b><p>"Alex Studio ⌄ · Primary": pick General to filter in place.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="d-seg"></div></div></div><figcaption><span class="id">D′</span><b>Variant: segmented</b><p>Primary | General, in that scope only (44 pt). Closest to Instagram's tabs.</p></figcaption></figure>
+      </div>
+      <div class="facts">
+        <div><b>Reach</b>Tap the title (or the segment).</div>
+        <div><b>Noticing</b>A count in the menu or the segment.</div>
+        <div><b>Zero</b>Unchanged.</div>
+        <div><b>Cost</b>M. The list gains folder state, per-folder empty states and search, and All scope needs a rule.</div>
+        <div><b>Principle</b>General becomes a filter, not a place.</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h3>E · Remove the folders</h3>
+      <p>Not viable for Requests: the brief requires them to stay clearly separate from Chats. For General, removal discards the Primary/General split the bridge patch (D12) bought. For Archived it's workable: search finds archived chats, and they come back on a new message.</p>
+      <div class="frames" data-cap=".62">
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="cur-all"></div></div></div><figcaption><span class="id">NOW</span><b>Today</b></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="e-none"></div></div></div><figcaption><span class="id">E</span><b>Typical day</b><p>Clean, but nothing says where an archived chat went.</p></figcaption></figure>
+        <figure><div class="dw"><div class="device"><div class="phone" data-f="e-mixed"></div></div></div><figcaption><span class="id">E</span><b>With requests: what breaks</b><p>Spam text, plus Accept and Delete, land among real chats. The "they won't see that you've read it" cue has no screen to live on.</p></figcaption></figure>
+      </div>
+    </div>
+
+    <div class="panels">
+      <div class="panel wide">
+        <h3>At a glance</h3>
+        <div class="tw"><table class="tbl">
+          <thead><tr><th></th><th>Space on a typical day</th><th>Requests noticed by</th><th>General reached by</th><th>Cost</th><th>Verdict</th></tr></thead>
+          <tbody>
+            <tr><td>Today: tiles</td><td>92 pt</td><td>a digit in a tile</td><td>1 tap</td><td>—</td><td>too heavy</td></tr>
+            <tr><td>A · pills</td><td>0 (44 with content)</td><td>pill appears</td><td>1 tap</td><td>S</td><td>good; two homes</td></tr>
+            <tr><td>B · menu</td><td>0</td><td>badge</td><td>2 taps</td><td>S</td><td>best home; weak signal alone</td></tr>
+            <tr><td>C · end rows + top row</td><td>0 on top</td><td>top row</td><td>scroll to end</td><td>S</td><td>good signal; poor home</td></tr>
+            <tr><td>D · General sub-filter</td><td>0 (title menu)</td><td>—</td><td>1–2 taps</td><td>M</td><td>General only; changes a principle</td></tr>
+            <tr><td>E · remove</td><td>0</td><td>—</td><td>—</td><td>S</td><td>breaks request separation</td></tr>
+            <tr class="hl"><td>Recommended: B + request card</td><td>0 (64 with new requests)</td><td>card + badge</td><td>2 taps</td><td>S</td><td>see section 4</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 3. HEADER ======================= -->
+  <section>
+    <h2>3 · The top of the screen</h2>
+    <p class="lead">These frames keep today's tiles so only the header changes. Inline title: yes. Merging the account stack into the chips: no.</p>
+    <div class="frames" data-cap=".62">
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="cur-all"></div></div></div><figcaption><span class="id">NOW</span><b>Large title</b><p>Nav bar 54 pt + title 52 pt hold one button and one word.</p></figcaption></figure>
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="h1"></div></div></div><figcaption><span class="id">H1</span><b>Inline title<span class="verdict yes">yes</span></b><p>The title and subtitle move into the empty nav bar, saving 52 pt. With the large title gone, the chips can use safeAreaBar and get the iOS 26 scroll-edge effect (H2).</p></figcaption></figure>
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="h3"></div></div></div><figcaption><span class="id">H3</span><b>Stack inside the chips row<span class="verdict">no</span></b><p>Saves about 46 pt more, but the custom header loses the native bar, the title and subtitle, and the slot for Folders. The stack looks like a chip but opens a sheet.</p></figcaption></figure>
+    </div>
+  </section>
+
+  <!-- ======================= 4. RECOMMENDED ======================= -->
+  <section>
+    <h2>4 · Recommended: inline title, Folders menu, request card</h2>
+    <p class="lead">H1 + H2 + B, plus a slim Requests card shown only while there are requests you haven't looked at yet. General stays quiet (badge and menu), as it does on Instagram. Archived lives in the menu, and search still finds archived chats. Folders are still places: each item pushes today's folder screen, so request privacy is unchanged.</p>
+    <div class="frames" data-cap=".62">
+      <figure>
+        <div class="dw"><div class="device"><div class="phone" data-f="rec-all-anno"></div></div></div>
+        <figcaption><span class="id">REC</span><b>All, typical day, measured</b><p>No badge and no card. The first chat moves from y 304 to y 164: 140 pt higher, 8.5 rows instead of 6.7.</p></figcaption>
+      </figure>
+      <figure>
+        <div class="dw"><div class="device"><div class="phone" data-f="rec-all-req"></div></div></div>
+        <figcaption><span class="id">REC</span><b>All, 2 new requests</b><p>The card names who is waiting, with each receiving account's mark, but shows no message text. It opens the Requests list, never a request thread. Badge "2". First chat at y 228.</p></figcaption>
+      </figure>
+      <figure>
+        <div class="dw"><div class="device"><div class="phone" data-f="rec-studio"></div></div></div>
+        <figcaption><span class="id">REC</span><b>Alex Studio, 1 unread in General</b><p>The subtitle "@alexstudio · Primary" says this list isn't everything. Unread General chats only feed the badge.</p></figcaption>
+      </figure>
+      <figure>
+        <div class="dw"><div class="device"><div class="phone" data-f="rec-studio-menu"></div></div></div>
+        <figcaption><span class="id">REC</span><b>Alex Studio, Folders open</b><p>General "1 unread", Requests "1 waiting" (already looked at, so no card), Archived. Alex's scope has no General item.</p></figcaption>
+      </figure>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <h3>Rules</h3>
+        <ul class="notes">
+          <li><b>Badge</b> = new requests in scope + unread General chats in scope. Label color; hidden at 0.</li>
+          <li><b>Card</b>: shown while the scope has requests newer than the last time Requests was opened there. That marker is a local timestamp; nothing is sent.</li>
+          <li><b>Menu</b>: General only where a professional account is in scope (today's showsGeneral). Subtitles only when non-zero; never a bare "0".</li>
+          <li><b>Zero</b>: nothing at all between the chips and the first chat.</li>
+          <li><b>AX sizes</b>: no tiles to stack. The card grows with its text (about 90 pt, and only when present).</li>
+          <li><b>VoiceOver</b>: "Folders, 2 requests waiting". Card: "2 message requests, from Lena Ortiz and crypto.wins.daily. Opens Requests."</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Principle changes (explicit)</h3>
+        <div class="tw"><table class="tbl">
+          <thead><tr><th>Where</th><th>Was</th><th>Becomes</th></tr></thead>
+          <tbody>
+            <tr><td>§0.4</td><td>Folders are tiles at the top of the list</td><td>Folders live in the Folders menu. A folder appears in the list only when it has something new (today: requests). "Places, not filters" stays.</td></tr>
+            <tr><td>§4.2</td><td>Request count always visible</td><td>Visible whenever it isn't zero</td></tr>
+            <tr><td>§4.1 / I1</td><td>Large title</td><td>Inline title, same text and subtitle</td></tr>
+            <tr><td>§8.4</td><td>tileHeight 52</td><td>removed</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h3>Build (S, InboxView.swift)</h3>
+        <ul class="notes">
+          <li>.navigationBarTitleDisplayMode(.inline)</li>
+          <li>FolderTiles → ToolbarItem(.topBarTrailing) Menu, id inbox.folders, with a badge (or an overlay if the system badge can't be monochrome)</li>
+          <li>RequestsCard as the first List row; FolderView(.requests) stores "last opened"</li>
+          <li>ScopeBar → safeAreaBar(edge: .top); wash 260 → 200</li>
+          <li>Empty-state copy says "Open Folders"; SmokeUITests taps inbox.folders first (2 call sites)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 5. OTHER SCREENS ======================= -->
+  <section>
+    <h2>5 · Other screens: fixes that change layout</h2>
+    <p class="lead">Findings 1–3 and 4–5 from the review's section d. Each is S.</p>
+    <div class="frames" data-cap=".62">
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="o5-now"></div></div></div><figcaption><span class="id">O5 · NOW</span><b>Save covers the colors</b><p>The bottom bar hides most of the first row of swatches and all of the second. Mark is off-screen.</p></figcaption></figure>
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="o5-fix"></div></div></div><figcaption><span class="id">O5 · FIX</span><b>Save in the bar</b><p>Inline title, ✓ to save (as in Accounts), "Add another account" as the last row. All 8 swatches and Mark fit.</p></figcaption></figure>
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="t1-now"></div></div></div><figcaption><span class="id">T1 · NOW</span><b>Account cut off</b><p>The handle cuts the tag off ("Alex · @alex.pe…"); with a 14-character account name, the name itself was cut. At XXL even a short name truncates.</p></figcaption></figure>
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="t1-fix"></div></div></div><figcaption><span class="id">T1 · FIX</span><b>Name, no handle</b><p>The handle lives in Chat Info and the composer popover. At large sizes the tag falls back to the mark plus first word, then the mark alone.</p></figcaption></figure>
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="a2-now"></div></div></div><figcaption><span class="id">A2 · NOW</span><b>Header pushes the editor down</b><p>An 88 pt avatar and a second copy of the name; Color starts below the fold.</p></figcaption></figure>
+      <figure><div class="dw"><div class="device"><div class="phone" data-f="a2-fix"></div></div></div><figcaption><span class="id">A2 · FIX</span><b>Compact header row</b><p>The same row as in Accounts. The identity editor is on the first screen.</p></figcaption></figure>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <h3>A1: say which accounts are professional</h3>
+        <p>whoami reports it now (D12), and it's the reason General exists only for Alex Studio.</p>
+        <div class="ios gbg" style="--ring-bg:var(--cell)">
+          <div class="cells" style="--sep-l:72px">
+            <div class="cell acct a-ocean"><span class="av own-t own" style="--z:44px">A<span class="mk s18">A</span></span><div class="grow"><div class="nm">Alex</div><div class="hd">@alex.personal</div><div class="st ok"><svg class="i"><use href="#i-checkc"/></svg>Connected</div></div></div>
+            <div class="cell acct a-ember"><span class="av own-k own" style="--z:44px"><span class="mk s18">S</span></span><div class="grow"><div class="nm">Alex Studio</div><div class="hd">@alexstudio · Professional · Primary and General</div><div class="st ok"><svg class="i"><use href="#i-checkc"/></svg>Connected</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>T3: name the account and the folder</h3>
+        <p>"In [tag]" becomes a labelled row. A professional account's chat also says where it lives, because the app can't move it.</p>
+        <div class="ios gbg">
+          <div class="cells">
+            <div class="cell a-ember"><span class="grow">Account</span><span class="tag"><span class="mi s16">S</span>Alex Studio</span></div>
+            <div class="cell"><span class="grow">Folder</span><span style="color:var(--label-2)">General</span></div>
+          </div>
+          <div class="grp-f">Replies always come from this account. Move chats between Primary and General in Instagram.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">Mockups are illustrative: placeholder avatars, fictional contacts, and two fictional accounts. Positions follow the iPhone 17 measurements shifted to a 393 × 852 frame (8 pt shorter status area). Specs and reasoning: REVIEW-2026-10-14.md; the v1 design system: DESIGN.md and mockups.html.</div>
+</main>
+</div>
+
+<script>
+(function(){
+  /* ---------- theme ---------- */
+  var root = document.documentElement, KEY = 'igm-theme-v2';
+  var buttons = document.querySelectorAll('.seg button');
+  function apply(t){
+    if (t === 'light' || t === 'dark') root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+    buttons.forEach(function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-t') === (t || 'auto'))); });
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  apply(saved || 'auto');
+  buttons.forEach(function(b){
+    b.addEventListener('click', function(){
+      var t = b.getAttribute('data-t'); apply(t);
+      try { localStorage.setItem(KEY, t); } catch (e) {}
+    });
+  });
+
+  /* ---------- data (fictional contacts and accounts) ---------- */
+  var A = {
+    T: {cls:'a-ocean', mk:'A', name:'Alex', handle:'alex.personal', av:'own-t', init:'A'},
+    K: {cls:'a-ember', mk:'S', name:'Alex Studio', handle:'alexstudio', av:'own-k', init:'', pro:true}
+  };
+  function I(id, extra){ return '<svg class="i"' + (extra ? ' ' + extra : '') + '><use href="#i-' + id + '"/></svg>'; }
+  var CHATS = [
+    {n:'Maya Chen', a:'K', av:'pp pp-maya', t:'9:41', un:1, pv:I('reel') + ' Sent a reel by @tidepool.films'},
+    {n:'Northwind Coffee', a:'K', av:'br-north', g:'☕', t:'9:12', un:1, pv:'Could you send the invoice for the menu shoot when you get a sec?'},
+    {n:'Priya Raman', a:'T', av:'pp pp-priya', t:'8:50', typing:1, pv:'typing…'},
+    {n:'Jonah Reyes', a:'T', av:'pp pp-jonah', t:'8:31', pv:'You: see you there'},
+    {n:'Weekend crew', a:'T', grp:['pp-theo','pp-jonah'], t:'Yesterday', pv:'Theo: ' + I('mic') + ' Voice message · 0:21'},
+    {n:'Ana Lucía', a:'K', av:'pp pp-ana', t:'Yesterday', pv:I('photo') + ' Photo'},
+    {n:'Dev Patel', a:'T', av:'pp pp-dev', t:'Mon', pv:'You: Here’s the moodboard'},
+    {n:'Sam Okafor', a:'K', av:'pp pp-sam', t:'Sun', pv:'Thanks again, the prints look great'},
+    {n:'Theo Brandt', a:'T', av:'pp pp-theo', t:'Sat', pv:'lol same'},
+    {n:'Kestrel Bikes', a:'K', av:'br-kestrel', g:'🚲', t:'Fri', pv:'You: selects tonight'}
+  ];
+  var REQS = [
+    {n:'Lena Ortiz', a:'K', av:'pp pp-lena', t:'2h', pv:'Is the studio free for a portrait session the week of the 20th?'},
+    {n:'crypto.wins.daily', a:'T', av:'br-crypto', g:'🚀', t:'1d', pv:'Turn $200 into $5,000 this week. DM me to learn the method'}
+  ];
+  function inScope(sc){ return function(c){ return sc === 'all' || c.a === sc; }; }
+
+  /* ---------- pieces ---------- */
+  function avatar(c, mark){
+    var m = mark ? '<span class="mk">' + A[c.a].mk + '</span>' : '';
+    if (c.grp) return '<div class="grp"><div class="av pp ' + c.grp[0] + '"></div><div class="av pp ' + c.grp[1] + '"></div>' + m + '</div>';
+    return '<div class="av ' + c.av + '">' + (c.g || '') + m + '</div>';
+  }
+  function row(c, mark){
+    return '<div class="row' + (c.un ? ' un' : '') + ' ' + A[c.a].cls + '">' + (c.un ? '<span class="dot"></span>' : '') + avatar(c, mark) +
+      '<div class="tx"><div class="l1"><span class="nm">' + c.n + '</span><span class="tm">' + c.t + '</span></div><div class="pv' + (c.typing ? ' typing' : '') + '">' + c.pv + '</div></div></div>';
+  }
+  function reqRow(c){
+    return '<div class="row un req ' + A[c.a].cls + '"><span class="dot"></span>' + avatar(c, true) +
+      '<div class="tx"><div class="l1"><span class="nm">' + c.n + '<span class="rtag">Request</span></span><span class="tm">' + c.t + '</span></div><div class="pv">' + c.pv +
+      '</div><div class="rbtns"><span class="sbtn del">Delete</span><span class="sbtn dark">Accept</span></div></div></div>';
+  }
+  function stack(){
+    return '<span class="gcap glass stk"><span class="av own own-t a-ocean">A</span><span class="av own own-k a-ember"></span></span>';
+  }
+  function fbtn(badge){ return '<span class="gb glass">' + I('folders') + (badge ? '<span class="bdg">' + badge + '</span>' : '') + '</span>'; }
+  function chipsInner(sc){
+    return '<span class="chip all' + (sc === 'all' ? ' on-all' : '') + '">All <span class="ct">2</span></span>' +
+      '<span class="chip a-ocean' + (sc === 'T' ? ' on' : '') + '"><span class="mi">A</span>Alex</span>' +
+      '<span class="chip a-ember' + (sc === 'K' ? ' on' : '') + '"><span class="mi">S</span>Alex Studio <span class="ct">2</span></span>';
+  }
+  function chips(sc, top){ return '<div class="scope" style="top:' + top + 'px">' + chipsInner(sc) + '</div>'; }
+  function tiles(sc, top, req, gen){
+    function tile(ic, n, lb){ return '<div class="tile"><div class="r1">' + I(ic) + '<span class="n">' + n + '</span></div><div class="lb">' + lb + '</div></div>'; }
+    return '<div class="tiles" style="top:' + top + 'px' + (sc !== 'all' ? ';--tint:var(--acc-ink)' : '') + '">' +
+      (sc !== 'T' ? tile('tray', gen || 0, 'General') : '') + tile('req', req || 0, 'Requests') + tile('archive', '', 'Archived') + '</div>';
+  }
+  function rqcard(sc, reqs){
+    var names = reqs.map(function(r){ return (sc === 'all' ? '<span class="mi s14 ' + A[r.a].cls + '">' + A[r.a].mk + '</span>' : '') + r.n; }).join(', ');
+    return '<div class="rqcard"><span class="ic">' + I('req') + '</span><div class="t"><b>' + reqs.length + ' message request' + (reqs.length > 1 ? 's' : '') +
+      '</b><span>' + names + '</span></div>' + I('chev-r') + '</div>';
+  }
+  function item(ic, label, sub, check){
+    return '<div class="it">' + (ic ? I(ic) : '') + '<div><b>' + label + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>' + (check ? I('check', 'style="font-size:17px;stroke-width:2.4"') : '') + '</div>';
+  }
+  function foldersMenu(sc, reqN, genU){
+    return '<div class="dim"></div><div class="mpop" style="top:106px;right:16px">' +
+      (sc !== 'T' ? item('tray', 'General', genU ? genU + ' unread' : '') : '') +
+      item('req', 'Requests', reqN ? reqN + ' waiting' : '') + item('archive', 'Archived', '') + '</div>';
+  }
+  function bar(sc){
+    var acc = sc !== 'all';
+    return '<div class="edge-bot"></div><div class="bb"><div class="srch glass">' + I('search') + (acc ? 'Search ' + A[sc].name : 'Search') +
+      '</div><span class="gb glass"' + (acc ? ' style="color:var(--acc-ink)"' : '') + '>' + I('compose') + '</span></div>';
+  }
+  function anno(bands){
+    return bands.map(function(b){
+      if (b.total) return '<div class="anno total" style="top:' + b.total + 'px"><span>' + b.l + '</span></div>';
+      return '<div class="anno" style="top:' + b.y + 'px;height:' + b.h + 'px"><span' + (b.st ? ' style="' + b.st + '"' : '') + '>' + b.l + '</span></div>';
+    }).join('');
+  }
+
+  /* ---------- the inbox builder ----------
+     header: 'large' (today), 'inline' (H1 / recommended), 'merged' (H3)
+     folders: 'tiles' | 'pills' | 'seg' | 'none' */
+  function inbox(o){
+    var sc = o.scope || 'all', acc = sc !== 'all', a = A[sc], h = '', chipsTop, top;
+    if (acc) h += '<div class="wash" style="height:' + (o.header === 'large' ? 220 : 180) + 'px"></div>';
+    if (o.header === 'merged'){
+      chipsTop = 63;
+      h += '<div class="scope" style="top:58px">' + stack() + chipsInner(sc) + '</div>';
+    } else {
+      var title = '', nt = '';
+      var sub = acc ? '@' + a.handle + (a.pro ? ' · Primary' : '') : '';
+      var tch = o.titleMenu ? '<svg class="i tch"><use href="#i-chev-d"/></svg>' : '';
+      if (o.header === 'large'){
+        title = acc ? '<div class="lt" style="top:94px">' + a.name + tch + '<small>' + sub + '</small></div>'
+                    : '<div class="lt" style="top:110px">Chats</div>';
+        chipsTop = 166;
+      } else {
+        nt = '<div class="ntitle">' + (acc ? '<b>' + a.name + '</b><span>' + sub + '</span>' : '<b>Chats</b>') + '</div>';
+        chipsTop = 113;
+      }
+      h += '<div class="tb">' + stack() + nt + (o.fbtn ? fbtn(o.badge) : '<span></span>') + '</div>' + title + chips(sc, chipsTop);
+    }
+    top = chipsTop + 42;
+    if (o.folders === 'tiles'){ h += tiles(sc, chipsTop + 57, o.req, o.gen); top = chipsTop + 130; }
+    if (o.folders === 'pills'){
+      h += '<div class="pills" style="top:' + (chipsTop + 44) + 'px"><span class="pill">' + I('req') + 'Requests <b>2</b></span><span class="pill">' + I('tray') + 'General <b>1</b></span></div>';
+      top = chipsTop + 84;
+    }
+    if (o.folders === 'seg'){
+      h += '<div class="segc" style="top:' + (chipsTop + 44) + 'px"><span class="on">Primary</span><span>General <b style="font-variant-numeric:tabular-nums">1</b></span></div>';
+      top = chipsTop + 84;
+    }
+    var rows = o.rows || CHATS.filter(inScope(sc)).map(function(c){ return row(c, !acc); }).join('');
+    h += '<div class="list" style="top:' + (o.listTop || top) + 'px">' + (o.before || '') + rows + '</div>';
+    if (o.extra) h += o.extra;
+    if (o.menu) h += o.menu;
+    if (o.anno) h += anno(o.anno);
+    h += bar(sc);
+    return {cls: acc ? a.cls : '', html: h};
+  }
+
+  /* ---------- frames ---------- */
+  var reqsAll = REQS, reqsK = REQS.filter(inScope('K'));
+  var ANNO_NOW = [
+    {y:54, h:54, l:'Nav bar · 54 · one 75 pt button'},
+    {y:108, h:52, l:'Large title · 52'},
+    {y:160, h:44, l:'Chips · 44'},
+    {y:204, h:92, l:'Folder tiles · 92 · "0 · 0 · (blank)"'},
+    {total:296, l:'242 pt to the first chat'}
+  ];
+  var ANNO_REC = [
+    {y:54, h:54, l:'Nav bar · 54', st:'right:60px'},
+    {y:108, h:47, l:'Chips · 44'},
+    {total:155, l:'102 pt to the first chat'}
+  ];
+  var FR = {
+    'cur-all':      function(){ return inbox({header:'large', folders:'tiles'}); },
+    'cur-all-anno': function(){ return inbox({header:'large', folders:'tiles', anno:ANNO_NOW}); },
+    'cur-studio':    function(){ return inbox({scope:'K', header:'large', folders:'tiles'}); },
+    'cur-req':      function(){ return inbox({header:'large', folders:'tiles', req:2}); },
+    'a-pills':      function(){ return inbox({header:'large', folders:'pills'}); },
+    'a-zero':       function(){ return inbox({header:'large', folders:'none'}); },
+    'b-badge':      function(){ return inbox({header:'large', folders:'none', fbtn:true, badge:2}); },
+    'b-menu':       function(){ return inbox({header:'large', folders:'none', fbtn:true, badge:2, menu:foldersMenu('all', 2, 0)}); },
+    'c-top':        function(){
+      var br = '<div class="brow"><span class="ic">' + I('req') + '</span><div class="grow"><b>2 message requests</b><span class="ct">2' + I('chev-r') + '</span></div></div>';
+      return inbox({header:'large', folders:'none', before:br});
+    },
+    'c-end':        function(){
+      var tail = CHATS.slice(5).map(function(c){ return row(c, true); }).join('') +
+        '<div class="fh">Folders</div>' +
+        '<div class="frow">' + I('tray') + '<div class="grow">General<span class="ct">' + I('chev-r') + '</span></div></div>' +
+        '<div class="frow">' + I('req') + '<div class="grow">Requests<span class="ct">2' + I('chev-r') + '</span></div></div>' +
+        '<div class="frow">' + I('archive') + '<div class="grow">Archived<span class="ct">' + I('chev-r') + '</span></div></div>';
+      /* scrolled: the large title has collapsed into the bar (inline "Chats"), chips stay pinned */
+      return inbox({header:'inline', folders:'none', listTop:96, rows:tail, extra:'<div class="edge-top" style="--eh:172px"></div>'});
+    },
+    'd-title':      function(){
+      var m = '<div class="dim"></div><div class="mpop" style="top:150px;left:16px">' + item(null, 'Primary', '', true) + item(null, 'General', '1 unread') + '</div>';
+      return inbox({scope:'K', header:'large', titleMenu:true, folders:'none', fbtn:true, menu:m});
+    },
+    'd-seg':        function(){ return inbox({scope:'K', header:'large', folders:'seg', fbtn:true}); },
+    'e-none':       function(){ return inbox({header:'large', folders:'none'}); },
+    'e-mixed':      function(){
+      var c = CHATS;
+      var rows = row(c[0], true) + reqRow(REQS[1]) + row(c[1], true) + reqRow(REQS[0]) + row(c[2], true) + row(c[3], true);
+      return inbox({header:'large', folders:'none', rows:rows});
+    },
+    'h1':           function(){ return inbox({header:'inline', folders:'tiles'}); },
+    'h3':           function(){ return inbox({header:'merged', folders:'tiles'}); },
+    'rec-all-anno': function(){ return inbox({header:'inline', folders:'none', fbtn:true, anno:ANNO_REC}); },
+    'rec-all-req':  function(){ return inbox({header:'inline', folders:'none', fbtn:true, badge:2, before:rqcard('all', reqsAll)}); },
+    'rec-studio':    function(){ return inbox({scope:'K', header:'inline', folders:'none', fbtn:true, badge:1}); },
+    'rec-studio-menu': function(){ return inbox({scope:'K', header:'inline', folders:'none', fbtn:true, badge:1, menu:foldersMenu('K', reqsK.length, 1)}); },
+    'o5-now':       function(){ return o5(false); },
+    'o5-fix':       function(){ return o5(true); },
+    't1-now':       function(){ return thread(false); },
+    't1-fix':       function(){ return thread(true); },
+    'a2-now':       function(){ return a2(false); },
+    'a2-fix':       function(){ return a2(true); }
+  };
+
+  /* ---------- other screens ---------- */
+  /* tall: as built today (about 177 pt); compact: the proposed fixes */
+  function preview(tall){
+    return '<div class="a-ocean" style="background:var(--cell);border-radius:24px;padding:' + (tall ? '18px 14px' : '12px 14px') + ';display:flex;flex-direction:column;gap:' + (tall ? 12 : 8) + 'px;--ring-bg:var(--cell)">' +
+      '<div style="display:flex;gap:12px;align-items:center"><div class="av pp pp-maya" style="--z:44px"><span class="mk s18">A</span></div>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:600">Maya Chen</div><div style="font-size:14px;line-height:18px;color:var(--label-2)">Sent a reel by @tidepool.films</div></div><span style="font-size:14px;color:var(--label-2)">9:41</span></div>' +
+      '<div class="b out" style="font-size:16px;padding:6px 12px">On my way!</div>' +
+      '<div class="field" style="min-height:36px;background:var(--fill);font-size:15px;padding-left:6px"><span class="av own-t own" style="--z:24px;--gap:1.5px;--rw:1.5px;--ring-bg:var(--cell);font-size:11px">A</span><span class="ph">Message as Alex</span></div></div>';
+  }
+  function nameCard(){
+    return '<div class="cells"><div class="cell">Alex</div><div class="cell" style="gap:8px;overflow:hidden;flex-wrap:nowrap"><span class="sbtn sel">Alex</span><span class="sbtn">Personal</span><span class="sbtn">Work</span><span class="sbtn">Studio</span></div></div>';
+  }
+  function swatches(){
+    var cols = ['ocean','ember','grape','teal','berry','moss','cocoa','slate'];
+    return '<div class="cells"><div class="swg">' + cols.map(function(c, i){
+      return '<span class="sw' + (i === 0 ? ' sel' : '') + (i === 1 ? ' taken' : '') + '" style="background:var(--' + c + ')">' + (i === 0 ? I('check', 'style="font-size:16px;stroke-width:2.6"') : i === 1 ? 'S' : '') + '</span>';
+    }).join('') + '</div></div>';
+  }
+  function markCard(){
+    return '<div class="cells a-ocean"><div class="cell" style="gap:10px"><span class="mi" style="width:30px;height:30px;font-size:16px">A</span><span style="flex:1"></span><span class="sbtn sel">A</span><span class="sbtn">L</span><span class="sbtn">X</span><span class="sbtn">✦</span></div></div>';
+  }
+  function o5(fixed){
+    var h;
+    if (!fixed){
+      h = '<div class="tb"><span class="gb glass">' + I('chev-l') + '</span><span></span></div>' +
+        '<div class="lt" style="top:106px">Name this account</div>' +
+        '<div style="position:absolute;left:36px;right:28px;top:168px;font-size:15px;line-height:20px;color:var(--label-2)">Pick a name, color and mark for @alex.personal. You’ll see them on every chat from this account.</div>' +
+        '<div style="position:absolute;left:16px;right:16px;top:252px">' + preview(true) + '</div>' +
+        '<div style="position:absolute;left:0;right:0;top:466px"><div class="grp-h" style="font-size:15px">Name</div>' + nameCard() + '</div>' +
+        '<div style="position:absolute;left:0;right:0;top:664px"><div class="grp-h" style="font-size:15px">Color</div>' + swatches() + '</div>' +
+        '<div class="edge-bot" style="height:150px"></div>' +
+        '<div style="position:absolute;left:20px;right:20px;bottom:42px;z-index:40"><div class="big glass" style="background:var(--label)">Save</div><div class="txtbtn" style="margin-top:22px">Add another account</div></div>';
+    } else {
+      h = '<div class="tb"><span class="gb glass">' + I('chev-l') + '</span><div class="ntitle"><b>Name this account</b></div><span class="gb prom">' + I('check') + '</span></div>' +
+        '<div style="position:absolute;left:20px;right:20px;top:108px;font-size:15px;line-height:20px;color:var(--label-2)">Pick a name, color and mark for @alex.personal. You’ll see them on every chat from this account.</div>' +
+        '<div style="position:absolute;left:16px;right:16px;top:160px">' + preview() + '</div>' +
+        '<div style="position:absolute;left:0;right:0;top:326px"><div class="grp-h">Name</div>' + nameCard() + '</div>' +
+        '<div style="position:absolute;left:0;right:0;top:470px"><div class="grp-h">Color</div>' + swatches() + '<div class="grp-f">Ember is used by Alex Studio.</div></div>' +
+        '<div style="position:absolute;left:0;right:0;top:654px"><div class="grp-h">Mark</div>' + markCard() + '</div>' +
+        '<div style="position:absolute;left:0;right:0;top:742px"><div class="cells"><div class="cell" style="min-height:48px">' + I('plus', 'style="font-size:20px"') + '<span class="grow" style="font-weight:500">Add another account</span></div></div></div>';
+    }
+    return {cls:'grouped a-ocean', html:h};
+  }
+  function thread(fixed){
+    var tag = '<span class="tag"' + (fixed ? '' : ' style="max-width:118px"') + '><span class="mi s16">A</span><span class="tx">Alex' + (fixed ? '' : ' <span class="h">· @alex.personal</span>') + '</span></span>';
+    var h = '<div class="msgs">' +
+      '<div class="day"><b>Today</b> 9:20</div>' +
+      '<div class="b in first">are you around saturday?</div><div class="gap" style="--g:2px"></div>' +
+      '<div class="b in last">the gallery opens at 2 and I have an extra ticket</div><div class="gap"></div>' +
+      '<div class="b out first">yes! count me in</div><div class="gap" style="--g:2px"></div>' +
+      '<div class="b out last">I’ll meet you by the entrance</div><div class="meta-r">Seen</div><div class="gap" style="--g:16px"></div>' +
+      '<div class="day">9:34</div><div class="b in">perfect, see you there</div>' +
+      '</div>' +
+      '<div class="edge-top" style="--eh:150px"></div><div class="wash" style="height:170px"></div>' +
+      '<div class="tb" style="z-index:41"><span class="gb glass">' + I('chev-l') + '</span><span class="gb glass" style="color:var(--acc-ink)">' + I('ellipsis') + '</span></div>' +
+      '<div class="thh"><div class="av pp pp-maya" style="--z:30px"></div><div class="tt"><b>Maya Chen</b>' + tag + '</div></div>' +
+      '<div class="comp"><span class="gb glass">' + I('plus') + '</span><div class="field glass"><span class="av own-t own" style="--z:28px;--gap:1.5px;--rw:1.5px;font-size:12px">A</span><span class="ph">Message as Alex</span></div></div>';
+    return {cls:'a-ocean', html:h};
+  }
+  function a2(fixed){
+    var h = '<div class="tb"><span class="gb glass">' + I('chev-l') + '</span><div class="ntitle"><b>Alex</b></div><span></span></div>';
+    var status = '<div class="st ok" style="justify-content:center">' + I('checkc') + 'Connected</div>';
+    if (!fixed){
+      h += '<div class="a-ocean" style="position:absolute;left:0;right:0;top:160px;display:flex;flex-direction:column;align-items:center;gap:6px;--ring-bg:var(--bg-grouped)">' +
+        '<span class="av own-t own" style="--z:88px;--gap:3px;--rw:2.5px">A<span class="mk s30">A</span></span>' +
+        '<div style="font-size:22px;line-height:28px;font-weight:700;margin-top:14px">Alex</div><div style="color:var(--label-2)">@alex.personal</div>' + status + '</div>' +
+        '<div style="position:absolute;left:16px;right:16px;top:412px">' + preview(true) + '</div>' +
+        '<div style="position:absolute;left:0;right:0;top:632px"><div class="grp-h" style="font-size:15px">Name</div>' + nameCard() + '</div>' +
+        '<div style="position:absolute;left:0;right:0;top:806px"><div class="grp-h" style="font-size:15px">Color</div>' + swatches() + '</div>';
+    } else {
+      h += '<div style="position:absolute;left:0;right:0;top:110px;--ring-bg:var(--cell)"><div class="cells"><div class="cell acct a-ocean" style="padding:12px 16px">' +
+        '<span class="av own-t own" style="--z:56px;font-size:24px">A<span class="mk s18">A</span></span><div class="grow"><div class="hd" style="color:var(--label);font-size:17px">@alex.personal</div>' +
+        '<div class="st ok">' + I('checkc') + 'Connected · since 9:02</div></div></div></div></div>' +
+        '<div style="position:absolute;left:16px;right:16px;top:212px">' + preview() + '</div>' +
+        '<div style="position:absolute;left:0;right:0;top:378px"><div class="grp-h">Name</div>' + nameCard() + '</div>' +
+        '<div style="position:absolute;left:0;right:0;top:522px"><div class="grp-h">Color</div>' + swatches() + '</div>' +
+        '<div style="position:absolute;left:0;right:0;top:690px"><div class="grp-h">Mark</div>' + markCard() + '</div>';
+    }
+    return {cls:'grouped', html:h};
+  }
+
+  /* ---------- render ---------- */
+  document.querySelectorAll('.phone[data-f]').forEach(function(p){
+    var f = FR[p.getAttribute('data-f')];
+    if (!f) return;
+    var r = f();
+    if (r.cls) r.cls.split(' ').forEach(function(c){ p.classList.add(c); });
+    p.innerHTML = r.html;
+  });
+
+  var sbar = '<div class="sb" aria-hidden="true"><span class="sb-t">9:41</span><span class="sb-i">' +
+    '<svg width="19" height="12" viewBox="0 0 19 12"><use href="#i-signal"/></svg>' +
+    '<svg width="17" height="12" viewBox="0 0 17 12"><use href="#i-wifi"/></svg>' +
+    '<svg width="27" height="13" viewBox="0 0 27 13"><use href="#i-batt"/></svg></span></div>' +
+    '<div class="island" aria-hidden="true"></div><div class="home" aria-hidden="true"></div>';
+  document.querySelectorAll('.phone').forEach(function(p){ p.insertAdjacentHTML('beforeend', sbar); });
+
+  /* Frame scale: rows of frames compare side by side on wide screens (data-cap), one per line at phone width. */
+  function fit(){
+    document.querySelectorAll('.frames').forEach(function(f){
+      var w = f.clientWidth, cap = +(f.getAttribute('data-cap') || 1);
+      var s = w < 700 ? Math.min(1, w / 415) : Math.min(cap, w / 415);
+      f.style.setProperty('--s', s.toFixed(4));
+    });
+  }
+  fit();
+  window.addEventListener('resize', fit);
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(document.querySelector('main'));
+})();
+</script>
+</body>
+</html>

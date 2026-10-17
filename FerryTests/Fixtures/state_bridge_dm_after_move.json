@@ -1,0 +1,26 @@
+{
+  "type": "m.bridge",
+  "state_key": "igm.home.arpa/instagram",
+  "sender": "@instagrambot:igm.home.arpa",
+  "content": {
+    "bridgebot": "@instagrambot:igm.home.arpa",
+    "channel": {
+      "avatar_url": "mxc://igm.home.arpa/onvkSvgXgcbowUuvGnImEyPS",
+      "displayname": "Tamo Veska",
+      "fi.mau.instagram.inbox_folder": "PRIMARY",
+      "fi.mau.receiver": "17841400000000302",
+      "id": "17841400000000301"
+    },
+    "com.beeper.room_type": "dm",
+    "com.beeper.room_type.v2": "dm",
+    "creator": "@instagrambot:igm.home.arpa",
+    "protocol": {
+      "avatar_url": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+      "displayname": "Instagram",
+      "external_url": "https://instagram.com",
+      "id": "instagramgo"
+    }
+  },
+  "origin_server_ts": 1791936273144,
+  "event_id": "$aOTnSfAOlt2QT-c-apv0MnujCTZNCtO7ZyXlWmKR68Q"
+}

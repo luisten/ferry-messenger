@@ -1,0 +1,125 @@
+# CI: lint and the app's unit tests.
+# Nothing here touches Instagram, a Matrix server or production, and no secrets are used: the only token is the
+# read-only GITHUB_TOKEN of `permissions` below. Actions are pinned by commit SHA (Dependabot keeps them fresh);
+# downloaded tools by version and SHA-256, bumped by hand.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash # -eo pipefail
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install shellcheck and actionlint (pinned, checksum-verified)
+        env:
+          SHELLCHECK_VERSION: v0.11.0
+          SHELLCHECK_SHA256: b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6 # linux.x86_64.tar.gz
+          ACTIONLINT_VERSION: 1.7.12
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8 # linux_amd64.tar.gz
+        run: |
+          mkdir -p "$RUNNER_TEMP/dl" "$RUNNER_TEMP/bin"
+          cd "$RUNNER_TEMP/dl"
+          curl -fsSLo shellcheck.tar.gz \
+            "https://github.com/koalaman/shellcheck/releases/download/$SHELLCHECK_VERSION/shellcheck-$SHELLCHECK_VERSION.linux.x86_64.tar.gz"
+          curl -fsSLo actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v$ACTIONLINT_VERSION/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          printf '%s  %s\n' "$SHELLCHECK_SHA256" shellcheck.tar.gz "$ACTIONLINT_SHA256" actionlint.tar.gz | sha256sum --strict -c -
+          tar -xzf shellcheck.tar.gz -C "$RUNNER_TEMP/bin" --strip-components=1 "shellcheck-$SHELLCHECK_VERSION/shellcheck"
+          tar -xzf actionlint.tar.gz -C "$RUNNER_TEMP/bin" actionlint
+          echo "$RUNNER_TEMP/bin" >>"$GITHUB_PATH"
+
+      - name: shellcheck (every tracked *.sh)
+        run: git ls-files -z '*.sh' | xargs -0 -r shellcheck
+
+      - name: actionlint (workflows, and shellcheck on their scripts)
+        run: actionlint
+
+      - name: No secrets or home paths in tracked files
+        run: |
+          status=0
+          check() { # <what> <extended regex>
+            local rc=0
+            git grep -nE "$2" || rc=$?
+            case $rc in
+              0) echo "::error::$1 in tracked files (above)"; status=1 ;;
+              1) echo "ok - no $1" ;;
+              *) echo "::error::git grep failed ($rc)"; status=1 ;;
+            esac
+          }
+          # The secret scan of CLAUDE.md "Commands": Matrix access tokens, Instagram session cookies.
+          check "Matrix tokens or Instagram session cookies" 'syt_[A-Za-z0-9_]{8,}|"sessionid"[[:space:]]*:[[:space:]]*"[^"]{12,}'
+          check "home directory paths" '/(Users|home)/[A-Za-z0-9._-]+'
+          exit "$status"
+
+  app:
+    name: App unit tests
+    # Xcode 27 image (public preview, arm64). Xcode_27.0 is today's local Xcode (27A266a); the image also has 27.1
+    # and a 27.2 beta. No Config/Local.xcconfig here, so the app builds as com.example.ferry-messenger, unsigned.
+    runs-on: xcode-27
+    timeout-minutes: 40
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Create a simulator
+        run: |
+          xcodebuild -version
+          sdk=$(xcrun --sdk iphonesimulator --show-sdk-version)
+          runtime=$(xcrun simctl list runtimes -j | jq -r --arg v "$sdk" \
+            '[.runtimes[] | select(.platform == "iOS" and .isAvailable and (.version | startswith($v)))] | last | .identifier // empty')
+          [ -n "$runtime" ] || { xcrun simctl list runtimes; echo "::error::no iOS $sdk simulator runtime"; exit 1; }
+          udid=$(xcrun simctl create ferry-ci com.apple.CoreSimulator.SimDeviceType.iPhone-17 "$runtime")
+          echo "SIM=$udid" >>"$GITHUB_ENV"
+          echo "iPhone 17 on $runtime: $udid"
+
+      # The app links core/'s static library (build/IGCore.xcframework, not in git): Go 1.27.1, pinned and checksummed
+      # like the tools above (go.dev's published SHA-256 for darwin-arm64), then core/build.sh.
+      - name: Build core/ (Go)
+        env:
+          GO_VERSION: go1.27.1
+          GO_SHA256: ee215d57e0ec269c60cc9ceca68e6bda321ba9ee5afe24f4b0988703c2d87d12 # darwin-arm64.tar.gz
+        run: |
+          mkdir -p "$RUNNER_TEMP/go-dl"
+          curl -fsSLo "$RUNNER_TEMP/go-dl/go.tar.gz" "https://go.dev/dl/$GO_VERSION.darwin-arm64.tar.gz"
+          printf '%s  %s\n' "$GO_SHA256" "$RUNNER_TEMP/go-dl/go.tar.gz" | shasum -a 256 -c -
+          tar -xzf "$RUNNER_TEMP/go-dl/go.tar.gz" -C "$RUNNER_TEMP"
+          PATH="$RUNNER_TEMP/go/bin:$PATH" core/build.sh
+
+      # All three targets, so FerryUITests must still compile; compiler warnings fail the build (the tree has none).
+      - name: Build for testing
+        run: |
+          xcodebuild build-for-testing -project Ferry.xcodeproj -scheme Ferry -destination "id=$SIM" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" SWIFT_TREAT_WARNINGS_AS_ERRORS=YES
+
+      # FerryTests only: FerryUITests need a live dev server. Flags: CLAUDE.md "Traps".
+      - name: Unit tests (FerryTests)
+        run: |
+          xcodebuild test-without-building -project Ferry.xcodeproj -scheme Ferry -destination "id=$SIM" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" -parallel-testing-enabled NO -collect-test-diagnostics never \
+            -only-testing:FerryTests 2>&1 | tee "$RUNNER_TEMP/test.log"
+          grep -E 'Executed [0-9]+ tests' "$RUNNER_TEMP/test.log" | tail -1 | sed 's/^[[:space:]]*/FerryTests: /' >>"$GITHUB_STEP_SUMMARY"

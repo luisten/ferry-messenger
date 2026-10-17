@@ -1,0 +1,75 @@
+{
+  "network": {
+    "displayname": "Instagram",
+    "network_url": "https://instagram.com",
+    "network_icon": "mxc://maunium.net/JxjlbZUlCPULEeHZSwleUXQv",
+    "network_id": "instagram",
+    "beeper_bridge_type": "instagramgo",
+    "default_port": 29330,
+    "default_command_prefix": "!ig"
+  },
+  "login_flows": [
+    {
+      "name": "instagram.com",
+      "description": "Login using cookies from instagram.com",
+      "id": "instagram"
+    },
+    {
+      "name": "Instagram",
+      "description": "Log in with your Instagram email or username and password",
+      "id": "instagram-password"
+    }
+  ],
+  "homeserver": "igm.home.arpa",
+  "bridge_bot": "@instagrambot:igm.home.arpa",
+  "command_prefix": "!ig",
+  "logins": [
+    {
+      "state_event": "CONNECTED",
+      "state_ts": 1791816843,
+      "state_info": {
+        "personal_filtering_space": "!8B3W21v2O_DdWOmLU2US75eotLLpkE2-BhMsjpPbvZ0"
+      },
+      "state": {
+        "state_event": "CONNECTED",
+        "timestamp": 1791816843,
+        "ttl": 21600,
+        "source": "bridge",
+        "info": {
+          "personal_filtering_space": "!8B3W21v2O_DdWOmLU2US75eotLLpkE2-BhMsjpPbvZ0"
+        }
+      },
+      "id": "17841400000000301",
+      "name": "Tamo Veska",
+      "profile": {
+        "username": "tamoveska",
+        "name": "Tamo Veska"
+      },
+      "space_room": "!8B3W21v2O_DdWOmLU2US75eotLLpkE2-BhMsjpPbvZ0"
+    },
+    {
+      "state_event": "CONNECTED",
+      "state_ts": 1791819116,
+      "state_info": {
+        "personal_filtering_space": "!w2RKZ-QLiwkbgCeUhoEJr3kpDQCPGEIJI0U61VeWL1Q"
+      },
+      "state": {
+        "state_event": "CONNECTED",
+        "timestamp": 1791819116,
+        "ttl": 21600,
+        "source": "bridge",
+        "info": {
+          "personal_filtering_space": "!w2RKZ-QLiwkbgCeUhoEJr3kpDQCPGEIJI0U61VeWL1Q"
+        }
+      },
+      "id": "17841400000000302",
+      "name": "Kivo Studio",
+      "profile": {
+        "username": "kivostudio",
+        "name": "Kivo Studio",
+        "avatar": "mxc://igm.home.arpa/AKRxSivqzKQzNAwknfzLHZsH"
+      },
+      "space_room": "!w2RKZ-QLiwkbgCeUhoEJr3kpDQCPGEIJI0U61VeWL1Q"
+    }
+  ]
+}

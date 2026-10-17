@@ -1,0 +1,34 @@
+{
+  "content": {
+    "body": "[https://www.instagram.com/stories/sample.stories/4000000000000000005](https://www.instagram.com/stories/sample.stories/4000000000000000005?reel_id=10000000005&reel_owner_id=10000000005)",
+    "com.beeper.disappearing_timer": {},
+    "external_url": "https://www.instagram.com/stories/sample.stories/4000000000000000005?reel_id=10000000005&reel_owner_id=10000000005",
+    "filename": "AQSampleStoryVideo01.mp4",
+    "format": "org.matrix.custom.html",
+    "formatted_body": "<p><a href=\"https://www.instagram.com/stories/sample.stories/4000000000000000005?reel_id=10000000005&amp;reel_owner_id=10000000005\">https://www.instagram.com/stories/sample.stories/4000000000000000005</a></p>",
+    "info": {
+      "h": 1280,
+      "mimetype": "video/mp4",
+      "size": 613455,
+      "thumbnail_info": {
+        "h": 1920,
+        "mimetype": "image/jpeg",
+        "size": 120308,
+        "w": 1080
+      },
+      "thumbnail_url": "mxc://igm.home.arpa/MmHFyuOPNjrDQcBSvNccvCwm",
+      "w": 720
+    },
+    "m.mentions": {},
+    "msgtype": "m.video",
+    "url": "mxc://igm.home.arpa/oMqqhLootBbMlGQRgfskJAPq"
+  },
+  "event_id": "$_yGdbwEq7y6rCQuFe9gwW7Um20Zly_saAvCxMUbZGSc",
+  "origin_server_ts": 1791904319914,
+  "room_id": "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA",
+  "sender": "@instagram_17841400000000302:igm.home.arpa",
+  "type": "m.room.message",
+  "unsigned": {
+    "membership": "join"
+  }
+}

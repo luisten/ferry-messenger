@@ -1,0 +1,10 @@
+# Keeps the workflows' SHA-pinned actions current (PRs that bump the SHA and its version comment). The tools CI
+# downloads (shellcheck, actionlint) are pinned in ci.yml and bumped by hand.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7 # a new release waits a week: hijacked releases are usually caught sooner
