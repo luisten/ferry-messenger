@@ -46,11 +46,12 @@ struct MessageRow: View {
     private var reactionsInset: CGFloat { message.reactions.isEmpty ? 0 : 14 }
 
     var body: some View {
+        if message.kind.isChatEvent { eventLine } else { bubbleRow }
+    }
+
+    private var bubbleRow: some View {
         VStack(alignment: own ? .trailing : .leading, spacing: 3) {
-            if row.showsTime {
-                Text(Self.timeLabel(message.ts)).font(.caption).foregroundStyle(.inkSecondary)
-                    .frame(maxWidth: .infinity).padding(.bottom, 6)
-            }
+            if row.showsTime { time }
             if row.groupSender?.showsName == true, message.reply == nil {  // a reply's caption names the sender instead
                 // Neutral, never coloured: colour means account (DESIGN §3.6). The bubble says it to VoiceOver.
                 Text(member(message.sender).name).font(.caption).foregroundStyle(.inkSecondary).lineLimit(1)
@@ -91,6 +92,26 @@ struct MessageRow: View {
             }
             .padding(.leading, indent)
         }
+    }
+
+    private var time: some View {
+        Text(Self.timeLabel(message.ts)).font(.caption).foregroundStyle(.inkSecondary)
+            .frame(maxWidth: .infinity).padding(.bottom, 6)
+    }
+
+    /// Instagram's own lines and what the app can't show: small centred text across the thread, no bubble or menu.
+    private var eventLine: some View {
+        VStack(spacing: 3) {
+            if row.showsTime { time }
+            Text(eventText).font(.footnote).foregroundStyle(.inkSecondary).multilineTextAlignment(.center)
+                .padding(.horizontal, 24).frame(maxWidth: .infinity)
+                .accessibilityIdentifier("thread.event")
+        }
+    }
+
+    private var eventText: String {
+        guard case .unsupported(let what) = message.kind else { return message.body }
+        return "\(own ? "You" : name(message.sender)) sent \(what). Open Instagram to see it."
     }
 
     // MARK: Bubble

@@ -245,6 +245,8 @@ final class SmokeUITests: XCTestCase {
         XCTAssertTrue(labels.contains("From Theo Park, Thinking the north wall at 9"), "\(labels)")
         XCTAssertTrue(labels.contains("From Priya Nair, Can't this week, have fun"), "\(labels)")
         XCTAssertTrue(labels.contains("You: Count me in"), "\(labels)")
+        let lines = app.descendants(matching: .any).matching(identifier: "thread.event").allElementsBoundByIndex.map(\.label)
+        XCTAssertEqual(lines, ["Priya left the group", "Sam sent a poll. Open Instagram to see it."])
         attachScreenshot(app, "group-thread")
 
         app.descendants(matching: .any)["thread.header"].firstMatch.tap()

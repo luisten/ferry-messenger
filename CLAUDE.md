@@ -22,7 +22,7 @@ SIM=$(xcrun simctl list devices booted | grep -oE '[0-9A-F-]{36}' | head -1)
 t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
-t test -only-testing:FerryTests              # 279 unit tests, ~3 s
+t test -only-testing:FerryTests              # 286 unit tests, ~3 s
 t test -only-testing:FerryUITests            # UI tests on made-up data (live ones opt-in: docs/DEVELOPMENT.md)
 t build-for-testing                           # all 3 targets
 core/build.sh                                 # Go core -> build/IGCore.xcframework (needs Go 1.27.1 on PATH)
@@ -151,6 +151,16 @@ captured in P0)
   (`PhotoMessage.gif`). A GIF card plays three times once per launch (`MediaCache.playedGIFs`), then rests on frame 0
   with a play button for one more; none of that by itself in a request (`autoplaysGIFs`) or under Reduce Motion.
   Links to GIFs that others send stay links. No GIF search: no outside service (the user's calls, 2026-10-17).
+- **Several photos sent at once** are one `IMAGES` message with every attachment (live 2026-10-18,
+  `ig_message_photos_tamo`); `IGAdapter.album` keeps the first as the content and all of them under `fi.ferry.album`
+  (`MediaInfo.album`), which `MediaCard` stacks: one message, so one menu, reaction row, reply target and unsend.
+  Ferry showed the first only.
+- **Chat events:** Instagram's own lines (a group renamed, someone left, a call) are admin text, `text_fragments`
+  (upstream's `SlideMessageAdminText`; never captured, no group on the dummies), shown as `MessageKind.event` lines.
+  A thread read's copy of a message has an empty `igd_snippet` (the mailbox's and live deltas' say "Sam sent 3
+  photos."), so anything unknown is `MessageKind.unsupported` ("… sent a message Ferry can't show"), never its
+  snippet, or it would read differently after a relaunch; "a poll" is a guess at Instagram's content type until a poll
+  is captured.
 - **Archive** is this device's (`UserDefaults` `archived`, room ID → ms), read as the room's `u.archived` tag; Instagram
   isn't told.
 

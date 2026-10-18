@@ -170,7 +170,8 @@ nonisolated enum DebugFixtures {
     /// One hand-made Instagram group on `receiver`, modelled on real shapes: the `m.bridge` content is the real DM event
     /// (`FerryTests/Fixtures/state_bridge_dm.json`) without `com.beeper.room_type`(`.v2`), which is how the bridge
     /// marks a group (S7.6), with a group's channel; the member events copy the real ghost, bot and double-puppet ones
-    /// of `sync_initial.json`. Four senders, runs, a reply, a reaction and a time gap. No avatars, so no media requests
+    /// of `sync_initial.json`. Four senders, runs, a reply, a reaction, a time gap and two chat events (Instagram's line
+    /// for Priya leaving, a poll the app can't show; `IGAdapter`'s shapes). No avatars, so no media requests
     /// (initials). Priya left: a leave is a bare `{"membership": "leave"}`, so her old message is named from her ghost
     /// profile, the thread's fallback for a member event without a name.
     static func groupRoom(receiver: String, me: String, now: Date = .now) -> Room {
@@ -216,6 +217,12 @@ nonisolated enum DebugFixtures {
             events.append(Event(type: "m.room.message", content: .object(content), eventID: "$debug-group-msg-\(i)", sender: line.sender,
                                 originServerTS: ms - Int64(line.minutesAgo * 60_000)))
         }
+        events.insert(contentsOf: [  // before Theo's last message
+            Event(type: "m.room.message", content: ["msgtype": "m.notice", "body": "Priya left the group", MessageKind.eventKey: true],
+                  eventID: "$debug-group-left", sender: priya, originServerTS: ms - 30 * 60_000),
+            Event(type: "m.room.message", content: ["msgtype": "m.notice", "body": "Sent a poll", MessageKind.unsupportedKey: "a poll"],
+                  eventID: "$debug-group-poll", sender: sam, originServerTS: ms - 20 * 60_000),
+        ], at: events.count - 1)
         events.append(Event(type: "m.reaction", content: ["m.relates_to": ["rel_type": "m.annotation", "event_id": "$debug-group-msg-4", "key": "❤️"]],
                             eventID: "$debug-group-reaction", sender: maya, originServerTS: ms - 47 * 60_000))
         events.append(state("m.room.member", priya, ["membership": "leave"], sender: priya, at: ms - 30 * 60_000))

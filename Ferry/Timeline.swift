@@ -17,6 +17,13 @@ nonisolated enum MessageKind: Equatable, Sendable {
     case tooLarge
     /// Unsent (redacted): a tombstone that keeps its sender and time.
     case unsent
+    /// Instagram's own line about the chat ("… named the group …", "… left the group"): `body` as it is.
+    case event
+    /// Something the app can't show (`IGAdapter.unsupported`): what it is, "a poll" or "a message Ferry can't show".
+    case unsupported(String)
+
+    static let eventKey = "fi.ferry.event"
+    static let unsupportedKey = "fi.ferry.unsupported"
 
     /// `other`: anything shared that isn't a reel, post or story (a profile, music…); the bridge can't fetch it.
     enum ShareType: String, Sendable { case reel, post, story, other }
@@ -45,6 +52,8 @@ nonisolated enum MessageKind: Equatable, Sendable {
         // The bridge's own English notices are the only signal for these two (`errorToNotice`, `makeViewOnceError`).
         case "m.notice" where body == "Too large attachment": self = .tooLarge
         case "m.notice" where body.hasPrefix("This ") && body.hasSuffix(" once. Use the Instagram app to view."): self = .viewOnce
+        case "m.notice" where content[Self.eventKey] != nil: self = .event
+        case "m.notice" where content[Self.unsupportedKey]?.string != nil: self = .unsupported(content[Self.unsupportedKey]?.string ?? "")
         case "m.notice": self = .notice
         case "m.emote": self = .emote
         default:  // the spec says unknown msgtypes fall back to their body
@@ -55,7 +64,7 @@ nonisolated enum MessageKind: Equatable, Sendable {
     /// One-line symbol and label for non-text kinds (inbox preview, reply quote).
     var media: (symbol: String, label: String)? {
         switch self {
-        case .text, .notice, .emote, .link: nil
+        case .text, .notice, .emote, .link, .event: nil
         case .image: ("photo", "Photo")
         case .video: ("video", "Video")
         case .audio: ("waveform", "Audio")
@@ -67,6 +76,15 @@ nonisolated enum MessageKind: Equatable, Sendable {
         case .viewOnce: ("eye.slash", "View-once media")
         case .tooLarge: ("doc", "Attachment")
         case .unsent: ("arrow.uturn.backward", "Unsent message")
+        case .unsupported: ("questionmark.bubble", "Unsupported message")
+        }
+    }
+
+    /// A line across the thread, not a bubble: no sender label, menu or status.
+    var isChatEvent: Bool {
+        switch self {
+        case .event, .unsupported: true
+        default: false
         }
     }
 }
@@ -110,6 +128,10 @@ nonisolated struct MediaInfo: Equatable, Sendable {
     var duration: Int?
     var thumbnailURL: String?
     var externalURL: URL?
+    /// Photos and videos sent together, each its own content (`IGAdapter.album`); empty for one.
+    var album: [JSON]
+
+    static let albumKey = "fi.ferry.album"
 
     init(content: JSON) {
         let info = content["info"]
@@ -122,6 +144,7 @@ nonisolated struct MediaInfo: Equatable, Sendable {
         duration = (info?["duration"] ?? content["org.matrix.msc1767.audio"]?["duration"])?.int64.map(Int.init)
         thumbnailURL = info?["thumbnail_url"]?.string
         externalURL = content["external_url"]?.string.flatMap(URL.init(string:))
+        album = content[Self.albumKey]?.array ?? []
     }
 
     var isVideo: Bool { msgtype == "m.video" }
@@ -405,7 +428,7 @@ nonisolated enum Timeline {
         }
 
         // Seen: someone else's m.read at or after our last message. A receipt outside the window is older.
-        if let last = messages.lastIndex(where: { $0.isOwn && $0.kind != .unsent && $0.eventID.flatMap { position[$0] } != nil }),
+        if let last = messages.lastIndex(where: { $0.isOwn && $0.kind != .unsent && !$0.kind.isChatEvent && $0.eventID.flatMap { position[$0] } != nil }),
            let at = messages[last].eventID.flatMap({ position[$0] }) {
             messages[last].isSeen = receipts.contains { user, receipt in user != me && (position[receipt.eventID] ?? -1) >= at }
         }
@@ -470,7 +493,7 @@ nonisolated enum Timeline {
         func joins(_ i: Int) -> Bool {
             guard i > 0, i < messages.count else { return false }
             let (a, b) = (messages[i - 1], messages[i])
-            return a.sender == b.sender && b.ts - a.ts < 180_000 && a.kind != .unsent && b.kind != .unsent
+            return a.sender == b.sender && b.ts - a.ts < 180_000 && [a, b].allSatisfy { $0.kind != .unsent && !$0.kind.isChatEvent }
         }
         return messages.indices.map { i in
             let position: GroupPosition = switch (joins(i), joins(i + 1)) {
@@ -482,7 +505,7 @@ nonisolated enum Timeline {
             let showsTime = i == 0 || messages[i].ts - messages[i - 1].ts > 3_600_000
             let spacing: Double = i == 0 ? 0 : joins(i) ? 2 : showsTime ? 16 : 10
             let labelled = messages[i].kind != .unsent
-            let sender = isGroup && !messages[i].isOwn
+            let sender = isGroup && !messages[i].isOwn && !messages[i].kind.isChatEvent  // a chat event spans the thread
                 ? GroupSender(showsName: labelled && (position == .single || position == .first),
                               showsAvatar: labelled && (position == .single || position == .last))
                 : nil

@@ -49,7 +49,7 @@ struct ThreadView: View {
         let identity = room.bridge?.receiver.flatMap { model.identities[$0] }
         let login = room.bridge?.receiver.flatMap { id in model.accounts.first { $0.id == id } }
         let messages = Timeline.reduce(room, me: me)
-        let lastOwn = messages.last(where: \.isOwn)?.id
+        let lastOwn = messages.last { $0.isOwn && !$0.kind.isChatEvent }?.id
         let typing = room.typing.contains { $0 != me }
         let profiles = model.profiles
         let name = { (user: String) in Self.firstName(user, in: room, me: me, profile: profiles[user]) }

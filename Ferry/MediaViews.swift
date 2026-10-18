@@ -14,6 +14,8 @@ struct MediaCard: View {
     var body: some View {
         let info = MediaInfo(content: message.content)
         switch message.kind {
+        case _ where info.album.count > 1:
+            AlbumStack(message: message, album: info.album, own: own, sender: sender, fill: fill, actions: actions)
         case .share(.story, .unavailable):
             NoticeCard(symbol: "clock", title: "Story no longer available", detail: "Stories disappear after 24 hours.")
         case .share(let type, .unavailable):
@@ -53,6 +55,33 @@ struct MediaCard: View {
         let text = [caption.caption ?? (caption.author == nil ? caption.title : nil)].compactMap(\.self).map { "“\($0)”" }
             + [caption.author.map { "@\($0)" }].compactMap(\.self)
         return text.isEmpty ? "" : " " + text.joined(separator: " · ")
+    }
+}
+
+/// Photos and videos sent together: a card each, stacked like a run of bubbles, under the one message's menu and
+/// reactions. Each opens on its own.
+private struct AlbumStack: View {
+    let message: Message
+    let album: [JSON]
+    let own: Bool
+    let sender: String
+    let fill: Color
+    let actions: MessageActions
+
+    var body: some View {
+        VStack(alignment: own ? .trailing : .leading, spacing: 2) {
+            ForEach(album.indices, id: \.self) { i in
+                MediaCard(message: item(album[i]), own: own, sender: sender, fill: fill, actions: actions)
+                    .clipShape(MessageRow.shape(i == 0 ? .first : i == album.count - 1 ? .last : .middle, own: own))
+            }
+        }
+    }
+
+    private func item(_ content: JSON) -> Message {
+        var item = message
+        item.content = content
+        item.kind = MessageKind(type: "m.room.message", content: content)
+        return item
     }
 }
 
