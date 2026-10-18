@@ -130,8 +130,9 @@ recipient, no groups.
   VoiceOver reads every incoming group bubble as "From Theo Park, …" and skips the visible name and avatar. Names
   come from the thread (Instagram always names its participants). DMs look exactly as before.
 - **Context menu:** reaction palette ❤️ 😂 😮 😢 🔥 👍 (same emoji again removes ours; double-tap = ❤️), Reply, Copy,
-  Edit (own text, within 15 min, at most 5 edits), Open in Instagram (shares), Unsend (own; confirmation, removed for
-  everyone), Delete (a failed send that never reached Instagram).
+  Edit (own text, within 15 min, at most 5 edits), Share All ("3 photos": photos sent together; downloads them all,
+  then the share sheet, whose "Save 3 Images" asks for Photos access once), Open in Instagram (shares), Unsend (own;
+  confirmation, removed for everyone), Delete (a failed send that never reached Instagram).
 - **Composer:** account avatar (tap: "This chat belongs to X. Replies always come from this account."), "Message as
   X", counter from 900 characters, Send off past 1000. Reply and edit modes show a bar with ✕. With the field empty
   the mic sits where Send is.
@@ -186,7 +187,8 @@ avatar, display name and @handle, sorted by name; you last as "You" with your ac
 | Reel / story (every share arrives unresolved) | Preview, author, caption + "Load video" → "Getting video…" | Instagram's media lookup (a read, allowed in requests) swaps the card in place, then it opens |
 | Unavailable / too large / expired story / view-once | Neutral card, dimmed preview | "Open in Instagram" |
 | Post / other share | Author, image, two caption lines | Open in Instagram |
-| Photo | Up to 240×320. Several sent together (one message) are a card each, stacked like a run, under one menu and one row of reactions; photos and videos mixed alike | M2 (each on its own) |
+| Photo | Up to 240×320 | M2 |
+| Photos sent together (one message; videos mixed in alike) | A pile: the first on top at a photo's size, up to four more tilted behind it (±3°, ±6°), "3 photos" on it; only those previews load. One menu and one row of reactions for the set | Unfolds in place into a card each, stacked like a run, each opening on its own (M2 / M1), and "Show less" under them folds it back. While "Share All" downloads, the pile shows the ring and a tap cancels |
 | GIF (Instagram's `GIFS`) | Up to 240×320 (its WebP, downloaded as it appears, like a photo; Instagram's still preview first when it sends one). Plays three times the first time it's on screen in a launch, then rests on its first frame with a play button (the video card's) that plays it once more. In a request, or under Reduce Motion, only the button. In the inbox, "GIF" | M2 (first frame) |
 | Voice (`m.audio` + voice flag) | Play/pause, static bars (drag to seek), 1×/1.5×/2×, duration; our own while sending: the upload ring in the play circle; after a failed play "Can't play" and a retry arrow in the circle (a tap retries) | Plays in the bubble (AVPlayer on Instagram's `.mp4`, or our own `.m4a`) |
 | Video (not a share) | Like a reel without author: Instagram's preview image, duration pill; ours while sending: the upload ring | Download (ring, tap cancels) → M1 |

@@ -17,6 +17,7 @@ struct ThreadView: View {
     @State private var unsending: Message?
     @State private var highlighted: String?
     @State private var viewer: MediaViewerItem?
+    @State private var sharing: SharedFiles?
     /// T2 "Reply instead": the composer replaces the request bar, with the "replying accepts" note.
     @State private var replyingInstead = false
     @State private var confirmingDelete = false
@@ -208,6 +209,7 @@ struct ThreadView: View {
             Text(RequestCopy.deleteMessage(handle: login?.profile?.username))
         }
         .sheet(item: $relogin) { ReloginSheet(loginID: $0.id) }
+        .sheet(item: $sharing) { ShareSheet(files: $0.files).presentationDetents([.medium, .large]) }
         .confirmationDialog("Unsend message?", isPresented: Binding(get: { unsending != nil }, set: { if !$0 { unsending = nil } }),
                             titleVisibility: .visible, presenting: unsending) { message in
             Button("Unsend", role: .destructive) { model.unsend(message, in: room) }
@@ -273,6 +275,7 @@ struct ThreadView: View {
             loadReplyTarget: { _ in },  // Instagram sends the target with the reply (`Room.related`)
             openMedia: { open($0, in: room) },
             resolveMedia: { model.resolveMedia($0, in: room) },
+            shareAll: { shareAll($0, in: room) },
             readOnly: !Inbox.allowsReceipts(room))
     }
 
@@ -288,6 +291,24 @@ struct ThreadView: View {
             guard let file = try? await model.media.file(mxc, mimetype: info.mimetype) else { return model.refreshMedia(in: room) }
             model.voice.stop()
             viewer = MediaViewerItem(message: message, file: file, sender: sender)
+        }
+    }
+
+    /// "Share All": every photo of a set downloaded at once (the pile's ring; a tap on it cancels), then the share
+    /// sheet, whose "Save N Images" puts them in Photos.
+    private func shareAll(_ message: Message, in room: Room) {
+        let items = MediaInfo(content: message.content).album.map(MediaInfo.init(content:))
+        Task {
+            let downloads = items.map { item in Task { try await model.media.file(item.url ?? "", mimetype: item.mimetype) } }
+            do {
+                var files: [URL] = []
+                for download in downloads { files.append(try await download.value) }
+                sharing = SharedFiles(files: files)
+            } catch is CancellationError {
+            } catch let error as URLError where error.code == .cancelled {
+            } catch {
+                model.refreshMedia(in: room)  // the links may have expired
+            }
         }
     }
 
@@ -813,4 +834,20 @@ enum Attachment {
     case preparing(isVideo: Bool, gif: Bool = false)
     case photo(PhotoMessage.Encoded, UIImage?)
     case video(VideoMessage.Video, UIImage?)
+}
+
+/// Files for the share sheet ("Share All").
+private struct SharedFiles: Identifiable {
+    let id = UUID()
+    let files: [URL]
+}
+
+private struct ShareSheet: UIViewControllerRepresentable {
+    let files: [URL]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: files, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }

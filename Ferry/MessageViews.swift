@@ -14,6 +14,8 @@ struct MessageActions {
     var openMedia: (Message) -> Void
     /// "Load video" on a backfilled share (`resolve_media`).
     var resolveMedia: (Message) -> Void
+    /// Photos sent together: download them all, then the share sheet.
+    var shareAll: (Message) -> Void
     /// Request rooms: nothing that sends. The bridge marks the chat read on Instagram for *every* event we send
     /// (seen in its logs in M4: "Sending implicit read receipt"), so even a reaction would leak "Seen".
     var readOnly = false
@@ -294,6 +296,12 @@ private struct MessageMenu: ViewModifier {
                 }
                 if !actions.readOnly, Timeline.canEdit(message) {
                     Button("Edit", systemImage: "pencil") { actions.edit(message) }
+                }
+                if case let info = MediaInfo(content: message.content), info.album.count > 1 {
+                    Button { actions.shareAll(message) } label: {
+                        Label("Share All", systemImage: "square.and.arrow.up.on.square")
+                        Text(info.albumLabel)
+                    }
                 }
                 if let url = message.content["external_url"]?.string.flatMap(URL.init(string:)) {
                     Link(destination: url) { Label("Open in Instagram", systemImage: "arrow.up.forward.app") }

@@ -213,6 +213,7 @@ final class IGAdapterTests: XCTestCase {
         XCTAssertEqual(info.album.map { MediaInfo(content: $0).url }, (0..<3).map { "https://scontent.example.invalid/v/f0\(40 + 2 * $0).jpg" })
         XCTAssertEqual(info.album.map { MessageKind(type: "m.room.message", content: $0) }, [.image, .image, .image])
         XCTAssertEqual(MediaInfo(content: info.album[2]).aspect, 468.0 / 750)
+        XCTAssertEqual(info.albumLabel, "3 photos")  // the pile's badge, "Share All"
 
         // The mailbox's copy (live): no attachments, still a photo, and no album to stack.
         var bare = photos
@@ -231,6 +232,7 @@ final class IGAdapterTests: XCTestCase {
         let album = MediaInfo(content: IGAdapter.content(mixed)).album
         XCTAssertEqual(album.map { MessageKind(type: "m.room.message", content: $0) }, [.image, .video])
         XCTAssertEqual(MediaInfo(content: album[1]).thumbnailURL, "https://scontent.example.invalid/v/f047.jpg")
+        XCTAssertEqual(MediaInfo(content: IGAdapter.content(mixed)).albumLabel, "2 photos and videos")
     }
 
     /// Instagram's own lines (upstream's `SlideMessageAdminText`, `text_fragments`; none captured: a group needs three

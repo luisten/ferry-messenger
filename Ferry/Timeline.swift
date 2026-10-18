@@ -149,6 +149,12 @@ nonisolated struct MediaInfo: Equatable, Sendable {
 
     var isVideo: Bool { msgtype == "m.video" }
 
+    /// "3 photos", "2 videos", "3 photos and videos": the pile's badge and "Share All".
+    var albumLabel: String {
+        let videos = album.filter { $0["msgtype"]?.string == "m.video" }.count
+        return "\(album.count) \(videos == 0 ? "photos" : videos == album.count ? "videos" : "photos and videos")"
+    }
+
     /// What a card shows before anything is downloaded: a video's thumbnail (for reels, the old preview image), an
     /// image itself.
     var previewURL: String? { isVideo ? thumbnailURL : url }

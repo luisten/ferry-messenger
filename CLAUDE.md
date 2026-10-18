@@ -153,8 +153,10 @@ captured in P0)
   Links to GIFs that others send stay links. No GIF search: no outside service (the user's calls, 2026-10-17).
 - **Several photos sent at once** are one `IMAGES` message with every attachment (live 2026-10-18,
   `ig_message_photos_tamo`); `IGAdapter.album` keeps the first as the content and all of them under `fi.ferry.album`
-  (`MediaInfo.album`), which `MediaCard` stacks: one message, so one menu, reaction row, reply target and unsend.
-  Ferry showed the first only.
+  (`MediaInfo.album`), which `AlbumStack` shows as a pile that unfolds in place: one message, so one menu, reaction
+  row, reply target and unsend. Ferry showed the first only. The share sheet hides "Save Images" without
+  `NSPhotoLibraryAddUsageDescription` (build settings, with the microphone's), so Share All and the viewer's Share
+  need it.
 - **Chat events:** Instagram's own lines (a group renamed, someone left, a call) are admin text, `text_fragments`
   (upstream's `SlideMessageAdminText`; never captured, no group on the dummies), shown as `MessageKind.event` lines.
   A thread read's copy of a message has an empty `igd_snippet` (the mailbox's and live deltas' say "Sam sent 3
