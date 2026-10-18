@@ -14,6 +14,8 @@ struct MessageActions {
     var openMedia: (Message) -> Void
     /// "Load video" on a backfilled share (`resolve_media`).
     var resolveMedia: (Message) -> Void
+    /// Photos sent together: download them all, then the share sheet.
+    var shareAll: (Message) -> Void
     /// Request rooms: nothing that sends. The bridge marks the chat read on Instagram for *every* event we send
     /// (seen in its logs in M4: "Sending implicit read receipt"), so even a reaction would leak "Seen".
     var readOnly = false
@@ -46,11 +48,12 @@ struct MessageRow: View {
     private var reactionsInset: CGFloat { message.reactions.isEmpty ? 0 : 14 }
 
     var body: some View {
+        if message.kind.isChatEvent { eventLine } else { bubbleRow }
+    }
+
+    private var bubbleRow: some View {
         VStack(alignment: own ? .trailing : .leading, spacing: 3) {
-            if row.showsTime {
-                Text(Self.timeLabel(message.ts)).font(.caption).foregroundStyle(.inkSecondary)
-                    .frame(maxWidth: .infinity).padding(.bottom, 6)
-            }
+            if row.showsTime { time }
             if row.groupSender?.showsName == true, message.reply == nil {  // a reply's caption names the sender instead
                 // Neutral, never coloured: colour means account (DESIGN §3.6). The bubble says it to VoiceOver.
                 Text(member(message.sender).name).font(.caption).foregroundStyle(.inkSecondary).lineLimit(1)
@@ -91,6 +94,26 @@ struct MessageRow: View {
             }
             .padding(.leading, indent)
         }
+    }
+
+    private var time: some View {
+        Text(Self.timeLabel(message.ts)).font(.caption).foregroundStyle(.inkSecondary)
+            .frame(maxWidth: .infinity).padding(.bottom, 6)
+    }
+
+    /// Instagram's own lines and what the app can't show: small centred text across the thread, no bubble or menu.
+    private var eventLine: some View {
+        VStack(spacing: 3) {
+            if row.showsTime { time }
+            Text(eventText).font(.footnote).foregroundStyle(.inkSecondary).multilineTextAlignment(.center)
+                .padding(.horizontal, 24).frame(maxWidth: .infinity)
+                .accessibilityIdentifier("thread.event")
+        }
+    }
+
+    private var eventText: String {
+        guard case .unsupported(let what) = message.kind else { return message.body }
+        return "\(own ? "You" : name(message.sender)) sent \(what). Open Instagram to see it."
     }
 
     // MARK: Bubble
@@ -273,6 +296,12 @@ private struct MessageMenu: ViewModifier {
                 }
                 if !actions.readOnly, Timeline.canEdit(message) {
                     Button("Edit", systemImage: "pencil") { actions.edit(message) }
+                }
+                if case let info = MediaInfo(content: message.content), info.album.count > 1 {
+                    Button { actions.shareAll(message) } label: {
+                        Label("Share All", systemImage: "square.and.arrow.up.on.square")
+                        Text(info.albumLabel)
+                    }
                 }
                 if let url = message.content["external_url"]?.string.flatMap(URL.init(string:)) {
                     Link(destination: url) { Label("Open in Instagram", systemImage: "arrow.up.forward.app") }

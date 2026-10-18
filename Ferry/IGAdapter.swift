@@ -419,30 +419,52 @@ nonisolated enum IGAdapter {
                          info: ["mimetype": "audio/mp4", "duration": .number(ms)],
                          extra: ["org.matrix.msc3245.voice": [:], "org.matrix.msc1767.audio": ["duration": .number(ms)]])
         case "VIDEOS":
-            let video = attachments?["videos"]?.array?.first
-            return media("m.video", "Video", url: video?["attachment_cdn_url"]?.string, info: [
-                "mimetype": "video/mp4", "w": video?["preview_width"] ?? .null, "h": video?["preview_height"] ?? .null,
-                "thumbnail_url": video?["preview_cdn_url"] ?? .null,
-            ])
+            return album(attachments?["videos"]?.array, video: true)
         case "IMAGES":
-            let image = attachments?["attachments"]?.array?.first
-            return media("m.image", "Photo", url: image?["attachment_cdn_url"]?.string, info: [
-                "mimetype": "image/jpeg", "w": image?["preview_width"] ?? .null, "h": image?["preview_height"] ?? .null,
-            ])
+            return album(attachments?["attachments"]?.array, video: false)
+        case _ where attachments?["ordered_photo_video_attachments"] != nil:  // photos and videos in one message (upstream's shape)
+            return album(attachments?["ordered_photo_video_attachments"]?.array, video: nil)
         case "GIFS":  // a GIF (Instagram's picker, or one we uploaded); the mailbox's copy has no media (`null`), the thread's does
             let gif = attachments?["animated_media"]?.array?.first
             return media("m.image", "GIF", url: gif?["attachment_webp_url"]?.string, info: [
                 "mimetype": "image/webp", "w": gif?["preview_width"] ?? .null, "h": gif?["preview_height"] ?? .null,
                 "thumbnail_url": gif?["preview_cdn_url"] ?? .null, "fi.mau.gif": true,
             ])
+        case _ where attachments?["text_fragments"] != nil:  // Instagram's own line: "… named the group …", "… left the group"
+            let line = (attachments?["text_fragments"]?.array ?? []).compactMap { $0["plaintext"]?.string }.joined()
+            guard let line = nonEmpty(line) ?? nonEmpty(message.igdSnippet) else { return unsupported(message) }
+            return ["msgtype": "m.notice", "body": .string(line), MessageKind.eventKey: true]
         case _ where attachments?["xma"] != nil:
             return share(attachments?["xma"], snippet: message.igdSnippet)
         case "RAVEN_IMAGE":
             // The bridge's own wording is how `MessageKind` knows view-once media.
             return ["msgtype": "m.notice", "body": "This photo can only be viewed once. Use the Instagram app to view."]
         default:
-            return ["msgtype": "m.notice", "body": .string(nonEmpty(message.igdSnippet) ?? "Message not supported yet")]
+            return unsupported(message)
         }
+    }
+
+    /// What the app can't show (a poll, a sticker…), as a line that sends you to Instagram. A thread read's copy has no
+    /// `igd_snippet` (the mailbox's and live deltas' do), so the content type is all that names it on every path.
+    private static func unsupported(_ message: IG.Message) -> JSON {
+        // ponytail: "poll" is a guess at Instagram's naming (no poll captured yet); name more kinds once one is.
+        let poll = [message.contentType, message.content?["__typename"]?.string].contains { $0?.localizedCaseInsensitiveContains("poll") == true }
+        let what = poll ? "a poll" : "a message Ferry can't show"
+        return ["msgtype": "m.notice", "body": .string("Sent \(what)"), MessageKind.unsupportedKey: .string(what)]
+    }
+
+    /// Photos or videos: one, or several sent together (one message, live 2026-10-18). Several are the first one's
+    /// content plus all of them under `MediaInfo.albumKey`, which `MediaCard` stacks. `video` nil: each item says.
+    private static func album(_ items: [JSON]?, video: Bool?) -> JSON {
+        func card(_ item: JSON?) -> JSON {
+            let url = item?["attachment_cdn_url"]?.string, w = item?["preview_width"] ?? .null, h = item?["preview_height"] ?? .null
+            return video ?? (item?["__typename"]?.string == "XFBSlideVideoAttachment")
+                ? media("m.video", "Video", url: url, info: ["mimetype": "video/mp4", "w": w, "h": h, "thumbnail_url": item?["preview_cdn_url"] ?? .null])
+                : media("m.image", "Photo", url: url, info: ["mimetype": "image/jpeg", "w": w, "h": h])
+        }
+        guard let items, items.count > 1, case .object(var first) = card(items[0]) else { return card(items?.first) }
+        first[MediaInfo.albumKey] = .array(items.map(card))
+        return .object(first)
     }
 
     /// A share (Instagram's XMA) in the bridge's shapes, so the cards read it as before: a reel or story waits for

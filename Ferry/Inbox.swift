@@ -423,14 +423,19 @@ nonisolated enum Inbox {
         let prefix = who.map { "\($0): " } ?? ""
 
         let kind = MessageKind(type: message.type, content: content)
-        if case .share(let type, _) = kind {
-            let sent = mine ? "You sent \(type.phrase)" : who.map { "\($0) sent \(type.phrase)" } ?? "Sent \(type.phrase)"
+        let sent: String? = switch kind {
+        case .share(let type, _): type.phrase
+        case .unsupported(let what): what
+        default: nil
+        }
+        if let sent {
+            let text = mine ? "You sent \(sent)" : who.map { "\($0) sent \(sent)" } ?? "Sent \(sent)"
             let author = ShareCaption(content: content).author.map { " by @\($0)" } ?? ""
-            return Preview(symbol: kind.media?.symbol, text: sent + author)
+            return Preview(symbol: kind.media?.symbol, text: text + author)
         }
         if let media = kind.media { return Preview(symbol: media.symbol, text: prefix + media.label) }
         let body = Timeline.body(of: content).split(whereSeparator: \.isNewline).joined(separator: " ")
-        return Preview(symbol: nil, text: prefix + body)
+        return Preview(symbol: nil, text: (kind == .event ? "" : prefix) + body)  // an event names who did it
     }
 
     /// Row time: "9:41" today, "Yesterday", weekday within a week, then a short date.

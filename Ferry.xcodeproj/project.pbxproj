@@ -337,6 +337,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Ferry Messenger";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Ferry records voice messages only while you hold the mic button.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Ferry saves photos and videos to your library only when you choose Save.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -367,6 +368,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Ferry Messenger";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Ferry records voice messages only while you hold the mic button.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Ferry saves photos and videos to your library only when you choose Save.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (

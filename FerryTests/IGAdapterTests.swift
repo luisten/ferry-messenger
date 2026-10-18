@@ -201,6 +201,80 @@ final class IGAdapterTests: XCTestCase {
         XCTAssertNil(MediaInfo(content: content).url)
     }
 
+    /// Three photos sent at once from the Instagram app (live 2026-10-18): one message with every photo, in order,
+    /// so it keeps one menu, one row of reactions and one unsend. Ferry showed only the first.
+    func testPhotosSentTogetherAreOneMessageWithAll() throws {
+        let photos = try Fixture.ig(IG.Message.self, "ig_message_photos_tamo")
+        let messages = Timeline.reduce(IGAdapter.events(photos, account: tamo), me: me)
+        XCTAssertEqual(messages.count, 1)
+        let info = MediaInfo(content: try XCTUnwrap(messages.first).content)
+        XCTAssertEqual(messages.first?.kind, .image)
+        XCTAssertEqual(info.url, "https://scontent.example.invalid/v/f040.jpg")  // the first: inbox, quotes
+        XCTAssertEqual(info.album.map { MediaInfo(content: $0).url }, (0..<3).map { "https://scontent.example.invalid/v/f0\(40 + 2 * $0).jpg" })
+        XCTAssertEqual(info.album.map { MessageKind(type: "m.room.message", content: $0) }, [.image, .image, .image])
+        XCTAssertEqual(MediaInfo(content: info.album[2]).aspect, 468.0 / 750)
+        XCTAssertEqual(info.albumLabel, "3 photos")  // the pile's badge, "Share All"
+
+        // The mailbox's copy (live): no attachments, still a photo, and no album to stack.
+        var bare = photos
+        bare.content = ["attachments": .null]
+        XCTAssertEqual(MessageKind(type: "m.room.message", content: IGAdapter.content(bare)), .image)
+        XCTAssertTrue(MediaInfo(content: IGAdapter.content(bare)).album.isEmpty)
+
+        // Photos and videos together (upstream's `ordered_photo_video_attachments`, not seen live): each item says which.
+        var mixed = photos
+        mixed.contentType = "MULTIMEDIA"  // a guess; the content's field decides
+        mixed.content = ["ordered_photo_video_attachments": [
+            photos.content?["attachments"]?.array?.first ?? .null,
+            ["__typename": "XFBSlideVideoAttachment", "attachment_cdn_url": "https://scontent.example.invalid/v/f046.mp4",
+             "preview_cdn_url": "https://scontent.example.invalid/v/f047.jpg", "preview_width": 360, "preview_height": 640],
+        ]]
+        let album = MediaInfo(content: IGAdapter.content(mixed)).album
+        XCTAssertEqual(album.map { MessageKind(type: "m.room.message", content: $0) }, [.image, .video])
+        XCTAssertEqual(MediaInfo(content: album[1]).thumbnailURL, "https://scontent.example.invalid/v/f047.jpg")
+        XCTAssertEqual(MediaInfo(content: IGAdapter.content(mixed)).albumLabel, "2 photos and videos")
+    }
+
+    /// Instagram's own lines (upstream's `SlideMessageAdminText`, `text_fragments`; none captured: a group needs three
+    /// people) and content the app doesn't know are lines across the thread, never a bubble saying "not supported".
+    func testChatEventsAndUnknownContentAreLines() throws {
+        func message(_ id: String, _ sender: String, _ type: String, _ content: JSON, at ms: Int64) throws -> [Event] {
+            let json = try JSONEncoder().encode(JSON.object(["id": .string(id), "sender_fbid": .string(sender), "content_type": .string(type),
+                                                             "timestamp_ms": .string(String(ms)), "igd_snippet": "", "content": content,
+                                                             "text_body": content["text_body"] ?? .null]))
+            return IGAdapter.events(try IG.decode(IG.Message.self, json), account: tamo)
+        }
+        let renamed: JSON = ["text_fragments": [["plaintext": "Kivo", "link_fragment": ["uri": "instagram://user?username=kivostudio"]],
+                                                ["plaintext": " named the group Weekend", "link_fragment": .null]]]
+        let events = try message("mid.1", kivo, "TEXT", ["text_body": "hi"], at: 1_000) + message("mid.1b", kivo, "TEXT", ["text_body": "there"], at: 1_100)
+            + message("mid.2", kivo, "ACTION_LOG", renamed, at: 2_000)  // a made-up type: the content's fields decide
+            + message("mid.3", kivo, "SOMETHING_NEW", ["__typename": "SlideMessageSomethingNewContent"], at: 3_000)
+            + message("mid.4", kivo, "POLL_XMAT", ["__typename": "SlideMessagePollContent"], at: 4_000)  // a guess at a poll
+            + message("mid.5", tamo, "TEXT", ["text_body": "mine"], at: 5_000)
+            + message("mid.6", tamo, "ACTION_LOG", ["text_fragments": [["plaintext": "You left the group"]]], at: 6_000)
+            + message("mid.7", tamo, "ACTION_LOG", ["text_fragments": []], at: 7_000)  // nothing to say: can't show it
+        let messages = Timeline.reduce(events, me: me, receipts: [IGAdapter.user(kivo): .init(eventID: "mid.7", ts: 7_000)])
+        XCTAssertEqual(messages.map(\.kind), [.text, .text, .event, .unsupported("a message Ferry can't show"), .unsupported("a poll"),
+                                              .text, .event, .unsupported("a message Ferry can't show")])
+        XCTAssertEqual(messages[2].body, "Kivo named the group Weekend")
+        XCTAssertEqual(messages.filter(\.isSeen).map(\.id), ["mid.5"])  // "Seen" stays on our last real message
+
+        // In a group: a line takes no sender name or avatar, and splits the run it lands in.
+        let rows = Timeline.layout(messages, isGroup: true)
+        XCTAssertEqual(rows.map { $0.groupSender != nil }, [true, true, false, false, false, false, false, false])
+        XCTAssertEqual(rows[1].position, .last)
+
+        // The inbox: an event names who did it; what the app can't show says who sent what.
+        func preview(_ count: Int) -> String? {
+            let room = Room(id: "!ig-test")
+            room.apply(JoinedRoom(timeline: .init(events: Array(events.prefix(count)), limited: false)))
+            return Inbox.preview(of: room, me: me)?.text
+        }
+        XCTAssertEqual(preview(3), "Kivo named the group Weekend")
+        XCTAssertEqual(preview(5), "Sent a poll")
+        XCTAssertEqual(preview(8), "You sent a message Ferry can't show")
+    }
+
     func testLiveMessagesReadsAndReceipts() throws {
         let deltas = try deltas()
         let room = room(try thread(), account: tamo)

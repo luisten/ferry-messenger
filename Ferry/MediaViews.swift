@@ -14,6 +14,8 @@ struct MediaCard: View {
     var body: some View {
         let info = MediaInfo(content: message.content)
         switch message.kind {
+        case _ where info.album.count > 1:
+            AlbumStack(message: message, album: info.album, own: own, sender: sender, fill: fill, actions: actions)
         case .share(.story, .unavailable):
             NoticeCard(symbol: "clock", title: "Story no longer available", detail: "Stories disappear after 24 hours.")
         case .share(let type, .unavailable):
@@ -53,6 +55,92 @@ struct MediaCard: View {
         let text = [caption.caption ?? (caption.author == nil ? caption.title : nil)].compactMap(\.self).map { "“\($0)”" }
             + [caption.author.map { "@\($0)" }].compactMap(\.self)
         return text.isEmpty ? "" : " " + text.joined(separator: " · ")
+    }
+}
+
+/// Photos and videos sent together, under the one message's menu and reactions: a pile (the first on top, up to four
+/// more peeking out behind it, how many there are) that a tap unfolds into a card each, stacked like a run of
+/// bubbles, each opening on its own; "Show less" folds it back. Only the pile's previews load until then.
+private struct AlbumStack: View {
+    @Environment(AppModel.self) private var model
+    let message: Message
+    let album: [JSON]
+    let own: Bool
+    let sender: String
+    let fill: Color
+    let actions: MessageActions
+    @State private var expanded = false
+
+    /// The pile's cards, top first.
+    private static let tilt: [Double] = [0, -3, 3, -6, 6]
+
+    var body: some View {
+        if expanded { column } else { pile }
+    }
+
+    private var pile: some View {
+        let info = MediaInfo(content: message.content)
+        let cards = album.prefix(Self.tilt.count).map(MediaInfo.init(content:))
+        let size = PhotoCard.fit(cards[0], max: CGSize(width: 240, height: 320))
+        let progress = shareProgress
+        return Button {
+            if progress != nil { album.compactMap { MediaInfo(content: $0).url }.forEach(model.media.cancel) }
+            else { withAnimation(.snappy) { expanded = true } }
+        } label: {
+            ZStack {
+                ForEach(cards.indices.reversed(), id: \.self) { i in
+                    MXCThumbnail(mxc: cards[i].previewURL, pixels: Int(max(size.width, size.height) * 3))
+                        .frame(width: size.width, height: size.height)
+                        .clipShape(.rect(cornerRadius: 20))
+                        .shadow(color: .black.opacity(0.18), radius: 2)
+                        .rotationEffect(.degrees(Self.tilt[i]))
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Text(info.albumLabel).font(.caption.weight(.semibold)).foregroundStyle(.white)
+                    .padding(.horizontal, 7).frame(height: 20).background(.black.opacity(0.42), in: .capsule).padding(8)
+            }
+            .overlay { if let progress { DownloadRing(progress: progress) } }
+            .padding(.horizontal, 16).padding(.vertical, 14)  // room for the tilted cards inside the bubble's clip
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(progress.map { "\(info.albumLabel), downloading, \(Int($0 * 100)) percent. Double-tap to cancel." }
+            ?? "\(info.albumLabel). Double-tap to show all.")
+        .accessibilityIdentifier("media.pile")
+    }
+
+    private var column: some View {
+        VStack(alignment: own ? .trailing : .leading, spacing: 2) {
+            ForEach(album.indices, id: \.self) { i in
+                MediaCard(message: item(album[i]), own: own, sender: sender, fill: fill, actions: actions)
+                    .clipShape(MessageRow.shape(i == 0 ? .first : i == album.count - 1 ? .last : .middle, own: own))
+            }
+            // Under the photos, not on them: a light photo hides a glass button's white label.
+            Button { withAnimation(.snappy) { expanded = false } } label: {
+                Label("Show less", systemImage: "chevron.up").font(.footnote.weight(.semibold)).foregroundStyle(.inkSecondary)
+                    .padding(.horizontal, 12).frame(minHeight: 44).contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("media.showLess")
+        }
+    }
+
+    /// "Share All" under way: the set's share downloaded so far, nil when nothing of it is downloading.
+    private var shareProgress: Double? {
+        let items = album.map(MediaInfo.init(content:))
+        guard items.contains(where: { $0.url.flatMap { model.media.progress[$0] } != nil }) else { return nil }
+        let done = items.map { item in
+            item.url.flatMap { model.media.progress[$0] } ?? (item.url.flatMap { model.media.localFile($0, mimetype: item.mimetype) } != nil ? 1 : 0)
+        }
+        return done.reduce(0, +) / Double(done.count)
+    }
+
+    private func item(_ content: JSON) -> Message {
+        var item = message
+        item.content = content
+        item.kind = MessageKind(type: "m.room.message", content: content)
+        return item
     }
 }
 
