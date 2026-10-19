@@ -1,6 +1,6 @@
 # Ferry Messenger: a shared engine, then Android (plan)
 
-> Accepted 2026-10-19; stage 1 done the same day (§3). Account names are the fictional stand-ins (`tamoveska` personal, `kivostudio`
+> Accepted 2026-10-19; stages 1 and 2 done the same day (§3, §4). Account names are the fictional stand-ins (`tamoveska` personal, `kivostudio`
 > professional). Builds on [PLAN-core.md](PLAN-core.md) (P0–P7, done) and the Android spike
 > ([spikes/2026-10-19-android-core.md](spikes/2026-10-19-android-core.md)).
 
@@ -154,6 +154,32 @@ errors, how long a disconnect has lasted (health).
 
 **Done when:** tests green; the live check gives the same C6 counts or fewer; a typing burst sends at most one
 typing per 20 s; reopening a read chat sends no "Seen". About 2 days.
+
+**Done 2026-10-19,** stacked on stage 1's branch (the user's call: one refactoring). `core/chat/rules.go` decides
+from the engine's copy, with tests that fail when a rule is loosened (re-read at most every 30 s; "Seen" on their
+newest message, only when unread and never in a request; typing at most once per 20 s, never in a request, off when
+sending; reactions, edits and unsends refused in requests, edits within 15 minutes and 5 texts; drafts and their
+move; the forced request; the folders after the first page). `cmd/igcore` pages the folders after each login, accepts
+a request before a reply, and retries a stored account's passing failure; `AppModel` lost `loadFolders`, both
+throttles, the "Seen" target, the draft builder, the login retry and `markForcedRequest`. FerryTests 281, UI tests
+green on made-up data. Live, with the user's OK: the same steps as stage 1's check, on the stage 2 build only, against
+that evening's baseline: the same counts (`tamoveska` 11, `kivostudio` 7), one typing (and its "stopped") for the
+burst, no "Seen" on the read chats. Cold launch to both first pages 2.98 s, one launch (2.14 s and 2.45 s before, also
+one each: the network).
+
+Changed from the table, as built:
+- **Reconnect:** `IGResume(account, cookies)` connects a stored account and, after a passing failure, tries again every
+  30 s by itself, telling the app through `Login` and `LoginFailed` events; `IGLogin` (a new login, the user is there)
+  doesn't retry.
+- **DEBUG:** `IGSetDebug(blockSends, requestRoom)`. Besides holding back sends, the engine treats
+  `FERRY_DEBUG_AS_REQUEST`'s chat as a request, so every request rule applies to it and the app's `markForcedRequest`
+  went. Typing stays blocked under `FERRY_DEBUG_BLOCK_SENDS`, as the old code did (DEVELOPMENT.md said it went; fixed).
+- **New Message:** the draft arrives as a `Draft` event (the app keeps it out of `rooms`), and `RoomMoved {room, to}`
+  when its thread arrives; `IGOpenDM` takes the contact as JSON. `IGSend` sends a draft's first message.
+- `IGAccept` and `IGEdit` make their own offline threading IDs; the app keeps `IGNewOTID` for local echoes.
+- Stays in the app, not in the table: which emoji a reaction removes (the same one again), and the UI's own checks
+  (`Inbox.allowsReceipts` for the read-only menu, `Timeline.canEdit` for the Edit item). `Timeline.receiptTarget` is now
+  used only by its tests: the engine picks "Seen"'s message, so Android needn't port it.
 
 ## 5. Stage 3: Android
 
