@@ -14,6 +14,7 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 - In light mode, the buttons on photos and videos ("Load video", play, try again) could be white on white over a bright
   picture.
 - "typing…" stayed for up to 20 seconds after their message had arrived.
+- In group chats, "typing…" could vanish while someone was still typing.
 
 ## [1.2] - 2026-10-19
 

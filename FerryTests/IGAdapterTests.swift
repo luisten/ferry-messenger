@@ -519,13 +519,21 @@ final class IGAdapterTests: XCTestCase {
         XCTAssertEqual(room.typing, [IGAdapter.user(kivo)])
         room.apply(IGAdapter.typing([]))
         XCTAssertEqual(room.typing, [])
-        // Their message arriving ends it: Instagram sends no "stopped" with a send. Our own message doesn't.
-        let deltas = try deltas()
-        room.apply(IGAdapter.typing([IGAdapter.user(kivo)]))
-        XCTAssertEqual(IGAdapter.apply(try XCTUnwrap(deltas.last { $0.typename == "SlideUQPPNewMessage" }), account: tamo, to: room), .applied)
+        // In a group, notices come one person at a time: each starts and stops on their own.
+        let other = IGAdapter.user("17841400000000101")
+        room.apply(IGAdapter.typing(IGAdapter.user(kivo), on: true, in: room.typing))
+        room.apply(IGAdapter.typing(other, on: true, in: room.typing))
+        room.apply(IGAdapter.typing(other, on: true, in: room.typing))  // a repeat notice doesn't add them twice
+        XCTAssertEqual(room.typing, [IGAdapter.user(kivo), other])
+        room.apply(IGAdapter.typing(other, on: false, in: room.typing))
         XCTAssertEqual(room.typing, [IGAdapter.user(kivo)])
+        // Their message arriving ends it, theirs only: Instagram sends no "stopped" with a send. Our own message doesn't.
+        let deltas = try deltas()
+        room.apply(IGAdapter.typing(other, on: true, in: room.typing))
+        XCTAssertEqual(IGAdapter.apply(try XCTUnwrap(deltas.last { $0.typename == "SlideUQPPNewMessage" }), account: tamo, to: room), .applied)
+        XCTAssertEqual(room.typing, [IGAdapter.user(kivo), other])
         XCTAssertEqual(IGAdapter.apply(try XCTUnwrap(deltas.first { $0.typename == "SlideUQPPNewMessage" }), account: tamo, to: room), .applied)
-        XCTAssertEqual(room.typing, [])
+        XCTAssertEqual(room.typing, [other])
         // The notice names the thread by its long ID and the person by their Instagram user ID (P0).
         let typing = try Fixture.ig([IG.Event].self, "ig_events_tamo").first { $0.kind == "TypingNotification" }
         XCTAssertEqual(typing?.thread, try thread().threadId)

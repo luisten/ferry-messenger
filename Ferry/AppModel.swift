@@ -72,6 +72,7 @@ final class AppModel {
     @ObservationIgnored private var fbidByUserID: [String: String] = [:]
     /// When each room was last read in full (opening a chat re-reads it, at most every 30 s).
     @ObservationIgnored private var refreshed: [String: Date] = [:]
+    /// Each person's typing TTL, by `"<room>/<user>"`.
     @ObservationIgnored private var typingTimers: [String: Task<Void, Never>] = [:]
     /// When we last told Instagram we're typing, per room (at most once per 20 s).
     @ObservationIgnored private var typingSince: [String: Date] = [:]
@@ -353,17 +354,17 @@ final class AppModel {
         }
     }
 
-    /// Someone typing (`m.typing` for the room); it holds for the notice's TTL unless another notice comes.
+    /// Someone typing (`m.typing` for the room); it holds for the notice's TTL unless another notice from them comes.
     private func typing(_ event: IG.Event) {
         guard let long = event.thread, let id = roomByLongID["\(event.account)/\(long)"], let room = rooms[id], let typing = event.typing,
               let sender = typing.senderId.flatMap({ fbidByUserID[String($0)] }), sender != event.account else { return }
-        let on = typing.activityStatus == 1
-        room.apply(IGAdapter.typing(on ? [IGAdapter.user(sender)] : []))
-        typingTimers[id]?.cancel()
+        let on = typing.activityStatus == 1, user = IGAdapter.user(sender), key = "\(id)/\(user)"
+        room.apply(IGAdapter.typing(user, on: on, in: room.typing))
+        typingTimers[key]?.cancel()
         guard on else { return }
-        typingTimers[id] = Task {
+        typingTimers[key] = Task {
             try? await Task.sleep(for: .milliseconds(typing.ttl ?? 22_000))
-            if !Task.isCancelled { room.apply(IGAdapter.typing([])) }
+            if !Task.isCancelled { room.apply(IGAdapter.typing(user, on: false, in: room.typing)) }
         }
     }
 
