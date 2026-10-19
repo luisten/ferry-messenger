@@ -7,6 +7,8 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 
 ## [Unreleased]
 
+## [1.3] - 2026-10-19
+
 ### Fixed
 
 - In light mode, the buttons on photos and videos ("Load video", play, try again) could be white on white over a bright
@@ -55,7 +57,8 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 - First public release: your Instagram direct messages, from all your accounts in one inbox, talking to Instagram
   straight from your iPhone.
 
-[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.2...HEAD
+[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.3...HEAD
+[1.3]: https://github.com/luisten/ferry-messenger/compare/v1.2...v1.3
 [1.2]: https://github.com/luisten/ferry-messenger/compare/v1.1...v1.2
 [1.1]: https://github.com/luisten/ferry-messenger/compare/v1.0...v1.1
 [1.0]: https://github.com/luisten/ferry-messenger/releases/tag/v1.0
