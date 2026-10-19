@@ -44,6 +44,10 @@ whenever `core/` changes (about 15 s):
 core/build.sh
 ```
 
+The app's "Check core/" build phase (`core/build.sh --check`) stops the build with "run core/build.sh" when `core/`
+has changed since, e.g. after a pull. A build with no `build/IGCore.xcframework` at all fails with "There is no
+XCFramework found" and Xcode remembers that: after the first `core/build.sh`, Clean Build Folder (⇧⌘K) once.
+
 Your Apple team ID and bundle ID prefix go in `Config/Local.xcconfig` (gitignored). Without it the app builds for the
 simulator as `com.example.ferry-messenger`; a phone needs your team:
 

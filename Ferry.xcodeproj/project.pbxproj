@@ -124,6 +124,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A00000000000000000000013 /* Build configuration list for PBXNativeTarget "Ferry" */;
 			buildPhases = (
+				A00000000000000000000019 /* Check core/ */,
 				A00000000000000000000014 /* Sources */,
 				A00000000000000000000015 /* Frameworks */,
 				A00000000000000000000016 /* Resources */,
@@ -249,6 +250,29 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A00000000000000000000019 /* Check core/ */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Check core/";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$SRCROOT/core/build.sh\" --check\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A00000000000000000000014 /* Sources */ = {
