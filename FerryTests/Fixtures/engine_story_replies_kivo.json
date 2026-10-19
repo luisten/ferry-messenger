@@ -1,0 +1,126 @@
+{
+ "bare": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "You sent an attachment.",
+    "fi.ferry.event": true,
+    "msgtype": "m.notice"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyng9tHi2hUpX6BkG2d",
+   "sender": "@me",
+   "origin_server_ts": 1792386924427
+  }
+ ],
+ "expired": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Story unavailable",
+    "fi.ferry.share_text": "Droopy",
+    "msgtype": "m.notice"
+   },
+   "event_id": "mid.expired",
+   "sender": "@me",
+   "origin_server_ts": 1792386924500
+  }
+ ],
+ "mailbox_receiver": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "😢",
+    "msgtype": "m.text"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyng9tHi2hUpX6BkG2d",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 1792386924427
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Droopy",
+    "msgtype": "m.text"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyng9sZ5mhUpXPcF6Kp",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 1792386912742
+  }
+ ],
+ "mailbox_sender": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "😢",
+    "msgtype": "m.text"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyng9tHi2hUpX6BkG2d",
+   "sender": "@me",
+   "origin_server_ts": 1792386924427
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Droopy",
+    "msgtype": "m.text"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyng9sZ5mhUpXPcF6Kp",
+   "sender": "@me",
+   "origin_server_ts": 1792386912742
+  }
+ ],
+ "thread": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Sent a story",
+    "com.beeper.unresolved_media": {
+     "target_id": "ee.mid.$cAAASampleStory0006",
+     "target_url": "https://www.instagram.com/stories/tamoveska/4000000000000000006?reel_id=10000000006&reel_owner_id=10000000006"
+    },
+    "external_url": "https://www.instagram.com/stories/tamoveska/4000000000000000006?reel_id=10000000006&reel_owner_id=10000000006",
+    "fi.ferry.share_text": "😢",
+    "format": "org.matrix.custom.html",
+    "formatted_body": "<blockquote>Reacted to @Tamo Veska's story</blockquote><strong>tamoveska</strong>",
+    "info": {
+     "h": 216,
+     "thumbnail_url": "https://scontent.example.invalid/v/s061.jpg",
+     "w": 144
+    },
+    "msgtype": "m.video"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyng9tHi2hUpX6BkG2d",
+   "sender": "@me",
+   "origin_server_ts": 1792386924427,
+   "unsigned": {
+    "transaction_id": "7517815640746388893"
+   }
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Sent a story",
+    "com.beeper.unresolved_media": {
+     "target_id": "ee.mid.$cAAASampleStory0006",
+     "target_url": "https://www.instagram.com/stories/tamoveska/4000000000000000006?reel_id=10000000006&reel_owner_id=10000000006"
+    },
+    "external_url": "https://www.instagram.com/stories/tamoveska/4000000000000000006?reel_id=10000000006&reel_owner_id=10000000006",
+    "fi.ferry.share_text": "Droopy",
+    "format": "org.matrix.custom.html",
+    "formatted_body": "<blockquote>Replied to @Tamo Veska's story</blockquote><strong>tamoveska</strong>",
+    "info": {
+     "h": 216,
+     "thumbnail_url": "https://scontent.example.invalid/v/s064.jpg",
+     "w": 144
+    },
+    "msgtype": "m.video"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyng9sZ5mhUpXPcF6Kp",
+   "sender": "@me",
+   "origin_server_ts": 1792386912742,
+   "unsigned": {
+    "transaction_id": "7517815595020559017"
+   }
+  }
+ ]
+}

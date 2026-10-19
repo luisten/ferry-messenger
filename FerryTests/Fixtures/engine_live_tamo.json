@@ -1,0 +1,504 @@
+{
+ "live": [
+  {
+   "kind": "Room",
+   "room": "!ig-17841400000000301-1700000000000301",
+   "update": {
+    "state": {
+     "events": [
+      {
+       "type": "m.bridge",
+       "content": {
+        "channel": {
+         "displayname": "Kivo Studio",
+         "fi.mau.receiver": "17841400000000301",
+         "id": "17841400000000302"
+        },
+        "com.beeper.room_type": "dm",
+        "protocol": {
+         "displayname": "Instagram",
+         "id": "instagramgo"
+        }
+       },
+       "event_id": "$ig-m.bridge-instagram",
+       "sender": "@me",
+       "state_key": "instagram"
+      },
+      {
+       "type": "m.room.name",
+       "content": {
+        "name": "Kivo Studio"
+       },
+       "event_id": "$ig-m.room.name-",
+       "sender": "@me",
+       "state_key": ""
+      },
+      {
+       "type": "m.room.avatar",
+       "content": {
+        "url": "https://scontent.example.invalid/v/f005.jpg?oe=6AD844F4"
+       },
+       "event_id": "$ig-m.room.avatar-",
+       "sender": "@me",
+       "state_key": ""
+      },
+      {
+       "type": "m.room.member",
+       "content": {
+        "membership": "join"
+       },
+       "event_id": "$ig-member-@me",
+       "sender": "@me",
+       "state_key": "@me"
+      },
+      {
+       "type": "m.room.member",
+       "content": {
+        "avatar_url": "https://scontent.example.invalid/v/f005.jpg?oe=6AD844F4",
+        "displayname": "Kivo Studio",
+        "membership": "join"
+       },
+       "event_id": "$ig-member-@ig_17841400000000302",
+       "sender": "@ig_17841400000000302",
+       "state_key": "@ig_17841400000000302"
+      }
+     ]
+    },
+    "timeline": {
+     "events": [
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Voice message",
+        "info": {
+         "duration": 6783,
+         "mimetype": "audio/mp4"
+        },
+        "msgtype": "m.audio",
+        "org.matrix.msc1767.audio": {
+         "duration": 6783
+        },
+        "org.matrix.msc3245.voice": {},
+        "url": "https://scontent.example.invalid/v/f012.mp4?oe=6AD8318D"
+       },
+       "event_id": "mid.$cAAAy8NQIKzynZxgYKmhNdLBRFfHc",
+       "sender": "@ig_17841400000000302",
+       "origin_server_ts": 1791904370730
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Sending a text",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzynZxjaMmhNdOPrGj5U",
+       "sender": "@me",
+       "origin_server_ts": 1791904420402,
+       "unsigned": {
+        "transaction_id": "7515791875401989716"
+       }
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "pop",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzynZxsS1WhNdXJSgAAq",
+       "sender": "@me",
+       "origin_server_ts": 1791904565973,
+       "unsigned": {
+        "transaction_id": "7515792487022067754"
+       }
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Reel with a meaaage/caption",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzynZy125mhNegoi3761",
+       "sender": "@me",
+       "origin_server_ts": 1791905771238,
+       "unsigned": {
+        "transaction_id": "7515797537104576181"
+       }
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Test",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzynaQAJrWhN7q_Fa0Bp",
+       "sender": "@ig_17841400000000302",
+       "origin_server_ts": 1791936348589
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "test",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzynaQBBKmhN7r3fwAAq",
+       "sender": "@me",
+       "origin_server_ts": 1791936362794,
+       "unsigned": {
+        "transaction_id": "7515925852421357610"
+       }
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "This photo can only be viewed once. Use the Instagram app to view.",
+        "msgtype": "m.notice"
+       },
+       "event_id": "mid.$cAAAy8NQIKzynaRTci2hN8-KG9mnA",
+       "sender": "@me",
+       "origin_server_ts": 1791937713291,
+       "unsigned": {
+        "transaction_id": "7515931507403680192"
+       }
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Video",
+        "info": {
+         "h": 640,
+         "mimetype": "video/mp4",
+         "thumbnail_url": "https://scontent.example.invalid/v/f011.jpg?oe=6AD833CE",
+         "w": 360
+        },
+        "msgtype": "m.video",
+        "url": "https://scontent.example.invalid/v/f010.mp4?oe=6AD436C2"
+       },
+       "event_id": "mid.$cAAAy8NQIKzynbHJAaWhOyzT_gAAq",
+       "sender": "@me",
+       "origin_server_ts": 1791994165353,
+       "unsigned": {
+        "transaction_id": "7516168256613253162"
+       }
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Voice message",
+        "info": {
+         "duration": 2043,
+         "mimetype": "audio/mp4"
+        },
+        "msgtype": "m.audio",
+        "org.matrix.msc1767.audio": {
+         "duration": 2043
+        },
+        "org.matrix.msc3245.voice": {},
+        "url": "https://scontent.example.invalid/v/f009.mp4?oe=6AD81FE7"
+       },
+       "event_id": "mid.$cAAAy8NQIKzynbHJpuWhOy0WqQAAq",
+       "sender": "@me",
+       "origin_server_ts": 1791994175929,
+       "unsigned": {
+        "transaction_id": "7516168328197439530"
+       }
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Voice message",
+        "info": {
+         "duration": 290000,
+         "mimetype": "audio/mp4"
+        },
+        "msgtype": "m.audio",
+        "org.matrix.msc1767.audio": {
+         "duration": 290000
+        },
+        "org.matrix.msc3245.voice": {},
+        "url": "https://scontent.example.invalid/v/f008.mp4?oe=6AD81E51"
+       },
+       "event_id": "mid.$cAAAy8NQIKzynbmmzSmhPSRU-QAAq",
+       "sender": "@me",
+       "origin_server_ts": 1792027159370,
+       "unsigned": {
+        "transaction_id": "7516306658692169770"
+       }
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Voice message",
+        "info": {
+         "duration": 6997,
+         "mimetype": "audio/mp4"
+        },
+        "msgtype": "m.audio",
+        "org.matrix.msc1767.audio": {
+         "duration": 6997
+        },
+        "org.matrix.msc3245.voice": {},
+        "url": "https://scontent.example.invalid/v/f007.mp4?oe=6AD83653"
+       },
+       "event_id": "mid.$cAAAy8NQIKzyncN82pWhP5nbUWn2W",
+       "sender": "@me",
+       "origin_server_ts": 1792068415141,
+       "unsigned": {
+        "transaction_id": "7516479701147876758"
+       }
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "On-device spike test",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzync6ZVKmhQmELUgAAq",
+       "sender": "@me",
+       "origin_server_ts": 1792115019050,
+       "unsigned": {
+        "transaction_id": "7516675190881779754"
+       }
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Push test while suspended",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzync7HIY2hQmx-gAAAq",
+       "sender": "@ig_17841400000000302",
+       "origin_server_ts": 1792115769443
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Push test",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzync8bc_WhQoGTXb4HM",
+       "sender": "@ig_17841400000000302",
+       "origin_server_ts": 1792117150973
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Another test",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzync8_scmhQoqixX4VD",
+       "sender": "@ig_17841400000000302",
+       "origin_server_ts": 1792117744754
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "P0 capture: a reply",
+        "m.relates_to": {
+         "m.in_reply_to": {
+          "event_id": "mid.$cAAAy8NQIKzyndxflxGhRdKarJRAq"
+         }
+        },
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzyndxf4rmhRdKvieuAq",
+       "sender": "@ig_17841400000000302",
+       "origin_server_ts": 1792172798126
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "* P0 capture: a reply, edited",
+        "m.new_content": {
+         "body": "P0 capture: a reply, edited",
+         "msgtype": "m.text"
+        },
+        "m.relates_to": {
+         "event_id": "mid.$cAAAy8NQIKzyndxf4rmhRdKvieuAq",
+         "rel_type": "m.replace"
+        },
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzyndxf4rmhRdKvieuAq~edit0",
+       "sender": "@ig_17841400000000302",
+       "origin_server_ts": 1792172798127
+      },
+      {
+       "type": "m.reaction",
+       "content": {
+        "m.relates_to": {
+         "event_id": "mid.$cAAAy8NQIKzyndxf4rmhRdKvieuAq",
+         "key": "😂",
+         "rel_type": "m.annotation"
+        }
+       },
+       "event_id": "mid.$cAAAy8NQIKzyndxf4rmhRdKvieuAq~react17841400000000301",
+       "sender": "@me",
+       "origin_server_ts": 1792172798126
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "P0 capture: back",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzyndxiw-GhRdNmpwFAq",
+       "sender": "@me",
+       "origin_server_ts": 1792172845304,
+       "unsigned": {
+        "transaction_id": "7516917731262746666"
+       }
+      }
+     ],
+     "limited": true,
+     "prev_batch": "AQHT2CN9EA8VJcjwT1Fst1JqgbSd6lxceyPUcoOk9rp-Z0O6V0H4LHq8UJxzNMFh22n9eiEu9ioZNhWmgonW1bqyWAqkIaraSKMuSoWPUprcx7kyAqj0VAtYheesO0uDxgvC"
+    },
+    "ephemeral": {
+     "events": [
+      {
+       "type": "m.receipt",
+       "content": {
+        "mid.$cAAAy8NQIKzync6ZVKmhQmELUgAAq": {
+         "m.read": {
+          "@ig_17841400000000302": {
+           "ts": 1792115019051
+          }
+         }
+        },
+        "mid.$cAAAy8NQIKzyndxiw-GhRdNmpwFAq": {
+         "m.read": {
+          "@me": {
+           "ts": 1792172845304
+          }
+         }
+        }
+       }
+      }
+     ]
+    },
+    "unread_notifications": {
+     "notification_count": 0,
+     "highlight_count": 0
+    }
+   },
+   "profiles": {
+    "@ig_17841400000000302": {
+     "name": "Kivo Studio",
+     "avatar_url": "https://scontent.example.invalid/v/f005.jpg?oe=6AD844F4",
+     "handle": "kivostudio"
+    }
+   },
+   "related": [
+    {
+     "type": "m.room.message",
+     "content": {},
+     "event_id": "mid.$cAAAy8NQIKzyndxflxGhRdKarJRAq",
+     "sender": "@ig_17841400000000302",
+     "unsigned": {
+      "redacted_because": {}
+     }
+    }
+   ]
+  },
+  {
+   "kind": "Room",
+   "room": "!ig-17841400000000301-1700000000000301",
+   "update": {
+    "timeline": {
+     "events": [
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "P0 capture: hello",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzyndxflxGhRdKarJRAq",
+       "sender": "@ig_17841400000000302",
+       "origin_server_ts": 1792172793284
+      }
+     ],
+     "limited": false
+    },
+    "unread_notifications": {
+     "notification_count": 1,
+     "highlight_count": 0
+    }
+   }
+  },
+  {
+   "kind": "Room",
+   "room": "!ig-17841400000000301-1700000000000301",
+   "update": {
+    "ephemeral": {
+     "events": [
+      {
+       "type": "m.receipt",
+       "content": {
+        "mid.$cAAAy8NQIKzyndxflxGhRdKarJRAq": {
+         "m.read": {
+          "@me": {
+           "ts": 1792172798127
+          }
+         }
+        }
+       }
+      }
+     ]
+    },
+    "unread_notifications": {
+     "notification_count": 0,
+     "highlight_count": 0
+    }
+   }
+  },
+  {
+   "kind": "Room",
+   "room": "!ig-17841400000000301-1700000000000301",
+   "update": {
+    "timeline": {
+     "events": [
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "P0 capture: back",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzyndxiw-GhRdNmpwFAq",
+       "sender": "@me",
+       "origin_server_ts": 1792172845304,
+       "unsigned": {
+        "transaction_id": "7516917731262746666"
+       }
+      }
+     ],
+     "limited": false
+    },
+    "unread_notifications": {
+     "notification_count": 0,
+     "highlight_count": 0
+    }
+   }
+  },
+  {
+   "kind": "Room",
+   "room": "!ig-17841400000000301-1700000000000301",
+   "update": {
+    "ephemeral": {
+     "events": [
+      {
+       "type": "m.receipt",
+       "content": {
+        "mid.$cAAAy8NQIKzyndxiw-GhRdNmpwFAq": {
+         "m.read": {
+          "@ig_17841400000000302": {
+           "ts": 1792172845305
+          }
+         }
+        }
+       }
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

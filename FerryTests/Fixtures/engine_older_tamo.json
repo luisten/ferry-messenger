@@ -1,0 +1,143 @@
+{
+ "page": {
+  "chunk": [
+   {
+    "type": "m.room.message",
+    "content": {
+     "body": "Photo",
+     "info": {
+      "h": 638,
+      "mimetype": "image/jpeg",
+      "w": 960
+     },
+     "msgtype": "m.image",
+     "url": "https://scontent.example.invalid/v/f029.jpg?oe=6AF9DC5C"
+    },
+    "event_id": "mid.$cAAAy8NQIKzynY3KmAGhMi1WKwAAq",
+    "sender": "@me",
+    "origin_server_ts": 1791843196416,
+    "unsigned": {
+     "transaction_id": "7515535077690834986"
+    }
+   },
+   {
+    "type": "m.room.message",
+    "content": {
+     "body": "M6 check: request privacy (from tamoveska)",
+     "msgtype": "m.text"
+    },
+    "event_id": "mid.$cAAAy8NQIKzynYxMvyGhMc3mLQAAq",
+    "sender": "@me",
+    "origin_server_ts": 1791836940232,
+    "unsigned": {
+     "transaction_id": "7515508844038979626"
+    }
+   },
+   {
+    "type": "m.room.message",
+    "content": {
+     "body": "Voice message",
+     "info": {
+      "duration": 7291,
+      "mimetype": "audio/mp4"
+     },
+     "msgtype": "m.audio",
+     "org.matrix.msc1767.audio": {
+      "duration": 7291
+     },
+     "org.matrix.msc3245.voice": {},
+     "url": "https://scontent.example.invalid/v/f032.mp4?oe=6AD81D4D"
+    },
+    "event_id": "mid.$cAAAy8NQIKzynYs-5R2hMYpjwwAAq",
+    "sender": "@me",
+    "origin_server_ts": 1791832518983,
+    "unsigned": {
+     "transaction_id": "7515490287188181034"
+    }
+   },
+   {
+    "type": "m.room.message",
+    "content": {
+     "body": "Photo",
+     "info": {
+      "h": 720,
+      "mimetype": "image/jpeg",
+      "w": 960
+     },
+     "msgtype": "m.image",
+     "url": "https://scontent.example.invalid/v/f033.jpg?oe=6AF9E960"
+    },
+    "event_id": "mid.$cAAAy8NQIKzynYs-OOGhMYo-0wAAq",
+    "sender": "@me",
+    "origin_server_ts": 1791832507960,
+    "unsigned": {
+     "transaction_id": "7515490247526842410"
+    }
+   },
+   {
+    "type": "m.reaction",
+    "content": {
+     "m.relates_to": {
+      "event_id": "mid.$cAAAy8NQIKzynYrQxcmhMW7lswAAq",
+      "key": "😂",
+      "rel_type": "m.annotation"
+     }
+    },
+    "event_id": "mid.$cAAAy8NQIKzynYrQxcmhMW7lswAAq~react17841400000000301",
+    "sender": "@me",
+    "origin_server_ts": 1791830714738
+   },
+   {
+    "type": "m.room.message",
+    "content": {
+     "body": "M4 reply from kivostudio",
+     "m.relates_to": {
+      "m.in_reply_to": {
+       "event_id": "mid.$cAAAy8NQIKzynYq2sfGhMWhi7gAAq"
+      }
+     },
+     "msgtype": "m.text"
+    },
+    "event_id": "mid.$cAAAy8NQIKzynYrQxcmhMW7lswAAq",
+    "sender": "@ig_17841400000000302",
+    "origin_server_ts": 1791830714738
+   },
+   {
+    "type": "m.room.message",
+    "content": {
+     "body": "igm test (M3)",
+     "msgtype": "m.text"
+    },
+    "event_id": "mid.$cAAAy8NQIKzynYokYXWhMUPOJQAAq",
+    "sender": "@me",
+    "origin_server_ts": 1791827890269,
+    "unsigned": {
+     "transaction_id": "7515470885084463146"
+    }
+   },
+   {
+    "type": "m.room.message",
+    "content": {
+     "body": "hello",
+     "msgtype": "m.text"
+    },
+    "event_id": "mid.$cAAAy8NQIKzyk7Oatxmeu6FixM7rY",
+    "sender": "@me",
+    "origin_server_ts": 1781264377286,
+    "unsigned": {
+     "transaction_id": "7471164299481955032"
+    }
+   },
+   {
+    "type": "m.room.message",
+    "content": {
+     "body": "test",
+     "msgtype": "m.text"
+    },
+    "event_id": "mid.$cAAAy8NQIKzyk7N_F3Geu5pwjjFHR",
+    "sender": "@ig_17841400000000302",
+    "origin_server_ts": 1781263924700
+   }
+  ]
+ }
+}

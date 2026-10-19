@@ -1,0 +1,117 @@
+{
+ "mailbox": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Photo",
+    "info": {
+     "mimetype": "image/jpeg"
+    },
+    "msgtype": "m.image"
+   },
+   "event_id": "mid.$cAAAy8NQIKzynf-hSPGhTqL37AbJ4",
+   "sender": "@me",
+   "origin_server_ts": 1792320670268,
+   "unsigned": {
+    "transaction_id": "7517537736924967544"
+   }
+  }
+ ],
+ "mixed": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Photo",
+    "fi.ferry.album": [
+     {
+      "body": "Photo",
+      "info": {
+       "h": 960,
+       "mimetype": "image/jpeg",
+       "w": 540
+      },
+      "msgtype": "m.image",
+      "url": "https://scontent.example.invalid/v/f040.jpg"
+     },
+     {
+      "body": "Video",
+      "info": {
+       "h": 640,
+       "mimetype": "video/mp4",
+       "thumbnail_url": "https://scontent.example.invalid/v/f047.jpg",
+       "w": 360
+      },
+      "msgtype": "m.video",
+      "url": "https://scontent.example.invalid/v/f046.mp4"
+     }
+    ],
+    "info": {
+     "h": 960,
+     "mimetype": "image/jpeg",
+     "w": 540
+    },
+    "msgtype": "m.image",
+    "url": "https://scontent.example.invalid/v/f040.jpg"
+   },
+   "event_id": "mid.$cAAAy8NQIKzynf-hSPGhTqL37AbJ4",
+   "sender": "@me",
+   "origin_server_ts": 1792320670268,
+   "unsigned": {
+    "transaction_id": "7517537736924967544"
+   }
+  }
+ ],
+ "thread": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Photo",
+    "fi.ferry.album": [
+     {
+      "body": "Photo",
+      "info": {
+       "h": 960,
+       "mimetype": "image/jpeg",
+       "w": 540
+      },
+      "msgtype": "m.image",
+      "url": "https://scontent.example.invalid/v/f040.jpg"
+     },
+     {
+      "body": "Photo",
+      "info": {
+       "h": 960,
+       "mimetype": "image/jpeg",
+       "w": 540
+      },
+      "msgtype": "m.image",
+      "url": "https://scontent.example.invalid/v/f042.jpg"
+     },
+     {
+      "body": "Photo",
+      "info": {
+       "h": 468,
+       "mimetype": "image/jpeg",
+       "w": 750
+      },
+      "msgtype": "m.image",
+      "url": "https://scontent.example.invalid/v/f044.jpg"
+     }
+    ],
+    "info": {
+     "h": 960,
+     "mimetype": "image/jpeg",
+     "w": 540
+    },
+    "msgtype": "m.image",
+    "url": "https://scontent.example.invalid/v/f040.jpg"
+   },
+   "event_id": "mid.$cAAAy8NQIKzynf-hSPGhTqL37AbJ4",
+   "sender": "@me",
+   "origin_server_ts": 1792320670268,
+   "unsigned": {
+    "transaction_id": "7517537736924967544"
+   }
+  }
+ ]
+}

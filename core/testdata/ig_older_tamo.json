@@ -1,0 +1,564 @@
+{
+ "fetch__SlideThread": {
+  "as_ig_direct_thread": {
+   "id": "1700000000000301",
+   "slide_messages": {
+    "edges": [
+     {
+      "node": {
+       "is_reported": false,
+       "message_id": "mid.$cAAAy8NQIKzynY3KmAGhMi1WKwAAq",
+       "sender_fbid": "17841400000000301",
+       "thread_fbid": "1700000000000301",
+       "content": {
+        "attachments": [
+         {
+          "__typename": "XFBSlideAttachment",
+          "__isSlideMessagingMediaAttachment": "XFBSlideAttachment",
+          "attachment_fbid": "900000000000006",
+          "attachment_type": 2,
+          "attachment_cdn_url": "https://scontent.example.invalid/v/f029.jpg?oe=6AF9DC5C",
+          "attachment_cdn_fallback_url": "",
+          "preview_cdn_url": "https://scontent.example.invalid/v/f030.jpg?oe=6AF9DC5C",
+          "preview_cdn_fallback_url": "",
+          "preview_height": 638,
+          "preview_width": 960,
+          "dash_manifest": "",
+          "Unrecognized": null
+         }
+        ],
+        "Unrecognized": null
+       },
+       "content_type": "IMAGES",
+       "offline_threading_id": "7515535077690834986",
+       "timestamp_ms": "1791843196416",
+       "reactions": [],
+       "id": "mid.$cAAAy8NQIKzynY3KmAGhMi1WKwAAq",
+       "bot_response_id": null,
+       "is_ai_generated": false,
+       "text_body": "",
+       "mentions": [],
+       "igd_is_forwarded": false,
+       "igd_snippet": "",
+       "replied_to_message_id": "",
+       "replied_to_message": null,
+       "sender": {
+        "name": "Tamo Veska",
+        "id": "17841400000000301",
+        "igid": "4200000301",
+        "user_dict": {
+         "interop_messaging_user_fbid": "17841400000000301",
+         "username": "tamoveska",
+         "full_name": "Tamo Veska",
+         "id": "4200000301",
+         "profile_pic_url": "https://scontent.example.invalid/v/f031.jpg?oe=6AD83F0F",
+         "latest_reel_media": 0,
+         "latest_besties_reel_media": 0,
+         "reel_media_seen_timestamp": null,
+         "is_verified": false,
+         "ai_agent_type": "",
+         "friendship_status": {
+          "is_restricted": false,
+          "blocking": false,
+          "following": false
+         },
+         "pk": "",
+         "fbid_v2": "",
+         "__typename": "",
+         "is_cannes": false,
+         "is_predicted_cannes": false,
+         "Unrecognized": null
+        },
+        "Unrecognized": null
+       },
+       "slide_edit_history": [],
+       "is_pinned": false,
+       "igd_wearables_attribution_text": null,
+       "igd_wearables_attribution_type": null,
+       "expiration_timestamp_ms": "0",
+       "view_expiration_timestamp_ms": "0",
+       "__typename": "SlideMessage",
+       "Unrecognized": null
+      },
+      "cursor": "AQHTBiLuWBwiAvSOVgPXGRpYk1BwXJqWuBExal3_rm06E3_fPulmN4WHKG0Pa94gMQX6PgQVlISekSkmwxdXRzYnCAkA2vjWnD9eHLiX2n75__IzzpNSZUn6LhtAfJlCFs1N"
+     },
+     {
+      "node": {
+       "is_reported": false,
+       "message_id": "mid.$cAAAy8NQIKzynYxMvyGhMc3mLQAAq",
+       "sender_fbid": "17841400000000301",
+       "thread_fbid": "1700000000000301",
+       "content": {
+        "text_body": "M6 check: request privacy (from tamoveska)",
+        "Unrecognized": null
+       },
+       "content_type": "TEXT",
+       "offline_threading_id": "7515508844038979626",
+       "timestamp_ms": "1791836940232",
+       "reactions": [],
+       "id": "mid.$cAAAy8NQIKzynYxMvyGhMc3mLQAAq",
+       "bot_response_id": null,
+       "is_ai_generated": false,
+       "text_body": "M6 check: request privacy (from tamoveska)",
+       "mentions": [],
+       "igd_is_forwarded": false,
+       "igd_snippet": "",
+       "replied_to_message_id": "",
+       "replied_to_message": null,
+       "sender": {
+        "name": "Tamo Veska",
+        "id": "17841400000000301",
+        "igid": "4200000301",
+        "user_dict": {
+         "interop_messaging_user_fbid": "17841400000000301",
+         "username": "tamoveska",
+         "full_name": "Tamo Veska",
+         "id": "4200000301",
+         "profile_pic_url": "https://scontent.example.invalid/v/f031.jpg?oe=6AD83F0F",
+         "latest_reel_media": 0,
+         "latest_besties_reel_media": 0,
+         "reel_media_seen_timestamp": null,
+         "is_verified": false,
+         "ai_agent_type": "",
+         "friendship_status": {
+          "is_restricted": false,
+          "blocking": false,
+          "following": false
+         },
+         "pk": "",
+         "fbid_v2": "",
+         "__typename": "",
+         "is_cannes": false,
+         "is_predicted_cannes": false,
+         "Unrecognized": null
+        },
+        "Unrecognized": null
+       },
+       "slide_edit_history": [],
+       "is_pinned": false,
+       "igd_wearables_attribution_text": null,
+       "igd_wearables_attribution_type": null,
+       "expiration_timestamp_ms": "0",
+       "view_expiration_timestamp_ms": "0",
+       "__typename": "SlideMessage",
+       "Unrecognized": null
+      },
+      "cursor": "AQHTatMaADG4e-f3WZAVXB3g8ZTqMbQldyi1DFz8_r_C9URVB6LhGnkY1KoTC5akK0-Uv5aNp5K2WhUn_JEYKXDp2an_ZwronmIwB1d4q-9unTnz3h2--vj7XXvq7MtBpDNk"
+     },
+     {
+      "node": {
+       "is_reported": false,
+       "message_id": "mid.$cAAAy8NQIKzynYs-5R2hMYpjwwAAq",
+       "sender_fbid": "17841400000000301",
+       "thread_fbid": "1700000000000301",
+       "content": {
+        "audio_attachments": [
+         {
+          "attachment_fbid": "900000000000007",
+          "waveform_data": [],
+          "playable_duration_ms": 7291,
+          "attachment_cdn_url": "https://scontent.example.invalid/v/f032.mp4?oe=6AD81D4D",
+          "Unrecognized": null
+         }
+        ],
+        "Unrecognized": null
+       },
+       "content_type": "AUDIOS",
+       "offline_threading_id": "7515490287188181034",
+       "timestamp_ms": "1791832518983",
+       "reactions": [],
+       "id": "mid.$cAAAy8NQIKzynYs-5R2hMYpjwwAAq",
+       "bot_response_id": null,
+       "is_ai_generated": false,
+       "text_body": "",
+       "mentions": [],
+       "igd_is_forwarded": false,
+       "igd_snippet": "",
+       "replied_to_message_id": "",
+       "replied_to_message": null,
+       "sender": {
+        "name": "Tamo Veska",
+        "id": "17841400000000301",
+        "igid": "4200000301",
+        "user_dict": {
+         "interop_messaging_user_fbid": "17841400000000301",
+         "username": "tamoveska",
+         "full_name": "Tamo Veska",
+         "id": "4200000301",
+         "profile_pic_url": "https://scontent.example.invalid/v/f031.jpg?oe=6AD83F0F",
+         "latest_reel_media": 0,
+         "latest_besties_reel_media": 0,
+         "reel_media_seen_timestamp": null,
+         "is_verified": false,
+         "ai_agent_type": "",
+         "friendship_status": {
+          "is_restricted": false,
+          "blocking": false,
+          "following": false
+         },
+         "pk": "",
+         "fbid_v2": "",
+         "__typename": "",
+         "is_cannes": false,
+         "is_predicted_cannes": false,
+         "Unrecognized": null
+        },
+        "Unrecognized": null
+       },
+       "slide_edit_history": [],
+       "is_pinned": false,
+       "igd_wearables_attribution_text": null,
+       "igd_wearables_attribution_type": null,
+       "expiration_timestamp_ms": "0",
+       "view_expiration_timestamp_ms": "0",
+       "__typename": "SlideMessage",
+       "Unrecognized": null
+      },
+      "cursor": "AQHT67AGH-OGMUYBjdtazL992GbNpGRevqtJNTLmDlzL3iymsM1FOikSgRYUqK7lZR9CQE3v4x6stpK0hpv8tASY7vvofrYgAw4tX0mX8QA8Chn4rndLHVf_E9b7Ozc678gp"
+     },
+     {
+      "node": {
+       "is_reported": false,
+       "message_id": "mid.$cAAAy8NQIKzynYs-OOGhMYo-0wAAq",
+       "sender_fbid": "17841400000000301",
+       "thread_fbid": "1700000000000301",
+       "content": {
+        "attachments": [
+         {
+          "__typename": "XFBSlideAttachment",
+          "__isSlideMessagingMediaAttachment": "XFBSlideAttachment",
+          "attachment_fbid": "900000000000008",
+          "attachment_type": 2,
+          "attachment_cdn_url": "https://scontent.example.invalid/v/f033.jpg?oe=6AF9E960",
+          "attachment_cdn_fallback_url": "",
+          "preview_cdn_url": "https://scontent.example.invalid/v/f034.jpg?oe=6AF9E960",
+          "preview_cdn_fallback_url": "",
+          "preview_height": 720,
+          "preview_width": 960,
+          "dash_manifest": "",
+          "Unrecognized": null
+         }
+        ],
+        "Unrecognized": null
+       },
+       "content_type": "IMAGES",
+       "offline_threading_id": "7515490247526842410",
+       "timestamp_ms": "1791832507960",
+       "reactions": [],
+       "id": "mid.$cAAAy8NQIKzynYs-OOGhMYo-0wAAq",
+       "bot_response_id": null,
+       "is_ai_generated": false,
+       "text_body": "",
+       "mentions": [],
+       "igd_is_forwarded": false,
+       "igd_snippet": "",
+       "replied_to_message_id": "",
+       "replied_to_message": null,
+       "sender": {
+        "name": "Tamo Veska",
+        "id": "17841400000000301",
+        "igid": "4200000301",
+        "user_dict": {
+         "interop_messaging_user_fbid": "17841400000000301",
+         "username": "tamoveska",
+         "full_name": "Tamo Veska",
+         "id": "4200000301",
+         "profile_pic_url": "https://scontent.example.invalid/v/f031.jpg?oe=6AD83F0F",
+         "latest_reel_media": 0,
+         "latest_besties_reel_media": 0,
+         "reel_media_seen_timestamp": null,
+         "is_verified": false,
+         "ai_agent_type": "",
+         "friendship_status": {
+          "is_restricted": false,
+          "blocking": false,
+          "following": false
+         },
+         "pk": "",
+         "fbid_v2": "",
+         "__typename": "",
+         "is_cannes": false,
+         "is_predicted_cannes": false,
+         "Unrecognized": null
+        },
+        "Unrecognized": null
+       },
+       "slide_edit_history": [],
+       "is_pinned": false,
+       "igd_wearables_attribution_text": null,
+       "igd_wearables_attribution_type": null,
+       "expiration_timestamp_ms": "0",
+       "view_expiration_timestamp_ms": "0",
+       "__typename": "SlideMessage",
+       "Unrecognized": null
+      },
+      "cursor": "AQHTp8Z4_GSoZPEtRWxhOZx7cMzgjlTd7oAFmxsRgGtAlyZG3UQc5239uhQifEJ0bqkaqBGII_kBBHnl8avXDC0kuXLnyb5O1t8gL6MZKba9f6ZjVd3hE1fEqCVaoXPo6Bwz"
+     },
+     {
+      "node": {
+       "is_reported": false,
+       "message_id": "mid.$cAAAy8NQIKzynYrQxcmhMW7lswAAq",
+       "sender_fbid": "17841400000000302",
+       "thread_fbid": "1700000000000301",
+       "content": {
+        "text_body": "M4 reply from kivostudio",
+        "Unrecognized": null
+       },
+       "content_type": "TEXT",
+       "offline_threading_id": "7515482730126114858",
+       "timestamp_ms": "1791830714738",
+       "reactions": [
+        {
+         "reaction": "😂",
+         "sender_fbid": "17841400000000301"
+        }
+       ],
+       "id": "mid.$cAAAy8NQIKzynYrQxcmhMW7lswAAq",
+       "bot_response_id": null,
+       "is_ai_generated": false,
+       "text_body": "M4 reply from kivostudio",
+       "mentions": [],
+       "igd_is_forwarded": false,
+       "igd_snippet": "",
+       "replied_to_message_id": "mid.$cAAAy8NQIKzynYq2sfGhMWhi7gAAq",
+       "replied_to_message": null,
+       "sender": {
+        "name": "Kivo Studio",
+        "id": "17841400000000302",
+        "igid": "4200000302",
+        "user_dict": {
+         "interop_messaging_user_fbid": "17841400000000302",
+         "username": "kivostudio",
+         "full_name": "Kivo Studio",
+         "id": "4200000302",
+         "profile_pic_url": "https://scontent.example.invalid/v/f035.jpg?oe=6AD844F4",
+         "latest_reel_media": 0,
+         "latest_besties_reel_media": 0,
+         "reel_media_seen_timestamp": null,
+         "is_verified": false,
+         "ai_agent_type": "",
+         "friendship_status": {
+          "is_restricted": false,
+          "blocking": false,
+          "following": false
+         },
+         "pk": "",
+         "fbid_v2": "",
+         "__typename": "",
+         "is_cannes": false,
+         "is_predicted_cannes": false,
+         "Unrecognized": null
+        },
+        "Unrecognized": null
+       },
+       "slide_edit_history": [],
+       "is_pinned": false,
+       "igd_wearables_attribution_text": null,
+       "igd_wearables_attribution_type": null,
+       "expiration_timestamp_ms": "0",
+       "view_expiration_timestamp_ms": "0",
+       "__typename": "SlideMessage",
+       "Unrecognized": null
+      },
+      "cursor": "AQHTgOF-IXM8F7V8qF-ew_qcDuHcf7y4zwkAvAjUs7-JFM62e1PUmGPPU5eRxEvE7qxUMbxV4T2W1HJAqD7W5PsqNcxnba8Z8FKTQaSLgqaxbZnW3e4dhRwBU0WA8web0RHK"
+     },
+     {
+      "node": {
+       "is_reported": false,
+       "message_id": "mid.$cAAAy8NQIKzynYokYXWhMUPOJQAAq",
+       "sender_fbid": "17841400000000301",
+       "thread_fbid": "1700000000000301",
+       "content": {
+        "text_body": "igm test (M3)",
+        "Unrecognized": null
+       },
+       "content_type": "TEXT",
+       "offline_threading_id": "7515470885084463146",
+       "timestamp_ms": "1791827890269",
+       "reactions": [],
+       "id": "mid.$cAAAy8NQIKzynYokYXWhMUPOJQAAq",
+       "bot_response_id": null,
+       "is_ai_generated": false,
+       "text_body": "igm test (M3)",
+       "mentions": [],
+       "igd_is_forwarded": false,
+       "igd_snippet": "",
+       "replied_to_message_id": "",
+       "replied_to_message": null,
+       "sender": {
+        "name": "Tamo Veska",
+        "id": "17841400000000301",
+        "igid": "4200000301",
+        "user_dict": {
+         "interop_messaging_user_fbid": "17841400000000301",
+         "username": "tamoveska",
+         "full_name": "Tamo Veska",
+         "id": "4200000301",
+         "profile_pic_url": "https://scontent.example.invalid/v/f031.jpg?oe=6AD83F0F",
+         "latest_reel_media": 0,
+         "latest_besties_reel_media": 0,
+         "reel_media_seen_timestamp": null,
+         "is_verified": false,
+         "ai_agent_type": "",
+         "friendship_status": {
+          "is_restricted": false,
+          "blocking": false,
+          "following": false
+         },
+         "pk": "",
+         "fbid_v2": "",
+         "__typename": "",
+         "is_cannes": false,
+         "is_predicted_cannes": false,
+         "Unrecognized": null
+        },
+        "Unrecognized": null
+       },
+       "slide_edit_history": [],
+       "is_pinned": false,
+       "igd_wearables_attribution_text": null,
+       "igd_wearables_attribution_type": null,
+       "expiration_timestamp_ms": "0",
+       "view_expiration_timestamp_ms": "0",
+       "__typename": "SlideMessage",
+       "Unrecognized": null
+      },
+      "cursor": "AQHTnIxMtZ_r6QiAflTyYchyEkvm7GabHklA0DE-SpBy7i0taajfMACjYwhFYxzW_dzEzZ-774pvhHYHzAv70skLN0V42B90XoORVegXDp--6Lo_Mw71MF5M-jwQotSDDxz5"
+     },
+     {
+      "node": {
+       "is_reported": false,
+       "message_id": "mid.$cAAAy8NQIKzyk7Oatxmeu6FixM7rY",
+       "sender_fbid": "17841400000000301",
+       "thread_fbid": "1700000000000301",
+       "content": {
+        "text_body": "hello",
+        "Unrecognized": null
+       },
+       "content_type": "TEXT",
+       "offline_threading_id": "7471164299481955032",
+       "timestamp_ms": "1781264377286",
+       "reactions": [],
+       "id": "mid.$cAAAy8NQIKzyk7Oatxmeu6FixM7rY",
+       "bot_response_id": null,
+       "is_ai_generated": false,
+       "text_body": "hello",
+       "mentions": [],
+       "igd_is_forwarded": false,
+       "igd_snippet": "",
+       "replied_to_message_id": "",
+       "replied_to_message": null,
+       "sender": {
+        "name": "Tamo Veska",
+        "id": "17841400000000301",
+        "igid": "4200000301",
+        "user_dict": {
+         "interop_messaging_user_fbid": "17841400000000301",
+         "username": "tamoveska",
+         "full_name": "Tamo Veska",
+         "id": "4200000301",
+         "profile_pic_url": "https://scontent.example.invalid/v/f031.jpg?oe=6AD83F0F",
+         "latest_reel_media": 0,
+         "latest_besties_reel_media": 0,
+         "reel_media_seen_timestamp": null,
+         "is_verified": false,
+         "ai_agent_type": "",
+         "friendship_status": {
+          "is_restricted": false,
+          "blocking": false,
+          "following": false
+         },
+         "pk": "",
+         "fbid_v2": "",
+         "__typename": "",
+         "is_cannes": false,
+         "is_predicted_cannes": false,
+         "Unrecognized": null
+        },
+        "Unrecognized": null
+       },
+       "slide_edit_history": [],
+       "is_pinned": false,
+       "igd_wearables_attribution_text": null,
+       "igd_wearables_attribution_type": null,
+       "expiration_timestamp_ms": "0",
+       "view_expiration_timestamp_ms": "0",
+       "__typename": "SlideMessage",
+       "Unrecognized": null
+      },
+      "cursor": "AQHT5JhKDrPtEPfEkQ9UIjFmHsh26o5xIp4JoD1JRHUf6X9dSwBlmSYubIVNL5MUrTgTxUvh5t6tlB00Gly5qxaM2Fw4DS6k9n9FoH45NGIYRUNdW-plVdP4pFm-VbDqhHjZ"
+     },
+     {
+      "node": {
+       "is_reported": false,
+       "message_id": "mid.$cAAAy8NQIKzyk7N_F3Geu5pwjjFHR",
+       "sender_fbid": "17841400000000302",
+       "thread_fbid": "1700000000000301",
+       "content": {
+        "text_body": "test",
+        "Unrecognized": null
+       },
+       "content_type": "TEXT",
+       "offline_threading_id": "7471162390139916753",
+       "timestamp_ms": "1781263924700",
+       "reactions": [],
+       "id": "mid.$cAAAy8NQIKzyk7N_F3Geu5pwjjFHR",
+       "bot_response_id": null,
+       "is_ai_generated": false,
+       "text_body": "test",
+       "mentions": [],
+       "igd_is_forwarded": false,
+       "igd_snippet": "",
+       "replied_to_message_id": "",
+       "replied_to_message": null,
+       "sender": {
+        "name": "Kivo Studio",
+        "id": "17841400000000302",
+        "igid": "4200000302",
+        "user_dict": {
+         "interop_messaging_user_fbid": "17841400000000302",
+         "username": "kivostudio",
+         "full_name": "Kivo Studio",
+         "id": "4200000302",
+         "profile_pic_url": "https://scontent.example.invalid/v/f035.jpg?oe=6AD844F4",
+         "latest_reel_media": 0,
+         "latest_besties_reel_media": 0,
+         "reel_media_seen_timestamp": null,
+         "is_verified": false,
+         "ai_agent_type": "",
+         "friendship_status": {
+          "is_restricted": false,
+          "blocking": false,
+          "following": false
+         },
+         "pk": "",
+         "fbid_v2": "",
+         "__typename": "",
+         "is_cannes": false,
+         "is_predicted_cannes": false,
+         "Unrecognized": null
+        },
+        "Unrecognized": null
+       },
+       "slide_edit_history": [],
+       "is_pinned": false,
+       "igd_wearables_attribution_text": null,
+       "igd_wearables_attribution_type": null,
+       "expiration_timestamp_ms": "0",
+       "view_expiration_timestamp_ms": "0",
+       "__typename": "SlideMessage",
+       "Unrecognized": null
+      },
+      "cursor": "AQHTjWwDfUcusXRceIk6P-8EGi8rfzP0vhvNfRo6fGVuwCGDlMZRNIUQZJ7RNH7YPEASvJn6JryWB9I-gZj27uz8ubz2cwN4AnG4r9PBZrBtTVC4Rr4dnQdWqPN3-A_L00c0"
+     }
+    ],
+    "page_info": {
+     "end_cursor": "AQHTx3VswtZYl4EGeGp_KD7Kme3TrpPdGmpB3w-v3U4xOkCEOXgVM6gmkfLW9yUH9bvCXTv8SRYAbTI4nGGqhEVEPJw_nW3_HXwBSJeBSCxyvRCulznv-e8ZaLFiEk1SpS58",
+     "start_cursor": "AQHTOlxXeW63KBkDLoP5fMdBFaewVnZDvX3zFJMFWCQ1dsiG6X9OYMVs049tC8Xxsij_-RwbC_tYWLmSL4jwlri1nEQyz11j6Ym050_uKgAYXAsLTFzdDd3YoxTD3OeNWQXM"
+    }
+   },
+   "Unrecognized": null
+  },
+  "id": "1700000000000301"
+ }
+}

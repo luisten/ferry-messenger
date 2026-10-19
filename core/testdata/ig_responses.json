@@ -1,0 +1,51 @@
+{
+ "send": {
+  "xig_direct_text_send_with_slide_messaging_response": {
+   "message_id": "mid.$cAAAy8NQIKzyndxflxGhRdKarJRAq",
+   "timestamp_ms": "1792172793284",
+   "id": "mid.$cAAAy8NQIKzyndxflxGhRdKarJRAq"
+  }
+ },
+ "react": {
+  "xig_direct_reaction_send_with_slide_messaging_response": {
+   "id": "",
+   "reactions": null
+  }
+ },
+ "edit": {
+  "direct_edit_message_with_slide_messaging_response": {
+   "message_id": "mid.$cAAAy8NQIKzyndxf4rmhRdKvieuAq",
+   "timestamp_ms": "1792172798126",
+   "id": "mid.$cAAAy8NQIKzyndxf4rmhRdKvieuAq"
+  }
+ },
+ "unsend": {
+  "direct_unsend_message": true
+ },
+ "mark_read": {
+  "xig_direct_mark_read_id_validation": true
+ },
+ "typing": {
+  "ok": true
+ },
+ "inbox_pending": {
+  "fetch__SlideMailbox": {
+   "threads_by_folder": {
+    "edges": []
+   },
+   "id": "17841400000000302",
+   "__token": "",
+   "Unrecognized": null
+  }
+ },
+ "inbox_general": {
+  "fetch__SlideMailbox": {
+   "threads_by_folder": {
+    "edges": []
+   },
+   "id": "17841400000000302",
+   "__token": "",
+   "Unrecognized": null
+  }
+ }
+}
