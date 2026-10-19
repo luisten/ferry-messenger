@@ -320,6 +320,61 @@ final class IGAdapterTests: XCTestCase {
         XCTAssertEqual(back.eventID, sent[2])
         XCTAssertTrue(back.isSeen)
         XCTAssertFalse(room.isUnread)
+        // Our "Seen" (`SlideUQPPMarkRead`) moved our own m.read to their reply: where a "New messages" line would start.
+        XCTAssertEqual(room.receipts[me], Room.Receipt(eventID: sent[1], ts: 1_792_172_798_127))
+    }
+
+    /// Opening a chat sends "Seen" and re-reads the thread at once. kivostudio's watermark in this capture sits before
+    /// tamoveska's "back", so for kivostudio this read says unread: the dot came back after reading (mostly in groups).
+    /// How far this app knows we've read (`AppModel.markRead` moves our m.read) keeps it read; marked unread still wins.
+    func testAReadThatCrossedOurSeenKeepsTheChatRead() throws {
+        var thread = try thread()
+        let back = try XCTUnwrap(thread.slideMessages?.nodes.first)
+        let stale = IGAdapter.room(thread, account: kivo, viewer: nil)
+        XCTAssertEqual(stale.joined.unreadNotifications?.notificationCount, 1)
+        let read = IGAdapter.room(thread, account: kivo, viewer: nil, readUpTo: back.ms)
+        XCTAssertEqual(read.joined.unreadNotifications?.notificationCount, 0)
+        thread.markedAsUnread = true
+        XCTAssertEqual(IGAdapter.room(thread, account: kivo, viewer: nil, readUpTo: back.ms).joined.unreadNotifications?.notificationCount, 1)
+
+        // Our own watermark is our m.read, on the newest message at or before it (kivostudio's "On-device spike test").
+        let room = room(try self.thread(), account: kivo)
+        XCTAssertEqual(room.receipts[me]?.ts, 1_792_115_019_051)
+        XCTAssertEqual(room.receipts[me]?.eventID, thread.slideMessages?.nodes.first { $0.ms <= 1_792_115_019_051 }?.id)
+        XCTAssertNil(Timeline.reduce(room, me: me).first { $0.isSeen && !$0.isOwn })  // ours never makes anything "Seen"
+
+        // The "New messages" line: after our watermark and after our own last message (kivostudio's edited reply), so on "back".
+        let rows = Timeline.layout(Timeline.reduce(room, me: me), unreadAfter: room.receipts[me]?.ts)
+        XCTAssertEqual(rows.filter(\.startsUnread).map(\.id), [back.id])
+    }
+
+    /// A reply or emoji reaction to a story (upstream's `MessageContentXMA`: the story and `xma_text_body`; none
+    /// captured) is the story's card plus what was sent, as one message. Ferry showed only the story.
+    func testStoryRepliesAndReactionsKeepWhatWasSent() throws {
+        let story: JSON = ["target_url": "https://www.instagram.com/stories/sample.stories/4000000000000000005?reel_id=10000000005",
+                           "target_id": "4000000000000000005", "header_title_text": "sample.stories",
+                           "preview_image": ["url": "https://scontent.example.invalid/v/s005.jpg", "width": 720, "height": 1280]]
+        func message(_ content: JSON) throws -> Message {
+            let json = try JSONEncoder().encode(JSON.object(["id": "mid.s", "sender_fbid": .string(kivo), "content_type": "XMA_STORY_SHARE",
+                                                             "timestamp_ms": "1000", "igd_snippet": "", "content": content]))
+            return try XCTUnwrap(Timeline.reduce(IGAdapter.events(try IG.decode(IG.Message.self, json), account: tamo), me: me).first)
+        }
+        let reply = try message(["xma": story, "xma_text_body": "Where is this?"])
+        XCTAssertEqual(reply.kind, .share(.story, .unresolved))  // still the story's card, "Load story"
+        XCTAssertEqual(reply.shareText, "Where is this?")
+        let reaction = try message(["xma": story, "xma_text_body": "😍"])
+        XCTAssertEqual(reaction.shareText, "😍")  // the row shows it big, like any emoji-only message
+        XCTAssertNil(try message(["xma": story]).shareText)  // a story shared without a word
+
+        let expired = try message(["xma": ["title_text": "Story unavailable"], "xma_text_body": "Where is this?"])
+        XCTAssertEqual(expired.kind, .notice)
+        XCTAssertEqual([expired.body, expired.shareText], ["Story unavailable", "Where is this?"])
+
+        // The inbox says what they wrote, after the story's symbol.
+        let room = Room(id: "!ig-test")
+        room.apply(JoinedRoom(timeline: .init(events: [Event(type: "m.room.message", content: reply.content, eventID: "mid.s",
+                                                             sender: IGAdapter.user(kivo), originServerTS: 1000)], limited: false)))
+        XCTAssertEqual(Inbox.preview(of: room, me: me), Inbox.Preview(symbol: "circle.dashed", text: "Where is this?"))
     }
 
     /// Their newest message makes the chat unread; when they unsend it and ours is newest again, it's read.

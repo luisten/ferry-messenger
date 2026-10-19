@@ -247,14 +247,33 @@ struct MXCImage: View {
     }
 }
 
-/// A chat's picture. A group without one gets the people glyph: its name's initial looked like a contact called "S"
-/// (review 2026-10-15 #9).
+/// A chat's picture. A group without one shows two of its people, one over the other (Instagram's; two faces say
+/// "group" at a glance), or the people glyph with fewer than two others: its name's initial looked like a contact
+/// called "S" (review 2026-10-15 #9).
 struct RoomAvatar: View {
+    @Environment(\.markRing) private var ring
     let room: Room
     let size: CGFloat
 
     var body: some View {
-        MXCImage(mxc: room.avatarURL, size: size, initial: room.name, symbol: room.bridge?.roomType == .group ? "person.2.fill" : nil)
+        let isGroup = room.bridge?.roomType == .group
+        let faces = isGroup && room.avatarURL == nil ? Inbox.faces(of: room) : []
+        if faces.count == 2 {
+            let face = size * 0.7
+            ZStack {
+                MXCImage(mxc: faces[0].avatarURL, size: face, initial: faces[0].name)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                MXCImage(mxc: faces[1].avatarURL, size: face, initial: faces[1].name)
+                    .padding(max(1.5, size * 0.04))
+                    .background(ring, in: .circle)  // the front face cut out of the back one
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    .offset(x: max(1.5, size * 0.04), y: max(1.5, size * 0.04))
+            }
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+        } else {
+            MXCImage(mxc: room.avatarURL, size: size, initial: room.name, symbol: isGroup ? "person.2.fill" : nil)
+        }
     }
 }
 

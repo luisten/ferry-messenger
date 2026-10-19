@@ -247,6 +247,69 @@ final class GroupTests: XCTestCase {
         XCTAssertEqual(members.count, 4)  // three ghosts and us; the one who left isn't listed
         XCTAssertEqual(members.last?.isMe, true)
         XCTAssertTrue(DebugFixtures.isFixtureRoom(room.id))
+
+        // Unread past Sam's ride: the line goes above Priya leaving; Maya and Sam have seen Theo's newest; 👍 is three people.
+        XCTAssertTrue(room.isUnread)
+        let messages = Timeline.reduce(room, me: me)
+        let marked = Timeline.layout(messages, isGroup: true, unreadAfter: room.receipts[me]?.ts)
+        XCTAssertEqual(marked.filter(\.startsUnread).map(\.id), ["$debug-group-left"])
+        XCTAssertEqual(messages.last?.seenBy.map { room.displayName(of: $0, profile: profiles[$0]) }, ["Maya Chen", "Sam Lee"])
+        XCTAssertEqual(messages.first { $0.reactions.contains { $0.count == 3 } }?.reactions.first?.senders.count, 3)
+        XCTAssertEqual(Inbox.faces(of: room).count, 2)
+    }
+
+    // MARK: Seen by, the "New messages" line, two faces
+
+    /// Hand-made: the newest message lists everyone else whose receipt is at or after it, first reader first; not
+    /// its sender, not us, not someone whose receipt is older. Only the newest message says it.
+    func testSeenByNamesWhoReadTheNewestMessage() {
+        let sam = "@instagram_7:igm.home.arpa", zoe = "@instagram_6:igm.home.arpa"
+        let events = [Event.message("$1", ts: 1, sender: theo), Event.message("$2", ts: 2, sender: maya)]
+        let receipts: [String: Room.Receipt] = [sam: .init(eventID: "$2", ts: 9), theo: .init(eventID: "$2", ts: 5),
+                                                maya: .init(eventID: "$2", ts: 3), me: .init(eventID: "$2", ts: 4),
+                                                zoe: .init(eventID: "$1", ts: 1)]
+        XCTAssertEqual(Timeline.reduce(events, me: me, receipts: receipts).map(\.seenBy), [[], [theo, sam]])
+    }
+
+    /// Instagram's web app: two names, then a count; "everyone" once all of three or more have.
+    func testSeenByLine() {
+        XCTAssertNil(Timeline.seenByLine([], everyone: false))
+        XCTAssertEqual(Timeline.seenByLine(["Maya"], everyone: true), "Seen by Maya")
+        XCTAssertEqual(Timeline.seenByLine(["Maya", "Sam"], everyone: true), "Seen by Maya and Sam")
+        XCTAssertEqual(Timeline.seenByLine(["Maya", "Sam", "Theo"], everyone: false), "Seen by Maya, Sam + 1")
+        XCTAssertEqual(Timeline.seenByLine(["Maya", "Sam", "Theo"], everyone: true), "Seen by everyone")
+    }
+
+    /// Hand-made: the line goes above the first message from someone else after how far we'd read, and after our own
+    /// last message (we'd read what came before it). It starts a new run, so a group names the sender again.
+    func testUnreadLineStartsAfterWhatWeRead() {
+        let run = [Event.message("$1", ts: 0, sender: theo), Event.message("$2", ts: minute, sender: theo), Event.message("$3", ts: 2 * minute, sender: theo)]
+        let rows = Timeline.layout(Timeline.reduce(run, me: me), isGroup: true, unreadAfter: 0)
+        XCTAssertEqual(rows.map(\.startsUnread), [false, true, false])
+        XCTAssertEqual(rows.map(\.position), [.single, .first, .last])
+        XCTAssertEqual(rows.map { $0.groupSender?.showsName }, [true, true, false])
+        XCTAssertEqual(rows[1].spacing, 16)
+
+        let replied = run + [Event.message("$4", ts: 3 * minute, sender: me), Event.message("$5", ts: 4 * minute, sender: maya)]
+        let messages = Timeline.reduce(replied, me: me)
+        XCTAssertEqual(Timeline.layout(messages, unreadAfter: 0).filter(\.startsUnread).map(\.id), ["$5"])
+        XCTAssertFalse(Timeline.layout(messages, unreadAfter: 4 * minute).contains(where: \.startsUnread))
+        XCTAssertFalse(Timeline.layout(messages).contains(where: \.startsUnread))  // opened read
+    }
+
+    /// A group without its own picture shows two of its people, those with a picture first, never us; with fewer than
+    /// two others it keeps the people glyph.
+    func testGroupFacesPreferPictures() throws {
+        let zoe = "@instagram_7:igm.home.arpa"
+        let group = try groupRoom(members: [theo: "Theo Park", maya: "Maya Chen", zoe: "Zoë Ruiz"])
+        group.ownUserID = me
+        group.apply(JoinedRoom(state: EventList(events: [
+            Event.state("m.room.member", ["membership": "join", "displayname": "Zoë Ruiz", "avatar_url": "https://scontent.example.invalid/z.jpg"], key: zoe),
+        ])))
+        XCTAssertEqual(Inbox.faces(of: group).map(\.name), ["Zoë Ruiz", "Maya Chen"])
+        let pair = try groupRoom(members: [theo: "Theo Park"])
+        pair.ownUserID = me
+        XCTAssertEqual(Inbox.faces(of: pair), [])
     }
 
     // MARK: Helpers

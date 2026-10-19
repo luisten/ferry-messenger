@@ -147,6 +147,14 @@ nonisolated enum Inbox {
         }
     }
 
+    /// The two faces a group without its own picture shows (`RoomAvatar`), people with a picture first; none with fewer
+    /// than two others, which keeps the people glyph.
+    static func faces(of room: Room) -> [Member] {
+        let others = members(of: room, me: room.ownUserID ?? IGAdapter.me, profiles: [:]).filter { !$0.isMe }
+        guard others.count >= 2 else { return [] }
+        return Array((others.filter { $0.avatarURL != nil } + others.filter { $0.avatarURL == nil }).prefix(2))
+    }
+
     /// People in the chat, us included, the bridge bot not: sync's room summary (lazy loading leaves most member
     /// events out), else the joined member events we have.
     static func memberCount(of room: Room) -> Int {
@@ -423,6 +431,9 @@ nonisolated enum Inbox {
         let prefix = who.map { "\($0): " } ?? ""
 
         let kind = MessageKind(type: message.type, content: content)
+        if let text = content[MessageKind.shareTextKey]?.string {  // a story reply or reaction: what they said
+            return Preview(symbol: kind.media?.symbol, text: prefix + text)
+        }
         let sent: String? = switch kind {
         case .share(let type, _): type.phrase
         case .unsupported(let what): what

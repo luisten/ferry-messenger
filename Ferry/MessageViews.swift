@@ -16,6 +16,10 @@ struct MessageActions {
     var resolveMedia: (Message) -> Void
     /// Photos sent together: download them all, then the share sheet.
     var shareAll: (Message) -> Void
+    /// A tap on the reactions: who reacted with what.
+    var showReactions: (Message) -> Void
+    /// A tap on someone's picture in a group: who they are.
+    var showPerson: (String) -> Void
     /// Request rooms: nothing that sends. The bridge marks the chat read on Instagram for *every* event we send
     /// (seen in its logs in M4: "Sending implicit read receipt"), so even a reaction would leak "Seen".
     var readOnly = false
@@ -33,6 +37,10 @@ struct MessageRow: View {
     let member: (String) -> (name: String, avatarURL: String?)
     /// Our last message carries the status line (Sending… / Sent / Delivered / Seen).
     let showsStatus: Bool
+    /// Groups: "Seen by Maya and Sam" under the newest message (ours: in place of "Seen").
+    var seenLine: String?
+    /// Reactions show who chose them.
+    var isGroup = false
     var highlighted = false
     let actions: MessageActions
 
@@ -48,7 +56,24 @@ struct MessageRow: View {
     private var reactionsInset: CGFloat { message.reactions.isEmpty ? 0 : 14 }
 
     var body: some View {
-        if message.kind.isChatEvent { eventLine } else { bubbleRow }
+        VStack(spacing: 0) {
+            if row.startsUnread { unreadLine }
+            if message.kind.isChatEvent { eventLine } else { bubbleRow }
+        }
+    }
+
+    /// Where what you hadn't read starts, when the chat opened unread (the thread opens here when it's long).
+    private var unreadLine: some View {
+        HStack(spacing: 8) {
+            Rectangle().fill(Color(.separator)).frame(height: 1)
+            Text("New messages").font(.caption.weight(.semibold)).foregroundStyle(.inkSecondary).fixedSize()
+            Rectangle().fill(Color(.separator)).frame(height: 1)
+        }
+        .padding(.bottom, 12)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("New messages")
+        .accessibilityAddTraits(.isHeader)  // VoiceOver's headings rotor jumps to it
+        .accessibilityIdentifier("thread.unreadLine")
     }
 
     private var bubbleRow: some View {
@@ -66,7 +91,12 @@ struct MessageRow: View {
                     Group {
                         if sender.showsAvatar {
                             let who = member(message.sender)
-                            MXCImage(mxc: who.avatarURL, size: Self.avatarSize, initial: who.name)
+                            Button { actions.showPerson(message.sender) } label: {
+                                MXCImage(mxc: who.avatarURL, size: Self.avatarSize, initial: who.name)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(who.name)
+                            .accessibilityHint("Shows who they are")
                         } else {
                             Color.clear
                         }
@@ -78,7 +108,9 @@ struct MessageRow: View {
                     .modifier(SpokenSender(name: row.groupSender != nil && message.kind != .unsent ? member(message.sender).name : nil))
                     .overlay(alignment: own ? .bottomLeading : .bottomTrailing) {
                         if !message.reactions.isEmpty {
-                            ReactionPills(reactions: message.reactions).offset(x: own ? -8 : 8, y: 14)
+                            ReactionPills(reactions: message.reactions, me: me, face: isGroup ? member : nil,
+                                          show: { actions.showReactions(message) })
+                                .offset(x: own ? -8 : 8, y: 14)
                         }
                     }
                     .padding(.bottom, reactionsInset)
@@ -118,7 +150,19 @@ struct MessageRow: View {
 
     // MARK: Bubble
 
+    /// A story reply or reaction is the story with what was sent under it, as Instagram shows them.
     @ViewBuilder private var bubble: some View {
+        if let text = message.shareText {
+            VStack(alignment: own ? .trailing : .leading, spacing: 4) {
+                content
+                textBubble(text)
+            }
+        } else {
+            content
+        }
+    }
+
+    @ViewBuilder private var content: some View {
         switch message.kind {
         case .unsent:
             Text(own ? "You unsent a message" : "\(name(message.sender)) unsent a message")
@@ -127,20 +171,7 @@ struct MessageRow: View {
                 .overlay(Capsule().strokeBorder(.secondary, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
                 .accessibilityIdentifier("thread.unsent")
         case .text, .notice, .emote:
-            if Self.isEmojiOnly(message.body) {
-                Text(message.body).font(.system(size: 48)).menu(message, actions)  // DESIGN §6.1: no bubble
-            } else {
-                Text(message.body)
-                    .font(.body)
-                    .foregroundStyle(own ? Color.white : Color.primary)
-                    .tint(own ? .white : nil)
-                    .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(fill, in: Self.shape(row.position, own: own))
-                    .contentShape(.contextMenuPreview, Self.shape(row.position, own: own))
-                    .menu(message, actions)
-                    .accessibilityLabel(spoken(message.body))
-                    .accessibilityIdentifier("thread.bubble")
-            }
+            textBubble(message.body)
         case .link:
             LinkBubble(message: message, own: own)
                 .background(fill)
@@ -154,6 +185,23 @@ struct MessageRow: View {
                 .contentShape(.contextMenuPreview, Self.shape(row.position, own: own))
                 .menu(message, actions)
                 .accessibilityIdentifier("thread.media")
+        }
+    }
+
+    @ViewBuilder private func textBubble(_ text: String) -> some View {
+        if Self.isEmojiOnly(text) {
+            Text(text).font(.system(size: 48)).menu(message, actions)  // DESIGN §6.1: no bubble
+        } else {
+            Text(text)
+                .font(.body)
+                .foregroundStyle(own ? Color.white : Color.primary)
+                .tint(own ? .white : nil)
+                .padding(.horizontal, 12).padding(.vertical, 8)
+                .background(fill, in: Self.shape(row.position, own: own))
+                .contentShape(.contextMenuPreview, Self.shape(row.position, own: own))
+                .menu(message, actions)
+                .accessibilityLabel(spoken(text))
+                .accessibilityIdentifier("thread.bubble")
         }
     }
 
@@ -226,8 +274,12 @@ struct MessageRow: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("thread.retry")
         } else if showsStatus, message.kind != .unsent {
-            Text(statusText).font(.caption2).foregroundStyle(.inkSecondary).padding(.horizontal, 6)
+            Text(seenLine ?? statusText).font(.caption2).foregroundStyle(.inkSecondary).padding(.horizontal, 6)
                 .accessibilityIdentifier("thread.status")
+        } else if let seenLine {
+            Text(seenLine).font(.caption2).foregroundStyle(.inkSecondary).padding(.horizontal, 6)
+                .frame(maxWidth: .infinity, alignment: .trailing)  // where Instagram's web app puts it
+                .accessibilityIdentifier("thread.seenBy")
         }
     }
 
@@ -291,8 +343,8 @@ private struct MessageMenu: ViewModifier {
                     .menuActionDismissBehavior(.enabled)  // a palette keeps the menu open by default (iOS 26.4)
                     Button("Reply", systemImage: "arrowshape.turn.up.left") { actions.reply(message) }
                 }
-                if !message.body.isEmpty, message.kind.media == nil {
-                    Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = message.body }
+                if let text = message.shareText ?? (message.kind.media == nil && !message.body.isEmpty ? message.body : nil) {
+                    Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = text }
                 }
                 if !actions.readOnly, Timeline.canEdit(message) {
                     Button("Edit", systemImage: "pencil") { actions.edit(message) }
@@ -330,26 +382,92 @@ private struct MessageMenu: ViewModifier {
 
 // MARK: - Pieces
 
-/// DESIGN §6.2: emoji (+ count when more than one) in a capsule overlapping the bubble's bottom edge.
+/// DESIGN §6.2: emoji (+ count when more than one) in a capsule overlapping the bubble's bottom edge. In a group each
+/// emoji has the faces of who chose it, stacked (Instagram's), up to three and then a count. A tap lists who reacted.
 struct ReactionPills: View {
     let reactions: [Message.Reaction]
+    let me: String
+    /// Groups: a user's name and picture (`MessageRow.member`); nil in a DM, where the count says enough.
+    let face: ((String) -> (name: String, avatarURL: String?))?
+    let show: () -> Void
+
+    static let faceSize: CGFloat = 16
 
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(reactions, id: \.key) { reaction in
-                Text(reaction.key)
-                if reaction.count > 1 { Text("\(reaction.count)").font(.caption.weight(.semibold)).foregroundStyle(.inkSecondary) }
+        Button(action: show) {
+            HStack(spacing: face == nil ? 2 : 6) {
+                ForEach(reactions, id: \.key) { reaction in
+                    HStack(spacing: 2) {
+                        Text(reaction.key)
+                        if let face {
+                            HStack(spacing: -5) {
+                                ForEach(reaction.senders.prefix(3), id: \.self) { user in
+                                    let who = face(user)
+                                    MXCImage(mxc: who.avatarURL, size: Self.faceSize, initial: who.name)
+                                        .overlay(Circle().stroke(Color.reactionBackground, lineWidth: 1.5))
+                                }
+                            }
+                            if reaction.count > 3 { count(reaction.count - 3, plus: true) }
+                        } else if reaction.count > 1 {
+                            count(reaction.count, plus: false)
+                        }
+                    }
+                }
             }
+            .font(.system(size: 14))
+            .padding(.horizontal, 6)
+            .frame(minHeight: 24)
+            .background(Color.reactionBackground, in: .capsule)
+            .overlay(Capsule().stroke(Color(.systemBackground), lineWidth: 2))
+            .shadow(color: .black.opacity(0.12), radius: 2, y: 1)
+            .contentShape(.capsule)
         }
-        .font(.system(size: 14))
-        .padding(.horizontal, 6)
-        .frame(minHeight: 24)
-        .background(Color.reactionBackground, in: .capsule)
-        .overlay(Capsule().stroke(Color(.systemBackground), lineWidth: 2))
-        .shadow(color: .black.opacity(0.12), radius: 2, y: 1)
+        .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Reactions: " + reactions.map { $0.count > 1 ? "\($0.key) \($0.count)" : $0.key }.joined(separator: ", "))
+        .accessibilityLabel("Reactions: " + reactions.map(spoken).joined(separator: ", "))
+        .accessibilityHint("Shows who reacted")
+        .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("thread.reactions")
+    }
+
+    private func count(_ n: Int, plus: Bool) -> some View {
+        Text(plus ? "+\(n)" : "\(n)").font(.caption.weight(.semibold)).foregroundStyle(.inkSecondary)
+    }
+
+    /// "❤️ 2" in a DM; "❤️ from Maya and you" in a group.
+    private func spoken(_ reaction: Message.Reaction) -> String {
+        guard let face else { return reaction.count > 1 ? "\(reaction.key) \(reaction.count)" : reaction.key }
+        let names = reaction.senders.map { $0 == me ? "you" : face($0).name }
+        return "\(reaction.key) from \(names.formatted(.list(type: .and)))"
+    }
+}
+
+/// Who reacted with what (a tap on a message's reactions), as Instagram lists them: everyone's face, name and emoji.
+struct ReactionList: View {
+    let message: Message
+    let me: String
+    let member: (String) -> (name: String, avatarURL: String?)
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(message.reactions.flatMap { reaction in reaction.senders.map { (user: $0, key: reaction.key) } }, id: \.user) { item in
+                    let who = member(item.user)
+                    HStack(spacing: 12) {
+                        MXCImage(mxc: who.avatarURL, size: 36, initial: who.name)
+                        Text(item.user == me ? "You" : who.name).lineLimit(1)
+                        Spacer(minLength: 8)
+                        Text(item.key).font(.title2)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("reactions.row")
+                }
+            }
+            .listStyle(.plain)
+            .navigationTitle("Reactions")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.medium, .large])
     }
 }
 

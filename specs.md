@@ -17,7 +17,7 @@ DESIGN.md's. Why it differs from the design: PLAN §7 and [m7-design-diff.md](do
 | Media on tap | Thumbnails load as rows appear; full media downloads only when tapped, to `Caches/media`, and plays from that file. The folder stays under 500 MB: past that, the least recently opened files go first, down to 400 MB. |
 | Order and unread | Newest **message** first (not newest event). A chat is unread while its newest message is incoming and newer than our "Seen", or it's marked unread on Instagram. Requests, archived and General chats don't count toward the main list's or chips' unread. |
 | Primary/General | Business and creator accounts (`is_professional_account`) have Instagram's two tabs: their main list is **Primary**, and chats in **General** on Instagram sit in General (Folders menu), from the start and as Instagram reports moves. Moving chats is done in Instagram. |
-| Read receipts | Opening an unread chat (and each new incoming message while it's open and the app is active) sends "Seen" on the newest incoming message. Typing is sent at most once per 20 s. |
+| Read receipts | Opening an unread chat (and each new incoming message while it's open and the app is active) sends "Seen" on the newest incoming message, and the chat reads as read at once. A re-read of the thread that Instagram answered before that "Seen" arrived can't make it unread again (only "marked unread" can). Typing is sent at most once per 20 s. |
 
 ## Onboarding (O1–O6)
 
@@ -62,9 +62,11 @@ With an account stored, the app opens on the inbox.
   "N message requests" and the requesters' names (with account marks in All), no message text; opens Requests, never
   a thread. VoiceOver: "2 message requests, from Lena Ortiz and crypto.wins.daily. Opens Requests." General never gets
   a card.
-- **Rows:** avatar (with the account mark in All; a group without a photo shows the people glyph on a light grey disc,
-  not its name's initial), name, time ("9:41", "Yesterday", weekday, date), two-line preview
-  ("You: …", "You sent a reel by @author", media symbols; in groups the sender's first name, "Theo: …", or no name
+- **Rows:** avatar (with the account mark in All; a group without a photo shows two of its people, one over the other
+  with a ring cut out between them, those with a picture first; with fewer than two others the people glyph on a light
+  grey disc, never its name's initial), name, time ("9:41", "Yesterday", weekday, date), two-line preview
+  ("You: …", "You sent a reel by @author", media symbols; a story reply or reaction shows what was sent after the
+  story's symbol; in groups the sender's first name, "Theo: …", or no name
   when the thread doesn't name them, never an ID), "typing…", unread dot. Swipe or
   long-press: Archive.
 - **Banner** (one at a time, most fundamental first): "Can't reach Instagram" (2 failed connects in a row with no
@@ -114,11 +116,16 @@ recipient, no groups.
   Ferry can't show. Open Instagram to see it." ("a poll" when Instagram's content type says so). In the inbox the
   event as it is, or "Sam sent a poll".
   Status line under our last message: Sending… / Sent / Seen (Instagram has no "delivered"); failed: "Not sent. Tap
-  to retry". Older
+  to retry". Reactions are a capsule on the bubble's bottom edge (emoji, and a count when more than one); a tap lists
+  who reacted with what (face, name or "You", emoji). A chat that opens unread shows a **"New messages"** line (hairlines,
+  `.caption` semibold grey; a VoiceOver heading) above the first message from someone else after our "Seen" and after
+  our own last message; it starts a new run, stays while the chat is open and goes once we reply. Older
   history loads at the top; at the very start a **start block**: the chat's avatar (64 pt), its name (`.title3`
   semibold), "@handle" in a DM (when known) or "N members" in a group, the AccountTag, 22 pt above and 20 pt below; "You're messaging from X."
   only while the chat has no messages (otherwise the composer says it). Opens on the newest message (also the first
   open after launch) and stays on it as rows, the keyboard or the typing bubble change its size, until you scroll up.
+  When what's new doesn't fit, it opens with the "New messages" line at the top instead and holds it there the same way
+  until you scroll, reply or tap a quote.
   The bubbles appear (a 0.15 s fade, none under Reduce Motion) only once the thread rests there under the bars with no
   older page loading, so the push never shows it jumping; at the latest after 1 s or on touch. Only a new last message
   animates; older pages land without animation.
@@ -127,6 +134,12 @@ recipient, no groups.
   beside its last bubble, every incoming bubble indented for it (tombstones too, without either; chat events are
   neither: they span the thread and end a run). Our own messages
   get nothing, as in DMs. A reply that starts a run says "Sam Lee replied to Theo" instead of a separate name.
+  A tap on someone's picture opens their card (sheet, medium): picture at 120 pt, name, @handle, Open in Instagram.
+  Each reaction shows the faces of who chose it (16 pt, stacked, up to three, then "+N"; ours is our account's
+  picture); VoiceOver: "👍 from Theo, Maya and you". Under the newest message (right-aligned, `.caption2` grey) "Seen
+  by Maya", "Seen by Maya and Sam", "Seen by Maya, Sam + 2", or "Seen by everyone" once all of three or more have:
+  everyone but us and its sender whose "Seen" is at or past it, first reader first; under our own newest message
+  it replaces "Seen".
   VoiceOver reads every incoming group bubble as "From Theo Park, …" and skips the visible name and avatar. Names
   come from the thread (Instagram always names its participants). DMs look exactly as before.
 - **Context menu:** reaction palette ❤️ 😂 😮 😢 🔥 👍 (same emoji again removes ours; double-tap = ❤️), Reply, Copy,
@@ -175,9 +188,10 @@ Accept. Failures show an alert.
 Contact avatar, name, @handle (from the thread), **Account** with its AccountTag (and your @handle when it fits), **Folder: General** for a chat in General,
 "Replies always come from this account.", Open in Instagram (when the handle is known), Archive.
 
-Groups: the group's avatar (the people glyph without a photo) and name over "N members", Account, then **N Members**:
-avatar, display name and @handle, sorted by name; you last as "You" with your account's avatar, ring and mark and its
-@handle. Source: the thread's participants. Footer: "To add or remove people, use Instagram." No actions on members.
+Groups: the group's avatar (two of its people without a photo, as in the inbox) and name over "N members", Account,
+then **N Members**: avatar, display name and @handle, sorted by name; you last as "You" with your account's avatar, ring
+and mark and its @handle. A tap on someone else opens their card (as in the thread). Source: the thread's participants.
+Footer: "To add or remove people, use Instagram." No other actions on members.
 
 ## Media
 
@@ -186,6 +200,7 @@ avatar, display name and @handle, sorted by name; you last as "You" with your ac
 | Reel / video ready (after "Load video") | Thumbnail, author (Instagram's header title) and caption | Download (ring, tap cancels) → M1 |
 | Reel / story (every share arrives unresolved) | Preview, author, caption + "Load video" → "Getting video…" | Instagram's media lookup (a read, allowed in requests) swaps the card in place, then it opens |
 | Unavailable / too large / expired story / view-once | Neutral card, dimmed preview | "Open in Instagram" |
+| Story reply or reaction (the story plus what was sent: Instagram's `xma_text_body`) | The story's card (or "Story unavailable"), then the text as a bubble under it (an emoji alone at 48 pt, no bubble). One message: one menu (Copy copies the text), reaction row and unsend | As the story |
 | Post / other share | Author, image, two caption lines | Open in Instagram |
 | Photo | Up to 240×320 | M2 |
 | Photos sent together (one message; videos mixed in alike) | A pile: the first on top at a photo's size, up to four more tilted behind it (±3°, ±6°), "3 photos" on it; only those previews load. One menu and one row of reactions for the set | Unfolds in place into a card each, stacked like a run, each opening on its own (M2 / M1), and "Show less" under them folds it back. While "Share All" downloads, the pile shows the ring and a tap cancels |

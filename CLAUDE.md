@@ -22,7 +22,7 @@ SIM=$(xcrun simctl list devices booted | grep -oE '[0-9A-F-]{36}' | head -1)
 t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
-t test -only-testing:FerryTests              # 286 unit tests, ~3 s
+t test -only-testing:FerryTests              # 292 unit tests, ~3 s
 t test -only-testing:FerryUITests            # UI tests on made-up data (live ones opt-in: docs/DEVELOPMENT.md)
 t build-for-testing                           # all 3 targets
 core/build.sh                                 # Go core -> build/IGCore.xcframework (needs Go 1.27.1 on PATH)
@@ -101,9 +101,11 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   `Timeline.layout(_:isGroup:)` sets `Row.groupSender` (name on the first of a run, avatar on the last, a tombstone
   neither). Names are `.inkSecondary`, never an account colour. Who a user is: `Room.displayName` = member event name
   (`IGAdapter` makes one per thread participant) → profile (`AppModel.profiles`,
-  from the threads) → in a DM the room name; never a raw ID. Members (T3): the joined member events, You last; read-only.
-  "N members" is `Inbox.memberCount`. A group without a photo is `RoomAvatar`'s people glyph, never an initial. No
-  group exists on the dummies: the DEBUG group and unit tests cover them.
+  from the threads) → in a DM the room name; never a raw ID. Members (T3): the joined member events, You last; read-only
+  (a tap shows `PersonCard`). "N members" is `Inbox.memberCount`. A group without a photo is `RoomAvatar`'s two faces
+  (`Inbox.faces`), or its people glyph with fewer than two others; never its name's initial. Reactions show faces and
+  "Seen by …" sits under the newest message (`Message.seenBy`, `Timeline.seenByLine`) only in groups. No group exists
+  on the dummies: the DEBUG group (unread, with readers and stacked reactions) and unit tests cover them.
 - **The sea is scenery only** (D19, DESIGN principle 10): `Scenery.*` (Tokens.swift, a namespace on purpose) colours
   O1's picture and nothing else: never text, controls, tint or chrome. The icon and `LaunchMark` come from
   `docs/design/ferry-icon-color*.svg` through `swift scripts/make_icon.swift`, which also stops if `FerryShape.swift`
@@ -130,7 +132,10 @@ captured in P0)
   Seen (the other side's read watermark).
 - **Unread:** the newest message is incoming and past our read watermark, or the chat is marked unread; live deltas
   (a new message's `MARK_UNREAD`, `SlideUQPPMarkRead`, `SlideUQPPIGMarkThreadUnread`) and our own `IGMarkRead` keep
-  it current. An empty `replied_to_message_id` means no
+  it current. Our watermark is `Room.receipts[@me]` (from `slide_read_receipts`, `SlideUQPPMarkRead`'s
+  `read_timestamp_ms`, and `markRead`, which also clears the dot at once). A thread read weighs it too (`readUpTo`):
+  opening a chat sends "Seen" and re-reads it together, and a read answered before the "Seen" landed said unread, so
+  the dot stayed. The "New messages" line goes after the watermark `ThreadView` took when the chat opened. An empty `replied_to_message_id` means no
   reply (P2: every bubble showed a loading quote).
 - **Folders:** requests are `system_folder` `PENDING`/`SPAM`; General is `folder` `GENERAL` (professional accounts, the
   viewer's `is_professional_account`), moved live by `SlideUQPPIGMoveThread` (its `ig_inbox_folder`). Only mailbox
@@ -144,7 +149,8 @@ captured in P0)
   `RecipientIGIDs`) makes the thread; its NewMessage delta loads it and `movedRooms` leads the draft to it.
 - **Shares (XMA)** become the bridge's shapes, so Ferry's cards work unchanged: `external_url`, `formatted_body`
   `<strong>author</strong><p>caption</p>`, `com.beeper.unresolved_media` → "Load video" (`IGResolveMedia`, a read)
-  → a hidden `m.replace`.
+  → a hidden `m.replace`. A story reply or reaction is the story plus `content.xma_text_body` (upstream's
+  `MessageContentXMA`; not captured yet), kept under `MessageKind.shareTextKey` and shown under the card.
 - **GIFs** are `content_type` `GIFS` (`animated_media`: WebP and MP4 links, a preview that may be `null`); the
   mailbox's copy has `animated_media: null`, the thread's has the links. An uploaded animated GIF comes back as one of
   Instagram's GIFs on both sides (live 2026-10-17), so GIFs from Photos and pasted GIF links are sent as files

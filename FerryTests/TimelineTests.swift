@@ -414,12 +414,12 @@ final class TimelineTests: XCTestCase {
 
     // MARK: Read receipt target
 
-    /// We mark read the newest message from someone else, only when our receipt isn't already at or past it.
+    /// We mark read the newest message from someone else. Whether to send it at all is `AppModel.markRead`'s call (only
+    /// while the chat is unread), not our receipt's: a chat marked unread elsewhere has ours on that message already.
     func testReceiptTarget() throws {
         let tamo = try RoomTests.room(Fixture.tamoRoom)
-        XCTAssertNil(Timeline.receiptTarget(tamo, me: me))  // real: our receipt sits on the newest incoming
+        XCTAssertEqual(Timeline.receiptTarget(tamo, me: me), tamo.receipts[me]?.eventID)  // real: our receipt sits on the newest incoming
         let kivo = try RoomTests.room(Fixture.kivoRoom)
-        XCTAssertNil(Timeline.receiptTarget(kivo, me: me))  // real: our receipt is on our own later reel
 
         kivo.apply(JoinedRoom(timeline: .init(events: [
             Event.message("$new", ts: 1_900_000_000_000, sender: Fixture.tamoGhost),

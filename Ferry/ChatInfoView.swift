@@ -7,6 +7,7 @@ struct ChatInfoView: View {
     @Environment(AppModel.self) private var model
     let roomID: String
     @State private var archived = 0
+    @State private var person: Inbox.Member?
 
     var body: some View {
         if let room = model.room(roomID) {
@@ -30,6 +31,7 @@ struct ChatInfoView: View {
             Section {
                 VStack(spacing: 6) {
                     RoomAvatar(room: room, size: 88).padding(.bottom, 6)
+                        .environment(\.markRing, Color(.systemGroupedBackground))  // on the page, not on a row
                     Text(room.name).font(.title2.bold()).multilineTextAlignment(.center)
                     if let subtitle { Text(subtitle).foregroundStyle(.inkSecondary) }
                 }
@@ -85,15 +87,23 @@ struct ChatInfoView: View {
         .navigationBarTitleDisplayMode(.inline)
         .environment(\.markRing, Color(.secondarySystemGroupedBackground))
         .sensoryFeedback(.impact(weight: .medium), trigger: archived)
+        .sheet(item: $person) { PersonCard(name: $0.name, handle: $0.handle, avatarURL: $0.avatarURL) }
     }
 
-    /// Read-only (DESIGN T3; no member actions yet). Everyone comes with the thread, so nothing loads here.
+    /// Read-only (DESIGN T3; no member actions yet): a tap shows who someone is. Everyone comes with the thread, so
+    /// nothing loads here.
     @ViewBuilder
     private func members(_ room: Room, identity: AccountIdentity?, login: BridgeAPI.Login?) -> some View {
         let members = Inbox.members(of: room, me: model.me, profiles: model.profiles)
         Section {
             ForEach(members) { member in
-                MemberRow(member: member, identity: identity, login: login)
+                if member.isMe {
+                    MemberRow(member: member, identity: identity, login: login)
+                } else {
+                    Button { person = member } label: { MemberRow(member: member, identity: identity, login: login) }
+                        .foregroundStyle(Color.primary)  // not the tint
+                        .accessibilityHint("Shows who they are")
+                }
             }
         } header: {
             Text("\(members.count) \(members.count == 1 ? "Member" : "Members")")
@@ -128,5 +138,33 @@ private struct MemberRow: View {
         .accessibilityLabel([member.isMe ? identity.map { "You, \($0.name) account" } ?? "You" : member.name,
                              handle.map { "@\($0)" }].compactMap(\.self).joined(separator: ", "))
         .accessibilityIdentifier("info.member")
+    }
+}
+
+/// Who someone is, bigger than a 28 pt face (a tap on their picture in a group, or on a member in Chat Info): their
+/// picture, name, @handle and Instagram profile. Only what the thread brought: nothing is asked of Instagram.
+struct PersonCard: View {
+    let name: String
+    let handle: String?
+    let avatarURL: String?
+
+    var body: some View {
+        VStack(spacing: 6) {
+            // ponytail: the thread's picture is Instagram's small one (150 px), soft at this size; a bigger one costs a
+            // profile request per tap.
+            MXCImage(mxc: avatarURL, size: 120, initial: name).padding(.bottom, 10)
+            Text(name).font(.title2.bold()).multilineTextAlignment(.center)
+            if let handle { Text("@\(handle)").foregroundStyle(.inkSecondary) }
+            if let url = handle.flatMap({ URL(string: "https://www.instagram.com/\($0)/") }) {
+                Link(destination: url) { Label("Open in Instagram", systemImage: "arrow.up.forward.app") }
+                    .buttonStyle(.glass)
+                    .padding(.top, 14)
+                    .accessibilityIdentifier("person.openInInstagram")
+            }
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity)
+        .presentationDetents([.medium])
+        .accessibilityIdentifier("person.card")
     }
 }
