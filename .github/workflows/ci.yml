@@ -110,6 +110,12 @@ jobs:
           tar -xzf "$RUNNER_TEMP/go-dl/go.tar.gz" -C "$RUNNER_TEMP"
           PATH="$RUNNER_TEMP/go/bin:$PATH" core/build.sh
 
+      # core/chat's tests on P0's captures; they also fail when FerryTests/Fixtures/engine_*.json (what the app's
+      # EngineTests read) no longer match the engine's output.
+      - name: Engine tests (Go)
+        working-directory: core
+        run: PATH="$RUNNER_TEMP/go/bin:$PATH" go test ./...
+
       # All three targets, so FerryUITests must still compile; compiler warnings fail the build (the tree has none).
       - name: Build for testing
         run: |

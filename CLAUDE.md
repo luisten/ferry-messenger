@@ -7,8 +7,9 @@ bundle outside the repo.
 
 **Status:** the app runs on `core/` at parity with Ferry except notifications (P0–P7 of
 [docs/PLAN-core.md](docs/PLAN-core.md), each checked live with the two dummies; its "Done" blocks hold the results and
-request counts). Instagram's data becomes the Matrix-shaped rooms the views always showed (`IGAdapter`, decision C2),
-so `Room`, `Timeline` and `Inbox` stay. As built: [specs.md](specs.md). Building, testing, installing, DEBUG switches
+request counts). Instagram's data becomes the Matrix-shaped rooms the views always showed (decision C2), in the engine
+since stage 1 of [docs/PLAN-android.md](docs/PLAN-android.md) (`core/chat`, so an Android app can share it), so
+`Room`, `Timeline` and `Inbox` stay. As built: [specs.md](specs.md). Building, testing, installing, DEBUG switches
 and signed releases: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the README is for users (plain words, no internals),
 and so is [CHANGELOG.md](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)): a user-visible
 change adds a line under Unreleased.
@@ -24,7 +25,8 @@ SIM=$(xcrun simctl list devices booted | grep -oE '[0-9A-F-]{36}' | head -1)
 t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
-t test -only-testing:FerryTests              # 292 unit tests, ~3 s
+t test -only-testing:FerryTests              # 281 unit tests, ~3 s
+(cd core && go test ./...)                    # core/chat on P0's captures; -update in ./chat rewrites the golden files
 t test -only-testing:FerryUITests            # UI tests on made-up data (live ones opt-in: docs/DEVELOPMENT.md)
 t build-for-testing                           # all 3 targets
 core/build.sh                                 # Go core -> build/IGCore.xcframework (needs Go 1.27.1 on PATH)
@@ -79,10 +81,15 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
 - Zero third-party dependencies; no protocol-for-swappability abstractions; pure logic is `nonisolated` and
   unit-tested with real fixtures (`FerryTests/Fixtures`). App target defaults to `MainActor`, test targets to
   `nonisolated`.
+- **Instagram's data becomes chats in `core/chat`** (pure Go, tested on the captures in `core/testdata`), which keeps
+  its own copy of each chat and is the only writer of what Instagram says (PLAN-android E3): `AppModel` applies its
+  updates (`IG.Update`, from `IGNextEvent` only, in order) and keeps only its own state (local echoes, the optimistic
+  Accept, archive, request "seen" markers, identities). Calls name chats by room ID. A change to the mapping changes
+  `FerryTests/Fixtures/engine_*.json` (`go test ./chat -update`), which `EngineTests` read: review that diff like code.
 - The thread is `Timeline.reduce(room)`, a pure fold over the raw window: never mutate `Room.events` to apply an edit,
-  reaction or redaction. `IGAdapter` emits Instagram's changes as events (`m.reaction`, `m.replace`, redactions) for it
+  reaction or redaction. `core/chat` emits Instagram's changes as events (`m.reaction`, `m.replace`, redactions) for it
   to fold; the reducer still absorbs the bridge's old echoes (TimelineTests, real M4 fixtures), harmless here.
-- Inbox order is the **last message's** timestamp (`Room.lastActivity`), not the newest event: `IGAdapter`'s state
+- Inbox order is the **last message's** timestamp (`Room.lastActivity`), not the newest event: the engine's state
   events are stamped when made, and edits never bump a chat.
 - **Colors live in `Tokens.swift`.** Small text: `.inkSecondary` (not `.secondary`, 3.4:1), and on an incoming-bubble
   card `.inkSecondaryOnBubble` (inkSecondary is 4.30 on #E9E9EB); status text `.statusOK/.statusWarn/.statusError`
@@ -96,13 +103,13 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   playback (`FERRY_DEBUG_PLAYER_FAILS`), the fixture capture (`FERRY_DEBUG_CAPTURE`) and a session Instagram ends for
   one launch (`FERRY_DEBUG_ENDED_SESSION`: a broken `sessionid`, never saved; Instagram wouldn't let the dummies' new
   web sessions be removed from "Where you're logged in").
-  **Fixture rooms (`!debug-…`) never reach Instagram:** they have no thread (`AppModel.threadID` reads it from the
-  `!ig-<account>-<thread>` room ID) and `AppModel.checkSend` refuses them. A new Instagram call for a room must go
-  through `threadID(of:)` and `checkSend`.
+  **Fixture rooms (`!debug-…`) never reach Instagram:** the engine refuses a room it didn't make (E4),
+  `AppModel.hasThread` skips them (and New Message drafts) and `AppModel.checkSend` refuses them. A new Instagram call
+  for a room takes its room ID and goes through `checkSend`.
 - **Groups (#24):** sender labels only where `BridgeInfo.roomType == .group`, never on our own (`@me`) messages:
   `Timeline.layout(_:isGroup:)` sets `Row.groupSender` (name on the first of a run, avatar on the last, a tombstone
   neither). Names are `.inkSecondary`, never an account colour. Who a user is: `Room.displayName` = member event name
-  (`IGAdapter` makes one per thread participant) → profile (`AppModel.profiles`, from the threads) → in a DM the room
+  (`core/chat` makes one per thread participant) → profile (`AppModel.profiles`, from the threads) → in a DM the room
   name; never a raw ID. Members (T3): the joined member events, You last; read-only (a tap shows `PersonCard`). "N
   members" is `Inbox.memberCount`. A group without a photo is `RoomAvatar`'s two faces (`Inbox.faces`), or its people
   glyph with fewer than two others; never its name's initial. Reactions show faces and "Seen by …" sits under the newest
@@ -121,32 +128,33 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   Identity in a toolbar sits on glass (the thread header's capsule), and the thread's top scroll edge is `.hard`.
 
 
-**Instagram behaviour the app relies on** (mautrix/meta v0.2609.0 `pkg/instameow`; shapes in `FerryTests/Fixtures/ig_*`,
-captured in P0)
+**Instagram behaviour the app relies on** (mautrix/meta v0.2609.0 `pkg/instameow`; shapes in `core/testdata/ig_*`,
+captured in P0; mapped in `core/chat`)
 
 - **IDs:** a thread is `ThreadInfo.id` (most calls, a delta's `thread_fbid`, our room ID `!ig-<account>-<id>`);
   unsend, "Seen" and typing take the long `thread_id`, which both of our accounts share for their DM, so anything keyed
-  by it is keyed by account too (`roomByLongID`; P2 showed typing in the wrong account's chat). `thread_key` is the
+  by it is keyed by account too (the engine's per-account `Chats`; P2 showed typing in the wrong account's chat). `thread_key` is the
   other person's ID in a DM and the upload target. People: `interop_messaging_user_fbid` (our account IDs too);
-  typing names the Instagram user `id` (`fbidByUserID`).
+  typing names the Instagram user `id` (mapped as threads load).
 - **Our own messages:** the local echo's transaction ID is the offline threading ID Instagram gets
-  (`IGAdapter.offlineThreadingID`), so the socket's echo replaces it. Instagram sends no "delivered": Sending → Sent →
+  (`IGNewOTID`), so the socket's echo replaces it. Instagram sends no "delivered": Sending → Sent →
   Seen (the other side's read watermark).
 - **Unread:** the newest message is incoming and past our read watermark, or the chat is marked unread; live deltas
   (a new message's `MARK_UNREAD`, `SlideUQPPMarkRead`, `SlideUQPPIGMarkThreadUnread`) and our own `IGMarkRead` keep
   it current. Our watermark is `Room.receipts[@me]` (from `slide_read_receipts`, `SlideUQPPMarkRead`'s
-  `read_timestamp_ms`, and `markRead`, which also clears the dot at once). A thread read weighs it too (`readUpTo`):
+  `read_timestamp_ms`, and `IGMarkRead`, which clears the dot at once, before Instagram is asked, and sends nothing if
+the engine already had it read that far). A thread read weighs it too (`readUpTo`):
   opening a chat sends "Seen" and re-reads it together, and a read answered before the "Seen" landed said unread, so
   the dot stayed. The "New messages" line goes after the watermark `ThreadView` took when the chat opened. An empty
   `replied_to_message_id` means no reply (P2: every bubble showed a loading quote).
 - **Folders:** requests are `system_folder` `PENDING`/`SPAM`; General is `folder` `GENERAL` (professional accounts, the
   viewer's `is_professional_account`), moved live by `SlideUQPPIGMoveThread` (its `ig_inbox_folder`). Only mailbox
-  pages carry `folder`: `IGThread` answers with it empty, so a re-read keeps the room's tab (`keepingFolder`). Never
+  pages carry `folder`: a thread read (`IGReadChat`) answers with it empty, so a re-read keeps the room's tab. Never
   take the tab from `SlideUQPPUpdateThreadFolder`: the first one for a DM a professional account starts says `GENERAL`
   while Instagram lists the thread `PRIMARY` (live 2026-10-17; Ferry's bridge patch reads it, which filed new DMs
   under General there). Deltas reach
-  Swift as Instagram's raw JSON: Go's `encoding/json` would drop the fields it doesn't know.
-- **New Message:** an existing DM opens (ours, else `IGFindDM` then `IGThread`); otherwise a draft (`!ig-<account>-new-
+  `core/chat` as Instagram's raw JSON: the library's types drop the fields they don't know.
+- **New Message:** an existing DM opens (ours, else `IGFindDM`, which reads Instagram's); otherwise a draft (`!ig-<account>-new-
   <fbid>`, outside `rooms`, so the inbox and search never show an empty chat) until the first message (`IGSendNew`,
   `RecipientIGIDs`) makes the thread; its NewMessage delta loads it and `movedRooms` leads the draft to it.
 - **Shares (XMA)** become the bridge's shapes, so Ferry's cards work unchanged: `external_url`, `formatted_body`
@@ -164,7 +172,7 @@ captured in P0)
   with a play button for one more; none of that by itself in a request (`autoplaysGIFs`) or under Reduce Motion.
   Links to GIFs that others send stay links. No GIF search: no outside service (the user's calls, 2026-10-17).
 - **Several photos sent at once** are one `IMAGES` message with every attachment (live 2026-10-18,
-  `ig_message_photos_tamo`); `IGAdapter.album` keeps the first as the content and all of them under `fi.ferry.album`
+  `ig_message_photos_tamo`); `core/chat`'s `album` keeps the first as the content and all of them under `fi.ferry.album`
   (`MediaInfo.album`), which `AlbumStack` shows as a pile that unfolds in place: one message, so one menu, reaction
   row, reply target and unsend. Ferry showed the first only. The share sheet hides "Save Images" without
   `NSPhotoLibraryAddUsageDescription` (build settings, with the microphone's), so Share All and the viewer's Share
