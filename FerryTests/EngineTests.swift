@@ -36,7 +36,6 @@ final class EngineTests: XCTestCase {
         XCTAssertEqual(tamoLogin.account, tamo)
         XCTAssertEqual(tamoLogin.viewer.username, "tamoveska")
         XCTAssertEqual(tamoLogin.viewer.isProfessionalAccount, false)
-        XCTAssertNil(tamoLogin.next)  // the dummies' whole mailbox is one page
         let account = IGAdapter.login(account: kivo, viewer: kivoLogin.viewer, state: "CONNECTED", since: .now)
         XCTAssertTrue(account.isProfessional)
         XCTAssertEqual(account.profile?.username, "kivostudio")
@@ -269,24 +268,28 @@ final class EngineTests: XCTestCase {
         XCTAssertEqual([expired["body"]?.string, expired[MessageKind.shareTextKey]?.string], ["Story unavailable", "Droopy"])
     }
 
-    /// N1: someone we've never messaged gets a draft chat until the first message; our existing DM is found by the
-    /// other person's FBID, without asking Instagram. (Search results as contacts: core/chat.)
+    /// N1: someone we've never messaged gets a draft chat (the engine's `Draft`) until the first message makes the
+    /// thread, which the draft then leads to (`RoomMoved`); our existing DM is found by the other person's FBID.
     func testDraftsAndExistingDMs() throws {
-        let contact = BridgeAPI.Contact(id: "17841400000000999", name: "Sample Person", avatarURL: "https://scontent.example.invalid/v/f099.jpg",
-                                        identifiers: ["instagram:sample.person"])
-        let draft = IGAdapter.draft(account: tamo, contact: contact, viewer: nil)
-        XCTAssertEqual(draft.room, IGAdapter.draftID(account: tamo, user: contact.id))
+        let drafts = try Fixture.engine([String: [IG.Update]].self, "drafts")
+        let draft = try XCTUnwrap(drafts["draft"]?.first)
+        XCTAssertEqual(draft.kind, "Draft")
         let room = room([draft])
         XCTAssertEqual(room.bridge?.receiver, tamo)
-        XCTAssertEqual(room.bridge?.channelID, contact.id)  // whom the first message goes to
+        XCTAssertEqual(room.bridge?.channelID, "17841400000000999")  // whom the first message goes to
         XCTAssertEqual(room.bridge?.isDM, true)
         XCTAssertEqual(room.name, "Sample Person")
         XCTAssertEqual(room.prevBatch, IGAdapter.startToken)
-        XCTAssertEqual(draft.profiles?[IGAdapter.user(contact.id)]?.handle, "sample.person")
+        XCTAssertEqual(room.memberName(me), "Tamo Veska")
+        XCTAssertEqual(draft.profiles?[IGAdapter.user("17841400000000999")]?.handle, "sample.person")
+        XCTAssertEqual(Timeline.reduce(room, me: me).count, 0)
 
+        let moved = try XCTUnwrap(drafts["moved"]?.last)
+        XCTAssertEqual(moved.kind, "RoomMoved")
+        XCTAssertEqual(moved.room, drafts["kivo_draft"]?.first?.room)
         let dm = self.room(try login("tamo").rooms)
+        XCTAssertEqual(moved.to, dm.id)
         XCTAssertEqual(Inbox.existingDM(with: kivo, account: tamo, in: [dm])?.id, dm.id)
-        XCTAssertNil(Inbox.existingDM(with: contact.id, account: tamo, in: [dm]))
     }
 
     /// Shares (Instagram's XMA, shaped like P0's raw captures, with fictional authors): the bridge's content shapes,

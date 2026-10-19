@@ -193,13 +193,15 @@ type MessagesPage struct {
 }
 
 // Envelope is one chat's change: `Room` (an update to apply, as `Room.apply` takes it, with the people and reply
-// targets that came with it) or `RoomRemoved`.
+// targets that came with it), `RoomRemoved`, `Draft` (New Message's chat before its thread exists, rules.go) or
+// `RoomMoved` (a draft's thread arrived: `To`).
 type Envelope struct {
 	Kind     string             `json:"kind"`
 	Room     string             `json:"room"`
 	Update   *JoinedRoom        `json:"update,omitempty"`
 	Profiles map[string]Profile `json:"profiles,omitempty"`
 	Related  []Event            `json:"related,omitempty"`
+	To       string             `json:"to,omitempty"` // `RoomMoved`: the draft's chat now
 }
 
 // Profile is a person's name, picture and @handle (`UserProfile`): no `/profile` to ask any more.

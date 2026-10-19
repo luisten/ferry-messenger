@@ -3,12 +3,11 @@ import Foundation
 /// What `core/` hands the app (docs/PLAN-android.md stage 1): the account, and chats as Matrix-shaped room updates the
 /// engine made from Instagram's data (core/chat).
 nonisolated enum IG {
-    /// `IGLogin`: the account, its viewer, and where the mailbox's next page starts (its first page's chats arrive as
-    /// updates, up to `seq`).
+    /// `IGLogin`, `IGResume`: the account and its viewer (its first mailbox page's chats arrive as updates, up to `seq`;
+    /// the engine loads the other folders by itself).
     struct Login: Decodable, Sendable {
         var account: String
         var viewer: Viewer
-        var next: String?
         var seq: Int?
     }
 
@@ -22,8 +21,9 @@ nonisolated enum IG {
         var isProfessionalAccount: Bool?
     }
 
-    /// What `IGNextEvent` hands over, in order: an account's event (`Connected`, `Disconnected`, `AuthError`) or a
-    /// chat's change (`Room`: an update with the people and reply targets that came with it; `RoomRemoved`).
+    /// What `IGNextEvent` hands over, in order: an account's event (`Connected`, `Disconnected`, `AuthError`, and a
+    /// retried connection's `Login` or `LoginFailed`) or a chat's change (`Room`: an update with the people and reply
+    /// targets that came with it; `RoomRemoved`; New Message's `Draft`; `RoomMoved` from a draft `to` its chat).
     struct Update: Decodable, Sendable {
         var account: String?
         var kind: String
@@ -31,18 +31,20 @@ nonisolated enum IG {
         var seq: Int?
         var error: String?
         var code: String?
+        var reason: String?
         var room: String?
         var update: JoinedRoom?
         var profiles: [String: UserProfile]?
         var related: [Event]?
+        var to: String?
+        /// `Login`: Instagram's viewer, in its own snake_case (`IG.decode` reads it).
+        var viewer: JSON?
     }
 
-    /// The small answers: a mailbox page's `next`, a chat's `room` (found or read), a sent message's `id`, and the
-    /// `seq` of the call's last update.
+    /// The small answers: a chat's `room` (opened or read), a sent message's `id`, and the `seq` of the call's last
+    /// update.
     struct Result: Decodable, Sendable {
-        var next: String?
         var room: String?
-        var found: Bool?
         var id: String?
         var seq: Int?
     }
@@ -67,7 +69,7 @@ nonisolated extension UserProfile: Decodable {
 }
 
 /// What's left on this side of Instagram's data (the rest is core/chat): the engine's names the views use, the account
-/// row, and New Message's draft (stage 2 takes it).
+/// row, and applying an update.
 nonisolated enum IGAdapter {
     /// The one user the views treat as "us" in every account's chats, as Ferry's double puppet was (core/chat `Me`).
     static let me = "@me"
@@ -93,34 +95,4 @@ nonisolated enum IGAdapter {
         if let joined = update.update { room.apply(joined) }
         for event in update.related ?? [] { room.addRelated(event) }
     }
-
-    /// The local chat with someone we've never messaged: Instagram has no thread until the first message. Its room ID
-    /// says whom it's for; once the real thread arrives, `AppModel.room(_:)` leads there.
-    static func draftID(account: String, user: String) -> String { "!ig-\(account)-new-\(user)" }
-
-    static func draft(account: String, contact: BridgeAPI.Contact, viewer: IG.Viewer?) -> IG.Update {
-        let name = contact.name ?? contact.handle ?? "New chat"
-        let bridge: JSON = ["protocol": ["id": .string(BridgeInfo.protocolID), "displayname": "Instagram"], "com.beeper.room_type": "dm",
-                            "channel": ["id": .string(contact.id), "displayname": .string(name), "fi.mau.receiver": .string(account)]]
-        var state = [stateEvent("m.bridge", key: "instagram", bridge), stateEvent("m.room.name", ["name": .string(name)]),
-                     member(me, name: viewer?.fullName ?? viewer?.username, avatar: viewer?.profilePicUrl),
-                     member(user(contact.id), name: name, avatar: contact.avatarURL)]
-        if let avatar = nonEmpty(contact.avatarURL) { state.append(stateEvent("m.room.avatar", ["url": .string(avatar)])) }
-        return IG.Update(kind: "Room", room: draftID(account: account, user: contact.id),
-                         update: JoinedRoom(state: EventList(events: state), timeline: .init(events: [], limited: true, prevBatch: startToken)),
-                         profiles: [user(contact.id): UserProfile(name: contact.name, avatarURL: contact.avatarURL, handle: contact.handle)])
-    }
-
-    private static func stateEvent(_ type: String, key: String = "", _ content: JSON) -> Event {
-        Event(type: type, content: content, eventID: "$ig-\(type)-\(key)", sender: me, stateKey: key)
-    }
-
-    private static func member(_ id: String, name: String?, avatar: String?) -> Event {
-        var content: [String: JSON] = ["membership": "join"]
-        if let name = nonEmpty(name) { content["displayname"] = .string(name) }
-        if let avatar = nonEmpty(avatar) { content["avatar_url"] = .string(avatar) }
-        return Event(type: "m.room.member", content: .object(content), eventID: "$ig-member-\(id)", sender: id, stateKey: id)
-    }
-
-    private static func nonEmpty(_ s: String?) -> String? { s.flatMap { $0.isEmpty ? nil : $0 } }
 }

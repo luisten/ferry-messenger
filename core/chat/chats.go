@@ -25,11 +25,18 @@ type Chats struct {
 	fbidByUserID map[string]string
 	// Each person's latest typing notice, by "<room>/<user>": a timeout from an older one does nothing.
 	typingGen map[string]int
+
+	// The rules' state (rules.go), by room: when each was last read in full, when we last said "typing".
+	readAt, typingAt map[string]int64
+	// New Message's drafts: room ID → whom it's for.
+	drafts map[string]string
+	// DEBUG: a real chat shown as a request (`FERRY_DEBUG_AS_REQUEST`), so every request rule applies to it.
+	ForcedRequest string
 }
 
 func New(account string) *Chats {
 	return &Chats{Account: account, rooms: map[string]*room{}, byLong: map[string]string{}, fbidByUserID: map[string]string{},
-		typingGen: map[string]int{}}
+		typingGen: map[string]int{}, readAt: map[string]int64{}, typingAt: map[string]int64{}, drafts: map[string]string{}}
 }
 
 // The state parts of `Room.apply` and `Room.prepend` (Room.swift), for the fields this engine reads.
@@ -131,22 +138,7 @@ func (r *room) lastBase(ms int64) *Event {
 }
 
 // lastMessage is the newest message that is neither an edit nor unsent.
-func (r *room) lastMessage() *Event {
-	unsent := map[string]bool{}
-	for _, e := range r.events {
-		if e.Type == "m.room.redaction" {
-			if id, ok := e.Content["redacts"].(string); ok {
-				unsent[id] = true
-			}
-		}
-	}
-	for i := len(r.events) - 1; i >= 0; i-- {
-		if e := &r.events[i]; e.isBase() && (e.Unsigned == nil || e.Unsigned.RedactedBecause == nil) && !unsent[e.EventID] {
-			return e
-		}
-	}
-	return nil
-}
+func (r *room) lastMessage() *Event { return r.lastMessageWhere(func(*Event) bool { return true }) }
 
 // currentContent is a message's content as it shows: its latest edit's `m.new_content` (same sender only).
 func (r *room) currentContent(base *Event) map[string]any {
@@ -289,24 +281,6 @@ func (c *Chats) Prepend(id, cursor string, t *Thread) MessagesPage {
 		r.prepend(p, cursor)
 	}
 	return p
-}
-
-// MarkRead is our "Seen" up to `message`: the chat reads at once, with our m.read there. `long` and `ms` are what
-// Instagram takes; `long` "" when the engine already had it read that far (a second call before the app saw the
-// first update would send another "Seen").
-func (c *Chats) MarkRead(id, message string) (out []Envelope, long string, ms int64, err error) {
-	r, err := c.room(id)
-	if err != nil {
-		return nil, "", 0, err
-	}
-	e := r.event(message)
-	if e == nil || r.long == "" {
-		return nil, "", 0, errors.New("no such message in this chat")
-	}
-	if r.unread == 0 && r.readUpTo >= e.OriginServerTS {
-		return nil, "", 0, nil
-	}
-	return []Envelope{c.put(id, r, readUpdate(message, e.OriginServerTS))}, r.long, e.OriginServerTS, nil
 }
 
 // Unread marks the chat unread again ("Seen" failed: the next open tries again).

@@ -628,11 +628,11 @@ func TestAReadThatCrossedOurSeenKeepsTheChatRead(t *testing.T) {
 	if c.rooms[stale.Room].readUpTo != 1_792_115_019_051 {
 		t.Errorf("our m.read at %d", c.rooms[stale.Room].readUpTo)
 	}
-	out, long, ms, err := c.MarkRead(stale.Room, back.ID)
-	if err != nil || long != th.ThreadID || ms != back.ms() || updates(out)[0].UnreadNotifications.NotificationCount != 0 {
-		t.Fatalf("mark read: %v %q %d %v", out, long, ms, err)
+	out, long, message, ms, err := c.MarkRead(stale.Room) // "Seen" on their newest: tamoveska's "back"
+	if err != nil || long != th.ThreadID || message != back.ID || ms != back.ms() || updates(out)[0].UnreadNotifications.NotificationCount != 0 {
+		t.Fatalf("mark read: %v %q %q %d %v", out, long, message, ms, err)
 	}
-	if _, long, _, _ := c.MarkRead(stale.Room, back.ID); long != "" {
+	if _, long, _, _, _ := c.MarkRead(stale.Room); long != "" {
 		t.Error("a second Seen for the same message")
 	}
 	if c.Thread(th).Update.UnreadNotifications.NotificationCount != 0 {
@@ -642,7 +642,7 @@ func TestAReadThatCrossedOurSeenKeepsTheChatRead(t *testing.T) {
 	if c.Thread(th).Update.UnreadNotifications.NotificationCount != 1 {
 		t.Error("marked unread lost")
 	}
-	if _, _, _, err := c.MarkRead("!debug-fixture", back.ID); err != ErrUnknownRoom {
+	if _, _, _, _, err := c.MarkRead("!debug-fixture"); err != ErrUnknownRoom {
 		t.Error("a room the engine didn't make")
 	}
 }

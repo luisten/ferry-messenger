@@ -7,7 +7,8 @@ import os
 
 /// App root state: the Instagram accounts (each one's session in the Keychain, a `core/` client per account), their
 /// identities, and the chats as Matrix-shaped rooms, kept current by the engine's updates while the app is open
-/// (core/chat makes them from Instagram's data, docs/PLAN-android.md stage 1).
+/// (core/chat makes them from Instagram's data and keeps Instagram's rules, docs/PLAN-android.md stages 1–2). What's
+/// left here is the app's own: accounts and the Keychain, local echoes, the optimistic Accept, archive, media, toasts.
 @Observable
 final class AppModel {
     /// Every stored account, in the bridge's whoami shape (`IGAdapter.login`) so `Health` and the views stay as they were.
@@ -65,16 +66,14 @@ final class AppModel {
     /// Accounts whose first load this launch has finished, either way.
     @ObservationIgnored private var loaded: Set<String> = []
     @ObservationIgnored private var eventTask: Task<Void, Never>?
-    @ObservationIgnored private var retries: [String: Task<Void, Never>] = [:]
+    /// Accounts a re-login turned out to be (refused): the engine's last updates for them are dropped.
+    @ObservationIgnored private var strangers: Set<String> = []
     /// The engine's updates applied so far (`IG.Update.seq`), and callers waiting for one (`applied(through:)`).
     @ObservationIgnored private var appliedSeq = 0
     @ObservationIgnored private var seqWaiters: [(seq: Int, done: CheckedContinuation<Void, Never>)] = []
-    /// When each room was last read in full (opening a chat re-reads it, at most every 30 s).
-    @ObservationIgnored private var refreshed: [String: Date] = [:]
-    /// When we last told Instagram we're typing, per room (at most once per 20 s).
-    @ObservationIgnored private var typingSince: [String: Date] = [:]
-    /// New Message's chats with people we've never messaged (`IGAdapter.draft`): not in `rooms`, so the inbox and search
-    /// never show an empty chat. When the first message makes the thread, `movedRooms` leads from the draft to it.
+    /// New Message's chats with people we've never messaged (the engine's `Draft` updates): not in `rooms`, so the inbox
+    /// and search never show an empty chat. When the first message makes the thread, `movedRooms` leads from the draft
+    /// to it (`RoomMoved`).
     private var drafts: [String: Room] = [:]
     @ObservationIgnored private var movedRooms: [String: String] = [:]
     /// Media on its way, by transaction ID, kept until Instagram's echo names its link (the file is filed there, so our
@@ -97,6 +96,7 @@ final class AppModel {
             initialSyncDone = true
         }
         if let dir = ProcessInfo.processInfo.environment["FERRY_DEBUG_CAPTURE"], !dir.isEmpty { IGCore.capture(to: dir) }
+        IGCore.setDebug(blockSends: DebugFixtures.blocksSends, requestRoom: DebugFixtures.forcedRequestRoom)
         #endif
         updateAccounts()
     }
@@ -144,15 +144,16 @@ final class AppModel {
         await applied(through: login.seq ?? 0)
         if let reloginID, login.account != reloginID {
             if sessions[login.account] == nil {  // a stranger; one of ours just got a fresh session
+                strangers.insert(login.account)
                 await IGCore.stop(login.account)
                 rooms = rooms.filter { $0.value.bridge?.receiver != login.account }
             }
             let wanted = accounts.first { $0.id == reloginID }?.profile?.username.map { "@\($0)" } ?? "the account you're fixing"
             throw IGCore.Failure(message: "That was @\(login.viewer.username ?? "another account"). Log in as \(wanted) to fix it.")
         }
+        strangers.remove(login.account)
         running.insert(login.account)
         loaded.insert(login.account)
-        retries.removeValue(forKey: login.account)?.cancel()
         sessions[login.account] = Keychain.Account(cookies: cookies, viewer: login.viewer)
         Keychain.save(sessions[login.account]!, id: login.account)
         apply(login)
@@ -169,7 +170,6 @@ final class AppModel {
         statuses[id] = nil
         running.remove(id)
         loaded.remove(id)
-        retries.removeValue(forKey: id)?.cancel()
         rooms = rooms.filter { $0.value.bridge?.receiver != id }
         identities[id] = nil
         AccountIdentity.save(identities)
@@ -184,11 +184,10 @@ final class AppModel {
         #if DEBUG
         if DebugFixtures.endedSessions.contains(id) { cookies["sessionid"] = "0" }  // Instagram's answer to an ended session
         #endif
-        retries.removeValue(forKey: id)?.cancel()
         setStatus(id, "CONNECTING")
         Task {
             do {
-                let login = try await IGCore.login(cookies: cookies)
+                let login = try await IGCore.resume(id, cookies: cookies)
                 await applied(through: login.seq ?? 0)  // its first page's chats, so the inbox never reads as empty
                 apply(login)
                 await saveSession(id)
@@ -201,8 +200,7 @@ final class AppModel {
         }
     }
 
-    /// A login's result: the account (its first mailbox page's chats come as updates), then the rest of its chats in
-    /// the background.
+    /// A login's result: the account (its first mailbox page's chats come as updates; the engine loads the rest).
     private func apply(_ login: IG.Login) {
         let id = login.account
         sessions[id]?.viewer = login.viewer
@@ -210,21 +208,6 @@ final class AppModel {
         syncFailures = 0
         updateAccounts()
         updateInitialSync()
-        Task { await loadFolders(id, after: login.next) }
-    }
-
-    /// The rest of the inbox, then the first pages of Requests and (professional accounts) General, one request a
-    /// page, as the bridge did (`chatsync.go:91`), so search and counts see every chat.
-    /// ponytail: at most 20 pages a folder per launch; page on scroll if real inboxes outgrow that.
-    private func loadFolders(_ id: String, after cursor: String?) async {
-        let professional = sessions[id]?.viewer?.isProfessionalAccount == true
-        for (folder, start) in [("INBOX", cursor)] + [("PENDING", ""), ("GENERAL", "")].filter({ $0.0 != "GENERAL" || professional }) {
-            var next = start
-            for _ in 0..<20 {
-                guard let cursor = next, running.contains(id), let page = try? await IGCore.inboxPage(id, folder: folder, cursor: cursor) else { break }
-                next = page
-            }
-        }
     }
 
     /// One of the engine's updates for a chat. A room starts with its first fresh window (an update for a room this
@@ -245,31 +228,30 @@ final class AppModel {
         if let ms = archived[id], room.tags[Inbox.archivedTag] == nil {
             room.setTags([Inbox.archivedTag: [Inbox.archivedAtKey: .number(Double(ms))]])
         }
-        // The DM a draft was waiting for: the draft gives way (its first message is in here now).
-        if room.bridge?.isDM == true, let other = room.bridge?.channelID,
-           drafts.removeValue(forKey: IGAdapter.draftID(account: account, user: other)) != nil {
-            movedRooms[IGAdapter.draftID(account: account, user: other)] = id
-        }
         if let people = update.profiles { profiles.merge(people) { _, new in new } }
         // Our media's echo: its file goes into the cache under Instagram's link.
         for txnID in update.update?.timeline?.events?.compactMap(\.unsigned?.transactionID) ?? [] where sending[txnID] != nil {
             fileSentMedia(txnID, in: room)
         }
-        #if DEBUG
-        if update.update?.state != nil { DebugFixtures.markForcedRequest(in: rooms) }
-        #endif
     }
 
+    /// New Message's chat with someone we've never messaged, until its first message makes the thread.
+    private func draft(_ update: IG.Update) {
+        guard let id = update.room, drafts[id] == nil else { return }
+        let room = Room(id: id)
+        room.ownUserID = me
+        IGAdapter.apply(update, to: room)
+        if let people = update.profiles { profiles.merge(people) { _, new in new } }
+        drafts[id] = room
+    }
+
+    /// A connection that failed. After a passing failure the engine tries again every 30 s by itself (`Login`,
+    /// `LoginFailed`).
     private func failed(_ id: String, _ error: any Error) {
         let failure = error as? IGCore.Failure
         let state = failure?.code ?? "UNKNOWN_ERROR"
         setStatus(id, state, message: InstagramLogin.message(reason: failure?.reason) ?? error.localizedDescription)
-        guard state == "TRANSIENT_DISCONNECT" else { return }
-        if !statuses.values.contains(where: { $0.state == "CONNECTED" }) { syncFailures += 1 }
-        retries[id] = Task {  // ponytail: a fixed 30 s while open; backoff if it ever hammers
-            try? await Task.sleep(for: .seconds(30))
-            if !Task.isCancelled { connect(id) }
-        }
+        if state == "TRANSIENT_DISCONNECT", !statuses.values.contains(where: { $0.state == "CONNECTED" }) { syncFailures += 1 }
     }
 
     private func saveSession(_ id: String) async {
@@ -347,7 +329,7 @@ final class AppModel {
             }
         }
         // A new login's chats can come before its account is stored; a removed account's last ones hide (`loginIDs`).
-        guard let id = update.account else { return }
+        guard let id = update.account, !strangers.contains(id) else { return }
         switch update.kind {
         case "Connected":
             setStatus(id, "CONNECTED")
@@ -356,10 +338,22 @@ final class AppModel {
             setStatus(id, "TRANSIENT_DISCONNECT", message: update.error)
         case "AuthError":
             setStatus(id, update.code ?? "BAD_CREDENTIALS", message: update.error)
+        case "Login":  // a retried connection got through
+            guard sessions[id] != nil, let viewer = try? IG.decode(IG.Viewer.self, JSONEncoder().encode(update.viewer)) else { return }
+            running.insert(id)
+            loaded.insert(id)
+            apply(IG.Login(account: id, viewer: viewer, seq: update.seq))
+            Task { await saveSession(id) }
+        case "LoginFailed":
+            failed(id, IGCore.Failure(message: update.error ?? "Can't reach Instagram.", code: update.code, reason: update.reason))
         case "Room":
             apply(update, account: id)
         case "RoomRemoved":
             if let room = update.room { rooms[room] = nil }
+        case "Draft":
+            draft(update)
+        case "RoomMoved":  // the draft's first message made its thread
+            if let from = update.room, let to = update.to, drafts.removeValue(forKey: from) != nil { movedRooms[from] = to }
         default:
             break
         }
@@ -374,25 +368,18 @@ final class AppModel {
 
     // MARK: Thread (read side)
 
-    /// A chat opened: read it in full (the mailbox's copy of a message has no reactions or edit history, P1), at most
-    /// every 30 s. A read; it sends nothing.
+    /// A chat opened: the engine reads it in full (the mailbox's copy of a message has no reactions or edit history,
+    /// P1), at most every 30 s. A read; it sends nothing.
     func openThread(_ room: Room) {
-        guard hasThread(room), Date.now.timeIntervalSince(refreshed[room.id] ?? .distantPast) > 30 else { return }
-        refreshed[room.id] = .now
-        Task { _ = try? await IGCore.readChat(room.id) }
+        guard hasThread(room) else { return }
+        Task { try? await IGCore.openChat(room.id) }
     }
 
-    /// "Seen" on the newest incoming message: Instagram's `MarkRead` + validation (C7). Never in a request or a room we
-    /// don't know (`Inbox.allowsReceipts`): the other person would see that we'd read it. The engine reads the chat at
-    /// once, with our `m.read` on that message (opening a chat also re-reads it, and its re-read weighs that `m.read`),
-    /// and makes it unread again if Instagram refuses, so the next open tries again.
+    /// The chat opened, or a new message in it while it shows: "Seen" on their newest message, which the engine sends
+    /// only when the chat is unread and isn't a request (C7), reading it here at once.
     func markRead(_ room: Room) {
-        // Only when it's unread: Instagram already has our read otherwise (a reopen sent a needless "Seen" in P4).
-        guard Inbox.allowsReceipts(room), room.isUnread, let target = Timeline.receiptTarget(room, me: me) else { return }
-        #if DEBUG
-        if DebugFixtures.isFixtureRoom(room.id) { return }
-        #endif
-        Task { try? await IGCore.markRead(room.id, message: target) }
+        guard hasThread(room) else { return }
+        Task { try? await IGCore.markRead(room.id) }
     }
 
     /// One page of older history, prepended. Not tied to the caller's task: the lazy list re-creates the top spinner
@@ -424,9 +411,10 @@ final class AppModel {
     // MARK: Thread (write side, PLAN-core P3). Instagram's echo through the socket confirms each one.
 
     /// A text, with a local echo at once. In a request it accepts first ("Reply instead"), as the bridge did.
+    /// In a request the engine accepts first ("Reply instead"), as the bridge did; the chat moves to the main list here
+    /// at once. To a New Message draft it's the first message, which makes the thread.
     func send(_ text: String, replyTo: String?, in room: Room) {
-        let accepting = Inbox.isRequest(room)
-        if accepting {
+        if Inbox.isRequest(room) {
             room.setRequestAction(.init(kind: .accept))
             toast = "Accepted. This chat is now in \(accountName(of: room))."
         }
@@ -434,28 +422,11 @@ final class AppModel {
         if let replyTo { content["m.relates_to"] = ["m.in_reply_to": ["event_id": .string(replyTo)]] }
         let pending = PendingMessage(txnID: nextOTID(), content: .object(content), ts: Self.nowMS, state: .sending)
         room.addPending(pending)
-        setTyping(false, in: room)
-        Task {
-            if accepting {
-                do { try await acceptRequest(room) } catch { return room.updatePending(pending.txnID, .failed(error.localizedDescription)) }
-            }
-            await deliver(pending, in: room)
-        }
+        Task { await deliver(pending, in: room) }
     }
 
     /// The local echo's transaction ID is the offline threading ID Instagram gets, so its echo clears the local one.
     private func deliver(_ pending: PendingMessage, in room: Room) async {
-        guard let account = room.bridge?.receiver else { return }
-        if drafts[room.id] != nil, let recipient = room.bridge?.channelID {  // the first message: Instagram makes the thread
-            do {
-                try checkSend(room)
-                try await IGCore.sendNew(account, recipient: recipient, text: Timeline.body(of: pending.content), otid: pending.txnID)
-                room.updatePending(pending.txnID, .sent(pending.txnID))
-            } catch {
-                room.updatePending(pending.txnID, .failed(error.localizedDescription))
-            }
-            return
-        }
         do {
             try checkSend(room)
             let id = try await IGCore.send(room.id, text: Timeline.body(of: pending.content), replyTo: Timeline.replyTarget(pending.content),
@@ -499,7 +470,6 @@ final class AppModel {
         sending[txnID] = item
         room.addPending(PendingMessage(txnID: txnID, content: item.content(url: local, thumbnailURL: local, replyTo: replyTo),
                                        ts: Self.nowMS, state: .sending))
-        setTyping(false, in: room)
         startUpload(txnID, in: room, replyTo: replyTo)
     }
 
@@ -568,39 +538,34 @@ final class AppModel {
 
     /// A download failed: Instagram's links expire (33 h to 30 days, P0), so the thread is read again for fresh ones.
     func refreshMedia(in room: Room) {
-        refreshed[room.id] = nil
-        openThread(room)
+        guard hasThread(room) else { return }
+        Task { try? await IGCore.readChat(room.id) }
     }
 
-    /// Instagram keeps one reaction per person: the same emoji again removes ours, another one replaces it.
+    /// Instagram keeps one reaction per person: the same emoji again removes ours, another one replaces it. Never in a
+    /// request (the engine refuses).
     func react(_ key: String, to message: Message, in room: Room) {
-        guard Inbox.allowsReceipts(room), let target = message.eventID else { return }
+        guard let target = message.eventID else { return }
         let remove = message.reactions.contains { $0.key == key && $0.senders.contains(me) }
         perform(room) { try await IGCore.react(room.id, message: target, emoji: key, remove: remove) }
     }
 
+    /// Our own text, within 15 minutes and 5 edits (the engine refuses otherwise; `Timeline.canEdit` hides the menu item).
     func edit(_ message: Message, to text: String, in room: Room) {
-        guard Inbox.allowsReceipts(room), let target = message.eventID, Timeline.canEdit(message) else { return }
-        let otid = nextOTID()
-        perform(room) { try await IGCore.edit(room.id, message: target, text: text, otid: otid) }
+        guard let target = message.eventID else { return }
+        perform(room) { try await IGCore.edit(room.id, message: target, text: text) }
     }
 
-    /// Unsend for everyone (Instagram has no "delete for me").
+    /// Unsend for everyone (Instagram has no "delete for me"): our own messages.
     func unsend(_ message: Message, in room: Room) {
-        guard Inbox.allowsReceipts(room), message.isOwn, let target = message.eventID else { return }
+        guard let target = message.eventID else { return }
         perform(room) { try await IGCore.unsend(room.id, message: target) }
     }
 
-    /// Typing reaches Instagram, so it's throttled (one "typing" per 20 s; Instagram holds it for 22) and, like "Seen",
-    /// never sent in requests.
+    /// The composer's typing state, as it changes: the engine tells Instagram at most once per 20 s (Instagram holds it
+    /// for 22) and, like "Seen", never in a request.
     func setTyping(_ typing: Bool, in room: Room) {
-        guard Inbox.allowsReceipts(room), hasThread(room), (try? checkSend(room)) != nil else { return }
-        if typing {
-            if let since = typingSince[room.id], Date.now.timeIntervalSince(since) < 20 { return }
-            typingSince[room.id] = .now
-        } else if typingSince.removeValue(forKey: room.id) == nil {
-            return
-        }
+        guard hasThread(room), (try? checkSend(room)) != nil else { return }
         Task { try? await IGCore.typing(room.id, on: typing) }
     }
 
@@ -624,13 +589,11 @@ final class AppModel {
         return drafts[room.id] == nil
     }
 
-    /// DEBUG stand-ins never reach Instagram: fixture rooms, the room forced to look like a request, and every send
-    /// under `FERRY_DEBUG_BLOCK_SENDS`.
+    /// DEBUG stand-ins never reach Instagram: fixture rooms here; every send under `FERRY_DEBUG_BLOCK_SENDS` and the
+    /// chat shown as a request in the engine (`IGCore.setDebug`).
     private func checkSend(_ room: Room) throws {
         #if DEBUG
-        if DebugFixtures.isFixtureRoom(room.id) || DebugFixtures.blocksSends || room.id == DebugFixtures.forcedRequestRoom {
-            throw DebugFixtures.Blocked()
-        }
+        if DebugFixtures.isFixtureRoom(room.id) { throw DebugFixtures.Blocked() }
         #endif
     }
 
@@ -646,28 +609,17 @@ final class AppModel {
     }
 
     /// The DM with `contact` on `loginID`: ours, else the one Instagram has (read once), else a draft until the first
-    /// message makes it.
+    /// message makes it (the engine decides).
     func openDM(with contact: BridgeAPI.Contact, from loginID: String) async throws -> String {
-        if let room = Inbox.existingDM(with: contact.id, account: loginID, in: rooms.values) { return room.id }
-        let draftID = IGAdapter.draftID(account: loginID, user: contact.id)
-        if drafts[draftID] != nil { return draftID }
-        if let found = try await IGCore.findDM(loginID, user: contact.id) {
-            await applied(through: found.seq)
-            return found.room
-        }
-        let draft = IGAdapter.draft(account: loginID, contact: contact, viewer: sessions[loginID]?.viewer)
-        let room = Room(id: draftID)
-        room.ownUserID = me
-        IGAdapter.apply(draft, to: room)
-        profiles.merge(draft.profiles ?? [:]) { _, new in new }
-        drafts[draftID] = room
-        return draftID
+        let found = try await IGCore.openDM(loginID, contact: contact)
+        await applied(through: found.seq)
+        return found.room
     }
 
     // MARK: Requests (PLAN §2.8, DESIGN I2/T2)
 
     /// The chat moves to the main list at once; Instagram accepts, then a re-read brings the thread's new folder (and
-    /// with it "Seen" and typing, `Inbox.allowsReceipts`). A failure puts it back.
+    /// with it "Seen" and typing). A failure puts it back.
     func accept(_ room: Room) {
         guard Inbox.isRequest(room) else { return }
         room.setRequestAction(.init(kind: .accept))
@@ -683,11 +635,11 @@ final class AppModel {
         }
     }
 
+    /// Instagram accepts, then the engine reads the chat again (its new folder lets "Seen" and typing through).
     private func acceptRequest(_ room: Room) async throws {
         guard hasThread(room) else { return }
         try checkSend(room)
-        try await IGCore.accept(room.id, otid: nextOTID())
-        _ = try? await IGCore.readChat(room.id)
+        try await IGCore.accept(room.id)
     }
 
     /// Deletes the request on Instagram for this account; the chat hides at once and goes when Instagram confirms.

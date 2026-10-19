@@ -162,7 +162,7 @@ struct Chat {
             _ = await run("A react 😂", [ta, id, "😂"]) { IGReact($0[0], $0[1], $0[2], 0) }; await pause()
         }
         log("P0 B edits its reply, unsends the first text")
-        _ = await run("B edit", [tb, reply, "P0 capture: a reply, edited", otid()]) { IGEdit($0[0], $0[1], $0[2], $0[3]) }
+        _ = await run("B edit", [tb, reply, "P0 capture: a reply, edited"]) { IGEdit($0[0], $0[1], $0[2]) }
         await pause()
         _ = await run("B unsend", [tb, first]) { IGUnsend($0[0], $0[1]) }
         await pause()
@@ -170,21 +170,18 @@ struct Chat {
         _ = await run("B typing", [tb]) { IGTyping($0[0], 1) }; await pause(3)
         _ = await run("B typing off", [tb]) { IGTyping($0[0], 0) }; await pause()
 
-        if let id = await newestIncoming(ta) {
-            log("P0 A marks B's newest read (one Seen)")
-            _ = await run("A mark read", [ta, id]) { IGMarkRead($0[0], $0[1]) }
+        if await newestIncoming(ta) != nil {
+            log("P0 A marks B's newest read (one Seen, when unread)")
+            _ = await run("A mark read", [ta]) { IGMarkRead($0[0]) }
             await pause()
         }
         log("P0 A sends one back")
         _ = await run("A send", [ta, "P0 capture: back", "", otid()]) { IGSend($0[0], $0[1], $0[2], $0[3]) }
         await pause()
 
-        log("P0 history and folders")
+        log("P0 history")  // the folders' pages load after each login by themselves
         await read(ta)
         _ = await run("A older", [ta]) { IGOlder($0[0]) }
-        for (x, folders) in [(a, ["INBOX", "PENDING"]), (b, ["INBOX", "PENDING", "GENERAL", "PRIMARY"])] {
-            for f in folders { _ = await run("Inbox \(f) @\(x.username)", [x.id, f, ""]) { IGInboxPage($0[0], $0[1], $0[2]) } }
-        }
         await read(ta); await read(tb)
         refreshCounts()
         log("P0 done. Counts: \(counts)")
@@ -220,12 +217,6 @@ struct ContentView: View {
                                     Text(verbatim: "general \(chat.channel["fi.mau.instagram.inbox_folder"] != nil) · request \(chat.channel["com.beeper.message_request"] != nil)")
                                         .font(.caption)
                                 }
-                            }
-                        }
-                        HStack {
-                            ForEach(["INBOX", "PENDING", "GENERAL", "PRIMARY"], id: \.self) { f in
-                                Button(f) { Task { _ = await capture.run("Inbox \(f)", [a.id, f, ""]) { IGInboxPage($0[0], $0[1], $0[2]) } } }
-                                    .buttonStyle(.borderless).font(.caption)
                             }
                         }
                     }
@@ -275,13 +266,13 @@ struct ThreadScreen: View {
                     Task { _ = await capture.run("Unreact", [room, id(lastIncoming), "❤️"]) { IGReact($0[0], $0[1], $0[2], 1) } }
                 }.disabled(lastIncoming == nil)
                 Button("Edit my newest to the text above") {
-                    Task { _ = await capture.run("Edit", [room, id(lastOwn), text, otid()]) { IGEdit($0[0], $0[1], $0[2], $0[3]) } }
+                    Task { _ = await capture.run("Edit", [room, id(lastOwn), text]) { IGEdit($0[0], $0[1], $0[2]) } }
                 }.disabled(lastOwn == nil || text.isEmpty)
                 Button("Unsend my newest") {
                     Task { _ = await capture.run("Unsend", [room, id(lastOwn)]) { IGUnsend($0[0], $0[1]) } }
                 }.disabled(lastOwn == nil)
-                Button("Mark read (sends Seen)") {
-                    Task { _ = await capture.run("Mark read", [room, id(lastIncoming)]) { IGMarkRead($0[0], $0[1]) } }
+                Button("Mark read (sends Seen when unread)") {
+                    Task { _ = await capture.run("Mark read", [room]) { IGMarkRead($0[0]) } }
                 }.disabled(lastIncoming == nil)
                 Button("Typing on") { Task { _ = await capture.run("Typing", [room]) { IGTyping($0[0], 1) } } }
                 Button("Typing off") { Task { _ = await capture.run("Typing off", [room]) { IGTyping($0[0], 0) } } }

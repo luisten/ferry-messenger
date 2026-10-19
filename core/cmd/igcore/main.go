@@ -5,6 +5,10 @@
 // `seq` of its last update, so the app can wait until it has applied it. The state dump (web tokens), cookies and
 // the viewer's contact details never cross.
 //
+// Instagram's rules live here too (stage 2, core/chat/rules.go): after a login the engine loads the other folders by
+// itself, and opening a chat, "Seen", typing, replies in requests, reactions, edits, unsends and New Message's drafts
+// go through the rules, which decide whether Instagram is asked at all.
+//
 // IDs: `account` is the account's FBID (the bridge's login ID). Chats are named by their room ID
 // (`!ig-<account>-<thread>`, made by the engine; a room it didn't make is refused). `message` is Message.id.
 package main
@@ -75,6 +79,14 @@ var (
 	queued = make(chan struct{}, 1)
 
 	otids atomic.Int64
+
+	// A passing login failure tries again every 30 s, by account (IGResume).
+	retries = map[string]*time.Timer{}
+
+	// DEBUG builds only (IGSetDebug): every send blocked, and a real chat shown as a request.
+	debugMu          sync.Mutex
+	debugBlockSends  bool
+	debugRequestRoom string
 
 	captureDir atomic.Value // string; set only by DEBUG builds (IGSetCapture)
 	captureSeq atomic.Int64
@@ -191,8 +203,85 @@ func (a *account) readThread(thread string) (room string, n int64, err error) {
 	if t == nil {
 		return "", 0, errors.New("Instagram has no such chat")
 	}
-	n = a.do(func(c *chat.Chats) []chat.Envelope { e := c.Thread(*t); room = e.Room; return []chat.Envelope{e} })
+	n = a.do(func(c *chat.Chats) []chat.Envelope { out := c.Load(*t); room = out[0].Room; return out })
 	return room, n, nil
+}
+
+// loadFolders is the rest of the inbox (after the first page's `next`), then the first pages of Requests and
+// (professional accounts) General, one request a page (chat.Folders, chat.MaxPages), while the account runs.
+func (a *account) loadFolders(next string, professional bool) {
+	fbid, _ := strconv.ParseInt(a.id, 10, 64)
+	for _, folder := range chat.Folders(professional) {
+		cursor := ""
+		if folder == "INBOX" {
+			if cursor = next; cursor == "" {
+				continue
+			}
+		}
+		for range chat.MaxPages {
+			if a.ctx.Err() != nil {
+				return
+			}
+			resp, err := a.cli.PaginateMailbox(a.ctx, slidetypes.MakePaginateMailboxRequest(fbid, cursor, folder, nil))
+			if err == nil && resp.Mailbox != nil {
+				resp.Mailbox.Token = ""
+			}
+			if _, err := wire(a.id, "inbox-"+folder, resp, err); err != nil {
+				break
+			}
+			threads, more, err := chat.Mailbox(must(json.Marshal(resp.Mailbox)))
+			if err != nil {
+				break
+			}
+			a.do(func(c *chat.Chats) (out []chat.Envelope) {
+				for _, t := range threads {
+					out = append(out, c.Load(t)...)
+				}
+				return out
+			})
+			if cursor = more; cursor == "" {
+				break
+			}
+		}
+	}
+}
+
+// typing tells Instagram we're typing or stopped (over the socket, so the HTTP counter doesn't see it).
+func (a *account) typing(thread string, on bool) {
+	a.count.add("typing (socket)")
+	_ = a.cli.SetTyping(a.ctx, thread, on)
+}
+
+// accept accepts a request, then reads the chat again: its new folder lets "Seen" and typing through.
+func (a *account) accept(r ids) error {
+	resp, err := a.cli.AcceptMessageRequest(a.ctx, &slidetypes.AcceptMessageRequestRequest{ThreadID: r.thread, OfflineThreadingID: newOTID()})
+	if _, err = wire(a.id, "accept", resp, err); err != nil {
+		return err
+	}
+	_, _, _ = a.readThread(r.thread)
+	return nil
+}
+
+func newOTID() string { return chat.OfflineThreadingID(time.Now().UnixMilli(), otids.Add(1)) }
+
+func now() int64 { return time.Now().UnixMilli() }
+
+// currentSeq is the last queued event's: a call that changed nothing waits for nothing.
+func currentSeq() int64 {
+	qmu.Lock()
+	defer qmu.Unlock()
+	return seq
+}
+
+// blocked refuses what DEBUG builds hold back: every send under FERRY_DEBUG_BLOCK_SENDS, and sends to the chat shown
+// as a request.
+func blocked(room string) error {
+	debugMu.Lock()
+	defer debugMu.Unlock()
+	if debugBlockSends || room != "" && room == debugRequestRoom {
+		return errors.New("DEBUG: blocked (FERRY_DEBUG_BLOCK_SENDS or FERRY_DEBUG_AS_REQUEST).")
+	}
+	return nil
 }
 
 func jsonOut(v any) *C.char {
@@ -255,11 +344,16 @@ func call(acct *C.char, f func(a *account) (any, error)) *C.char {
 
 type ids struct{ room, thread, long, key string }
 
+// accountOf is the account a room ID names (`!ig-<account>-…`).
+func accountOf(room string) string {
+	acct, _, _ := strings.Cut(strings.TrimPrefix(room, "!ig-"), "-")
+	return acct
+}
+
 // One library call for a chat this engine made (E4): DEBUG fixture rooms and New Message drafts never get here.
 func roomCall(room *C.char, f func(a *account, r ids) (any, error)) *C.char {
 	r := ids{room: C.GoString(room)}
-	acct, _, _ := strings.Cut(strings.TrimPrefix(r.room, "!ig-"), "-")
-	a, err := get(acct)
+	a, err := get(accountOf(r.room))
 	if err != nil {
 		return fail(err)
 	}
@@ -334,19 +428,17 @@ func (a *account) handle(evt slidetypes.ClientEvent) error {
 //export IGSetCapture
 func IGSetCapture(dir *C.char) { captureDir.Store(C.GoString(dir)) }
 
-// Logs in (or re-logs in) with the cookies from the web view, loads the index and mailbox, and connects the socket.
-// The mailbox's chats are queued; the result is `{account, viewer, next, seq}`, `next` the mailbox's next page.
-//
-//export IGLogin
-func IGLogin(cookiesJSON *C.char) *C.char {
+// login logs in (or re-logs in) with cookies from the web view or the Keychain: loads the index and mailbox, queues the
+// first page's chats, connects the socket, then loads the other folders by itself. `{account, viewer, seq}`.
+func login(cookiesJSON string) (map[string]any, error) {
 	var raw map[cookies.MetaCookieName]string
-	if err := json.Unmarshal([]byte(C.GoString(cookiesJSON)), &raw); err != nil {
-		return fail(err)
+	if err := json.Unmarshal([]byte(cookiesJSON), &raw); err != nil {
+		return nil, err
 	}
 	c := &cookies.Cookies{Platform: types.Instagram}
 	c.UpdateValues(raw)
 	if missing := c.GetMissingCookieNames(); len(missing) > 0 {
-		return fail(fmt.Errorf("missing cookies: %v", missing))
+		return nil, fmt.Errorf("missing cookies: %v", missing)
 	}
 	log := zerolog.New(os.Stderr).Level(zerolog.WarnLevel).With().Timestamp().Logger()
 	a := &account{count: &counter{n: map[string]int{}}}
@@ -362,12 +454,12 @@ func IGLogin(cookiesJSON *C.char) *C.char {
 	viewer, mailbox, err := cli.LoadIndex(ctx)
 	if err != nil {
 		cancel()
-		return fail(err)
+		return nil, err
 	}
 	fbid := cli.GetOwnFBID()
 	if fbid == 0 {
 		cancel()
-		return fail(errors.New("logged in, but Instagram didn't say which account"))
+		return nil, errors.New("logged in, but Instagram didn't say which account")
 	}
 	id := strconv.FormatInt(fbid, 10)
 	a.cli, a.ctx, a.cancel = cli, ctx, cancel
@@ -400,26 +492,99 @@ func IGLogin(cookiesJSON *C.char) *C.char {
 	capture(id, "login", must(json.Marshal(map[string]any{"account": id, "viewer": shown, "mailbox": mailbox})))
 	threads, next, err := chat.Mailbox(must(json.Marshal(mailbox)))
 	if err != nil {
-		return fail(err)
+		return nil, err
 	}
-	n := a.do(func(c *chat.Chats) []chat.Envelope {
-		c.Name, c.Avatar = v.FullName, v.ProfilePicURL
-		var out []chat.Envelope
+	debugMu.Lock()
+	forced := debugRequestRoom
+	debugMu.Unlock()
+	n := a.do(func(c *chat.Chats) (out []chat.Envelope) {
+		c.Name, c.Avatar, c.ForcedRequest = v.FullName, v.ProfilePicURL, forced
 		for _, t := range threads {
-			out = append(out, c.Thread(t))
+			out = append(out, c.Load(t)...)
 		}
 		return out
 	})
 	go cli.Connect(ctx) // after the chats are in: its live changes apply to them
-	return jsonOut(map[string]any{"account": id, "viewer": shown, "next": nextPage(next), "seq": n})
+	go a.loadFolders(next, v.IsProfessionalAccount)
+	return map[string]any{"account": id, "viewer": shown, "seq": n}, nil
 }
 
-// nextPage is a next page's cursor, null at the end (an empty one would ask for the first page again).
-func nextPage(next string) *string {
-	if next == "" {
-		return nil
+// Logs in with the cookies from the web view (a new account, or a fix for one Instagram signed out): `{account,
+// viewer, seq}`. The user is there, so nothing retries.
+//
+//export IGLogin
+func IGLogin(cookiesJSON *C.char) *C.char {
+	out, err := login(C.GoString(cookiesJSON))
+	if err != nil {
+		return fail(err)
 	}
-	return &next
+	return jsonOut(out)
+}
+
+// Connects a stored account (a launch, "Try again"): as IGLogin, and after a passing failure (the network) it tries
+// again every 30 s by itself, telling the app each time (`Login` with IGLogin's answer, or `LoginFailed`), until it
+// connects, the app calls this again, or the account stops.
+//
+//export IGResume
+func IGResume(acct, cookiesJSON *C.char) *C.char {
+	id, cookies := C.GoString(acct), C.GoString(cookiesJSON)
+	stopRetry(id)
+	out, err := login(cookies)
+	if err != nil {
+		retryLater(id, cookies, err)
+		return fail(err)
+	}
+	return jsonOut(out)
+}
+
+// ponytail: a fixed 30 s while the app runs; backoff if it ever hammers.
+func retryLater(id, cookies string, err error) {
+	if state, _ := classify(err); state != "TRANSIENT_DISCONNECT" {
+		return
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	var t *time.Timer
+	t = time.AfterFunc(30*time.Second, func() {
+		mu.Lock()
+		current := retries[id] == t
+		if current {
+			delete(retries, id)
+		}
+		mu.Unlock()
+		if !current {
+			return
+		}
+		out, err := login(cookies)
+		if err != nil {
+			state, reason := classify(err)
+			push(map[string]any{"account": id, "kind": "LoginFailed", "error": err.Error(), "code": state, "reason": reason})
+			retryLater(id, cookies, err)
+			return
+		}
+		out["kind"] = "Login"
+		push(out)
+	})
+	retries[id] = t
+}
+
+func stopRetry(id string) {
+	mu.Lock()
+	defer mu.Unlock()
+	if t := retries[id]; t != nil {
+		t.Stop()
+		delete(retries, id)
+	}
+}
+
+// DEBUG builds only: `blockSends` holds back every send and upload (FERRY_DEBUG_BLOCK_SENDS); `requestRoom` is a real
+// chat every rule treats as a request, whose sends are held back too (FERRY_DEBUG_AS_REQUEST).
+//
+//export IGSetDebug
+func IGSetDebug(blockSends C.int, requestRoom *C.char) {
+	debugMu.Lock()
+	debugBlockSends, debugRequestRoom = blockSends != 0, C.GoString(requestRoom)
+	debugMu.Unlock()
 }
 
 func must(b []byte, _ error) []byte { return b }
@@ -447,42 +612,32 @@ func IGNextEvent(timeoutMS C.int) *C.char {
 	}
 }
 
-// One page of a mailbox folder (`INBOX`, `PENDING`, `GENERAL`) after `cursor`: its chats are queued; the result is
-// `{next, seq}`.
+// A chat opened: read in full (the mailbox's copy of a message has no reactions or edit history, P1), at most every
+// 30 s (rules.go). A read; it sends nothing. `{seq}`.
 //
-//export IGInboxPage
-func IGInboxPage(acct, folder, cursor *C.char) *C.char {
-	f := C.GoString(folder)
-	return call(acct, func(a *account) (any, error) {
-		fbid, _ := strconv.ParseInt(a.id, 10, 64)
-		resp, err := a.cli.PaginateMailbox(a.ctx, slidetypes.MakePaginateMailboxRequest(fbid, C.GoString(cursor), f, nil))
-		if err == nil && resp.Mailbox != nil {
-			resp.Mailbox.Token = ""
+//export IGOpenChat
+func IGOpenChat(room *C.char) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
+		a.chats.Lock()
+		read, err := a.chats.Open(r.room, now())
+		a.chats.Unlock()
+		if err != nil || !read {
+			return map[string]int64{"seq": currentSeq()}, err
 		}
-		if _, err := wire(a.id, "inbox-"+f, resp, err); err != nil {
-			return nil, err
-		}
-		threads, next, err := chat.Mailbox(must(json.Marshal(resp.Mailbox)))
-		if err != nil {
-			return nil, err
-		}
-		n := a.do(func(c *chat.Chats) []chat.Envelope {
-			var out []chat.Envelope
-			for _, t := range threads {
-				out = append(out, c.Thread(t))
-			}
-			return out
-		})
-		return map[string]any{"next": nextPage(next), "seq": n}, nil
+		_, n, err := a.readThread(r.thread)
+		return map[string]int64{"seq": n}, err
 	})
 }
 
-// The chat read in full: reactions, edits, reply targets (the mailbox's copy of a message has none, P1). A read; it
-// sends nothing. `{room, seq}`.
+// The chat read in full now, whenever it was last: Instagram's media links expire (33 h to 30 days, P0), so a failed
+// download reads it again for fresh ones. A read. `{room, seq}`.
 //
 //export IGReadChat
 func IGReadChat(room *C.char) *C.char {
 	return roomCall(room, func(a *account, r ids) (any, error) {
+		a.chats.Lock()
+		a.chats.Reading(r.room, now())
+		a.chats.Unlock()
 		room, n, err := a.readThread(r.thread)
 		return map[string]any{"room": room, "seq": n}, err
 	})
@@ -523,38 +678,55 @@ func optional(s *C.char) *string {
 	return nil
 }
 
-// `otid` is the offline threading ID of the app's local echo (IGNewOTID); the socket's echo carries it back. The
-// result is `{id}`, Instagram's ID for the message.
+// A text (a reply when `replyTo`). `otid` is the offline threading ID of the app's local echo (IGNewOTID); the
+// socket's echo carries it back. In a request it accepts first, as the bridge did; "typing" stops if we'd said it. To
+// a New Message draft it's the first message, which makes the thread (its arrival moves the draft, `RoomMoved`).
+// `{id}`: Instagram's ID for the message ("" for a draft's).
 //
 //export IGSend
 func IGSend(room, text, replyTo, otid *C.char) *C.char {
+	req := &slidetypes.SendTextRequest{
+		OfflineThreadingID: C.GoString(otid), Text: slidetypes.SensitiveString{Value: C.GoString(text)},
+		ReplyToMessageID: optional(replyTo), SendAttribution: new("igd_web_chat_tab:in_thread"),
+	}
+	if a, err := get(accountOf(C.GoString(room))); err == nil {
+		a.chats.Lock()
+		user, draft := a.chats.DraftRecipient(C.GoString(room))
+		a.chats.Unlock()
+		if draft {
+			if err := blocked(""); err != nil {
+				return fail(err)
+			}
+			req.RecipientIGIDs, req.ReplyToMessageID = []string{user}, nil
+			resp, err := a.cli.SendMessage(a.ctx, req)
+			if _, err = wire(a.id, "send-new", resp, err); err != nil {
+				return fail(err)
+			}
+			return jsonOut(map[string]string{"id": ""})
+		}
+	}
 	return roomCall(room, func(a *account, r ids) (any, error) {
-		resp, err := a.cli.SendMessage(a.ctx, &slidetypes.SendTextRequest{
-			IGThreadIGID:       &r.thread,
-			OfflineThreadingID: C.GoString(otid),
-			Text:               slidetypes.SensitiveString{Value: C.GoString(text)},
-			ReplyToMessageID:   optional(replyTo),
-			SendAttribution:    new("igd_web_chat_tab:in_thread"),
-		})
+		if err := blocked(r.room); err != nil {
+			return nil, err
+		}
+		a.chats.Lock()
+		accept, typingOff, err := a.chats.BeforeSend(r.room)
+		a.chats.Unlock()
+		if err != nil {
+			return nil, err
+		}
+		if typingOff {
+			a.typing(r.thread, false)
+		}
+		if accept {
+			if err := a.accept(r); err != nil {
+				return nil, err
+			}
+		}
+		req.IGThreadIGID = &r.thread
+		resp, err := a.cli.SendMessage(a.ctx, req)
 		b, err := wire(a.id, "send", resp, err)
 		return map[string]string{"id": chat.SentID(b)}, err
-	})
-}
-
-// The first message to someone with no thread yet: Instagram makes the thread (`recipient` is their FBID). The
-// thread arrives through the socket like any new one.
-//
-//export IGSendNew
-func IGSendNew(acct, recipient, text, otid *C.char) *C.char {
-	return call(acct, func(a *account) (any, error) {
-		resp, err := a.cli.SendMessage(a.ctx, &slidetypes.SendTextRequest{
-			RecipientIGIDs:     []string{C.GoString(recipient)},
-			OfflineThreadingID: C.GoString(otid),
-			Text:               slidetypes.SensitiveString{Value: C.GoString(text)},
-			SendAttribution:    new("igd_web_chat_tab:in_thread"),
-		})
-		_, err = wire(a.id, "send-new", resp, err)
-		return map[string]bool{"ok": true}, err
 	})
 }
 
@@ -562,17 +734,18 @@ func IGSendNew(acct, recipient, text, otid *C.char) *C.char {
 //
 //export IGNewOTID
 func IGNewOTID() *C.char {
-	return C.CString(chat.OfflineThreadingID(time.Now().UnixMilli(), otids.Add(1)))
+	return C.CString(newOTID())
 }
 
+// Accepts a request, then reads the chat again (its new folder arrives as an update). `{seq}`.
+//
 //export IGAccept
-func IGAccept(room, otid *C.char) *C.char {
+func IGAccept(room *C.char) *C.char {
 	return roomCall(room, func(a *account, r ids) (any, error) {
-		resp, err := a.cli.AcceptMessageRequest(a.ctx, &slidetypes.AcceptMessageRequestRequest{
-			ThreadID: r.thread, OfflineThreadingID: C.GoString(otid),
-		})
-		_, err = wire(a.id, "accept", resp, err)
-		return map[string]bool{"ok": true}, err
+		if err := blocked(r.room); err != nil {
+			return nil, err
+		}
+		return map[string]int64{"seq": currentSeq()}, a.accept(r)
 	})
 }
 
@@ -582,6 +755,9 @@ func IGAccept(room, otid *C.char) *C.char {
 //export IGDeleteThread
 func IGDeleteThread(room *C.char) *C.char {
 	return roomCall(room, func(a *account, r ids) (any, error) {
+		if err := blocked(r.room); err != nil {
+			return nil, err
+		}
 		resp, err := a.cli.DeleteThread(a.ctx, &slidetypes.DeleteThreadRequest{ThreadID: r.thread})
 		if _, err = wire(a.id, "delete-thread", resp, err); err != nil {
 			return nil, err
@@ -604,24 +780,36 @@ func IGSearch(acct, query *C.char) *C.char {
 	})
 }
 
-// Our DM with `user` (their FBID), if Instagram has one, read into its room: `{found, room, seq}`.
+// New Message's chat with `contact` (a search result, `{id, name, avatar_url, identifiers}`): our DM with them, else
+// the one Instagram has (read in full), else a draft until the first message makes the thread. `{room, seq}`.
 //
-//export IGFindDM
-func IGFindDM(acct, user *C.char) *C.char {
+//export IGOpenDM
+func IGOpenDM(acct, contactJSON *C.char) *C.char {
 	return call(acct, func(a *account) (any, error) {
-		fbid, err := strconv.ParseInt(C.GoString(user), 10, 64)
+		var contact chat.Contact
+		if err := json.Unmarshal([]byte(C.GoString(contactJSON)), &contact); err != nil {
+			return nil, err
+		}
+		fbid, err := strconv.ParseInt(contact.ID, 10, 64)
 		if err != nil {
 			return nil, err
 		}
+		a.chats.Lock()
+		room := a.chats.ExistingDM(contact.ID)
+		a.chats.Unlock()
+		if room != "" {
+			return map[string]any{"room": room, "seq": currentSeq()}, nil
+		}
 		found, err := a.cli.FetchThreadID(a.ctx, fbid)
-		if errors.Is(err, instameow.ErrThreadNotFound) {
-			return map[string]any{"found": false}, nil
-		} else if err != nil {
+		if err == nil {
+			capture(a.id, "find-dm", must(json.Marshal(found)))
+			room, n, err := a.readThread(found.ShortID)
+			return map[string]any{"room": room, "seq": n}, err
+		} else if !errors.Is(err, instameow.ErrThreadNotFound) {
 			return nil, err
 		}
-		capture(a.id, "find-dm", must(json.Marshal(found)))
-		room, n, err := a.readThread(found.ShortID)
-		return map[string]any{"found": true, "room": room, "seq": n}, err
+		n := a.do(func(c *chat.Chats) (out []chat.Envelope) { room, out = c.Draft(contact); return out })
+		return map[string]any{"room": room, "seq": n}, nil
 	})
 }
 
@@ -634,6 +822,21 @@ func IGFindDM(acct, user *C.char) *C.char {
 //export IGSendMedia
 func IGSendMedia(room, path, mime *C.char, voice C.int, replyTo, otid *C.char) *C.char {
 	return roomCall(room, func(a *account, r ids) (any, error) {
+		if err := blocked(r.room); err != nil {
+			return nil, err
+		}
+		a.chats.Lock()
+		request, typingOff, err := a.chats.BeforeSend(r.room)
+		a.chats.Unlock()
+		if err == nil && request { // never in a request
+			err = chat.ErrRequest
+		}
+		if err != nil {
+			return nil, err
+		}
+		if typingOff {
+			a.typing(r.thread, false)
+		}
 		key, err := strconv.ParseInt(r.key, 10, 64)
 		if err != nil {
 			return nil, err
@@ -669,6 +872,9 @@ var shortcode = regexp.MustCompile(`/(?:reel|p)/([a-zA-Z0-9_-]+)/?`)
 //export IGResolveMedia
 func IGResolveMedia(room, message *C.char) *C.char {
 	return roomCall(room, func(a *account, r ids) (any, error) {
+		if err := blocked(r.room); err != nil {
+			return nil, err
+		}
 		a.chats.Lock()
 		target, id, err := a.chats.Unresolved(r.room, C.GoString(message))
 		a.chats.Unlock()
@@ -738,9 +944,15 @@ func IGResolveMedia(room, message *C.char) *C.char {
 	})
 }
 
+// Our reaction to `message`, or (`remove`) its removal: never in a request. Instagram keeps one per person, so another
+// emoji replaces it.
+//
 //export IGReact
 func IGReact(room, message, emoji *C.char, remove C.int) *C.char {
 	return roomCall(room, func(a *account, r ids) (any, error) {
+		if err := allowed(a, r.room, func(c *chat.Chats) error { return c.CanReact(r.room) }); err != nil {
+			return nil, err
+		}
 		status := slidetypes.ReactionStatusCreated
 		if remove != 0 {
 			status = slidetypes.ReactionStatusDeleted
@@ -753,11 +965,16 @@ func IGReact(room, message, emoji *C.char, remove C.int) *C.char {
 	})
 }
 
+// Our own text, edited: within 15 minutes and 5 edits, never in a request.
+//
 //export IGEdit
-func IGEdit(room, message, text, otid *C.char) *C.char {
+func IGEdit(room, message, text *C.char) *C.char {
 	return roomCall(room, func(a *account, r ids) (any, error) {
+		if err := allowed(a, r.room, func(c *chat.Chats) error { return c.CanEdit(r.room, C.GoString(message), now()) }); err != nil {
+			return nil, err
+		}
 		resp, err := a.cli.EditMessage(a.ctx, &slidetypes.EditMessageRequest{
-			ThreadID: r.thread, TargetMessageID: C.GoString(message), OfflineThreadingID: C.GoString(otid),
+			ThreadID: r.thread, TargetMessageID: C.GoString(message), OfflineThreadingID: newOTID(),
 			Body: slidetypes.SensitiveString{Value: C.GoString(text)},
 		})
 		_, err = wire(a.id, "edit", resp, err)
@@ -765,11 +982,14 @@ func IGEdit(room, message, text, otid *C.char) *C.char {
 	})
 }
 
-// Unsend, for everyone. Instagram names the thread by its long ID here (P0).
+// Unsend, for everyone (our own messages, never in a request). Instagram names the thread by its long ID here (P0).
 //
 //export IGUnsend
 func IGUnsend(room, message *C.char) *C.char {
 	return roomCall(room, func(a *account, r ids) (any, error) {
+		if err := allowed(a, r.room, func(c *chat.Chats) error { return c.CanUnsend(r.room, C.GoString(message)) }); err != nil {
+			return nil, err
+		}
 		resp, err := a.cli.UnsendMessage(a.ctx, &slidetypes.UnsendMessageRequest{
 			MessageID: C.GoString(message), SendData: slidetypes.SendData{ThreadID: r.long},
 		})
@@ -778,22 +998,22 @@ func IGUnsend(room, message *C.char) *C.char {
 	})
 }
 
-// "Seen" up to `message`: the chat reads at once (an update, before Instagram is asked), then the same two requests
-// the bridge makes (handlematrix.go:323). If they fail, the chat is unread again, so the next open tries again.
-// Nothing is sent when the engine already had it read that far. `{seq}`.
+// "Seen" on their newest message, when the chat is unread and isn't a request (rules.go; the app calls this on open and
+// on each new message while the chat shows): the chat reads at once (an update, before Instagram is asked), then the
+// same two requests the bridge makes (handlematrix.go:323). If they fail, the chat is unread again, so the next open
+// tries again. `{seq}`.
 //
 //export IGMarkRead
-func IGMarkRead(room, message *C.char) *C.char {
+func IGMarkRead(room *C.char) *C.char {
 	return roomCall(room, func(a *account, r ids) (any, error) {
-		var long string
+		var long, id string
 		var ms int64
 		var err error
-		n := a.do(func(c *chat.Chats) (out []chat.Envelope) { out, long, ms, err = c.MarkRead(r.room, C.GoString(message)); return out })
+		n := a.do(func(c *chat.Chats) (out []chat.Envelope) { out, long, id, ms, err = c.MarkRead(r.room); return out })
 		if err != nil || long == "" {
 			return map[string]int64{"seq": n}, err
 		}
 		meta := slidetypes.MarkReadMetadata{IGThreadIGID: long}
-		id := C.GoString(message)
 		_, err = a.cli.MarkRead(a.ctx, &slidetypes.MarkReadRequest{Metadata: meta, Data: slidetypes.MarkReadData{MessageID: id, ItemID: new("")}})
 		if err == nil {
 			var resp any
@@ -810,12 +1030,33 @@ func IGMarkRead(room, message *C.char) *C.char {
 	})
 }
 
+// The composer's typing state (the app calls this as the text changes, and when the chat closes): Instagram hears
+// "typing" at most once per 20 s and "stopped" only after it, never in a request. `{sent}`.
+//
 //export IGTyping
 func IGTyping(room *C.char, on C.int) *C.char {
 	return roomCall(room, func(a *account, r ids) (any, error) {
-		a.count.add("typing (socket)") // goes over the socket, so the HTTP counter doesn't see it
-		return map[string]bool{"ok": true}, a.cli.SetTyping(a.ctx, r.thread, on != 0)
+		if blocked("") != nil { // the chat shown as a request is held back by the request rule, as a real one is
+			return map[string]bool{"sent": false}, nil
+		}
+		a.chats.Lock()
+		send, err := a.chats.SetTyping(r.room, on != 0, now())
+		a.chats.Unlock()
+		if send {
+			a.typing(r.thread, on != 0)
+		}
+		return map[string]bool{"sent": send}, err
 	})
+}
+
+// allowed is DEBUG's block, then a rule's verdict on the engine's copy.
+func allowed(a *account, room string, rule func(c *chat.Chats) error) error {
+	if err := blocked(room); err != nil {
+		return err
+	}
+	a.chats.Lock()
+	defer a.chats.Unlock()
+	return rule(a.chats.Chats)
 }
 
 // Requests made per account since login, by operation (C6).
@@ -849,6 +1090,7 @@ func IGSession(acct *C.char) *C.char {
 //
 //export IGStop
 func IGStop(acct *C.char) {
+	stopRetry(C.GoString(acct))
 	mu.Lock()
 	a := accounts[C.GoString(acct)]
 	delete(accounts, C.GoString(acct))
