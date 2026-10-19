@@ -110,25 +110,23 @@ recipient, no groups.
   (design v3: the tag was unreadable over media). ⋯ menu: Chat Info, Open in Instagram (when the contact's handle is
   known), Archive/Unarchive.
 - **Timeline:** bubbles in the account color (ours) or grey (theirs), grouped runs, time labels, reply quotes (fetched
-  if outside the window), reactions (one per person), "Edited", "You unsent a message" tombstones, typing bubble.
-  **Chat events** are a line across the thread (`.footnote`, grey, centred; no bubble, menu or status): Instagram's
-  own ("Sam named the group Weekend", "… left the group", calls), and anything the app can't show, "Sam sent a message
-  Ferry can't show. Open Instagram to see it." ("a poll" when Instagram's content type says so). In the inbox the
-  event as it is, or "Sam sent a poll".
-  Status line under our last message: Sending… / Sent / Seen (Instagram has no "delivered"); failed: "Not sent. Tap
-  to retry". Reactions are a capsule on the bubble's bottom edge (emoji, and a count when more than one); a tap lists
-  who reacted with what (face, name or "You", emoji). A chat that opens unread shows a **"New messages"** line (hairlines,
-  `.caption` semibold grey; a VoiceOver heading) above the first message from someone else after our "Seen" and after
-  our own last message; it starts a new run, stays while the chat is open and goes once we reply. Older
+  if outside the window), reactions (one per person), "Edited", "You unsent a message" tombstones, typing bubble. **Chat
+  events** are a line across the thread (`.footnote`, grey, centred; no bubble, menu or status): Instagram's own ("Sam
+  named the group Weekend", "… left the group", calls), and anything the app can't show, "Sam sent a message Ferry can't
+  show. Open Instagram to see it." ("a poll" when Instagram's content type says so). In the inbox the event as it is, or
+  "Sam sent a poll". Status line under our last message: Sending… / Sent / Seen (Instagram has no "delivered"); failed:
+  "Not sent. Tap to retry". Reactions are a capsule on the bubble's bottom edge (emoji, and a count when more than one);
+  a tap lists who reacted with what (face, name or "You", emoji). A chat that opens unread shows a **"New messages"**
+  line (hairlines, `.caption` semibold grey; a VoiceOver heading) above the first message from someone else after our
+  "Seen" and after our own last message; it starts a new run, stays while the chat is open and goes once we reply. Older
   history loads at the top; at the very start a **start block**: the chat's avatar (64 pt), its name (`.title3`
-  semibold), "@handle" in a DM (when known) or "N members" in a group, the AccountTag, 22 pt above and 20 pt below; "You're messaging from X."
-  only while the chat has no messages (otherwise the composer says it). Opens on the newest message (also the first
-  open after launch) and stays on it as rows, the keyboard or the typing bubble change its size, until you scroll up.
-  When what's new doesn't fit, it opens with the "New messages" line at the top instead and holds it there the same way
-  until you scroll, reply or tap a quote.
-  The bubbles appear (a 0.15 s fade, none under Reduce Motion) only once the thread rests there under the bars with no
-  older page loading, so the push never shows it jumping; at the latest after 1 s or on touch. Only a new last message
-  animates; older pages land without animation.
+  semibold), "@handle" in a DM (when known) or "N members" in a group, the AccountTag, 22 pt above and 20 pt below;
+  "You're messaging from X." only while the chat has no messages (otherwise the composer says it). Opens on the newest
+  message (also the first open after launch) and stays on it as rows, the keyboard or the typing bubble change its size,
+  until you scroll up. When what's new doesn't fit, it opens with the "New messages" line at the top instead and holds
+  it there the same way until you scroll, reply or tap a quote. The bubbles appear (a 0.15 s fade, none under Reduce
+  Motion) only once the thread rests there under the bars with no older page loading, so the push never shows it
+  jumping; at the latest after 1 s or on touch. Only a new last message animates; older pages land without animation.
 - **Groups:** the sender's display name (`.caption`, grey: never an account
   colour) above the first bubble of each run of their messages, their avatar (28 pt, the initial without a picture)
   beside its last bubble, every incoming bubble indented for it (tombstones too, without either; chat events are

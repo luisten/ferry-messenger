@@ -9,7 +9,9 @@ bundle outside the repo.
 [docs/PLAN-core.md](docs/PLAN-core.md), each checked live with the two dummies; its "Done" blocks hold the results and
 request counts). Instagram's data becomes the Matrix-shaped rooms the views always showed (`IGAdapter`, decision C2),
 so `Room`, `Timeline` and `Inbox` stay. As built: [specs.md](specs.md). Building, testing, installing, DEBUG switches
-and signed releases: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the README is for users (plain words, no internals).
+and signed releases: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the README is for users (plain words, no internals),
+and so is [CHANGELOG.md](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)): a user-visible
+change adds a line under Unreleased.
 Feasibility, numbers and push results: [docs/spikes/2026-10-16-on-device.md](docs/spikes/2026-10-16-on-device.md). The
 other docs inherited from Ferry ([docs/PLAN.md](docs/PLAN.md), [docs/FOLLOWUPS.md](docs/FOLLOWUPS.md),
 [docs/DECISIONS.md](docs/DECISIONS.md), [docs/BRIEF.md](docs/BRIEF.md), `docs/research/`) describe the Matrix version;
@@ -100,12 +102,12 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
 - **Groups (#24):** sender labels only where `BridgeInfo.roomType == .group`, never on our own (`@me`) messages:
   `Timeline.layout(_:isGroup:)` sets `Row.groupSender` (name on the first of a run, avatar on the last, a tombstone
   neither). Names are `.inkSecondary`, never an account colour. Who a user is: `Room.displayName` = member event name
-  (`IGAdapter` makes one per thread participant) → profile (`AppModel.profiles`,
-  from the threads) → in a DM the room name; never a raw ID. Members (T3): the joined member events, You last; read-only
-  (a tap shows `PersonCard`). "N members" is `Inbox.memberCount`. A group without a photo is `RoomAvatar`'s two faces
-  (`Inbox.faces`), or its people glyph with fewer than two others; never its name's initial. Reactions show faces and
-  "Seen by …" sits under the newest message (`Message.seenBy`, `Timeline.seenByLine`) only in groups. No group exists
-  on the dummies: the DEBUG group (unread, with readers and stacked reactions) and unit tests cover them.
+  (`IGAdapter` makes one per thread participant) → profile (`AppModel.profiles`, from the threads) → in a DM the room
+  name; never a raw ID. Members (T3): the joined member events, You last; read-only (a tap shows `PersonCard`). "N
+  members" is `Inbox.memberCount`. A group without a photo is `RoomAvatar`'s two faces (`Inbox.faces`), or its people
+  glyph with fewer than two others; never its name's initial. Reactions show faces and "Seen by …" sits under the newest
+  message (`Message.seenBy`, `Timeline.seenByLine`) only in groups. No group exists on the dummies: the DEBUG group
+  (unread, with readers and stacked reactions) and unit tests cover them.
 - **The sea is scenery only** (D19, DESIGN principle 10): `Scenery.*` (Tokens.swift, a namespace on purpose) colours
   O1's picture and nothing else: never text, controls, tint or chrome. The icon and `LaunchMark` come from
   `docs/design/ferry-icon-color*.svg` through `swift scripts/make_icon.swift`, which also stops if `FerryShape.swift`
@@ -135,8 +137,8 @@ captured in P0)
   it current. Our watermark is `Room.receipts[@me]` (from `slide_read_receipts`, `SlideUQPPMarkRead`'s
   `read_timestamp_ms`, and `markRead`, which also clears the dot at once). A thread read weighs it too (`readUpTo`):
   opening a chat sends "Seen" and re-reads it together, and a read answered before the "Seen" landed said unread, so
-  the dot stayed. The "New messages" line goes after the watermark `ThreadView` took when the chat opened. An empty `replied_to_message_id` means no
-  reply (P2: every bubble showed a loading quote).
+  the dot stayed. The "New messages" line goes after the watermark `ThreadView` took when the chat opened. An empty
+  `replied_to_message_id` means no reply (P2: every bubble showed a loading quote).
 - **Folders:** requests are `system_folder` `PENDING`/`SPAM`; General is `folder` `GENERAL` (professional accounts, the
   viewer's `is_professional_account`), moved live by `SlideUQPPIGMoveThread` (its `ig_inbox_folder`). Only mailbox
   pages carry `folder`: `IGThread` answers with it empty, so a re-read keeps the room's tab (`keepingFolder`). Never
