@@ -348,33 +348,41 @@ final class IGAdapterTests: XCTestCase {
         XCTAssertEqual(rows.filter(\.startsUnread).map(\.id), [back.id])
     }
 
-    /// A reply or emoji reaction to a story (upstream's `MessageContentXMA`: the story and `xma_text_body`; none
-    /// captured) is the story's card plus what was sent, as one message. Ferry showed only the story.
+    /// A reply and an emoji reaction to tamoveska's story, sent by kivostudio from the Instagram app (live 2026-10-19,
+    /// `ig_story_replies_kivo`: the thread's copies and both sides' mailbox copies). The thread's copy is the story plus
+    /// what was sent (`xma_text_body`) and Instagram's line about it; Ferry showed only the story. The mailbox's copy has
+    /// `xma: null` and the text in `text_body`, and its snippet already says "You: ", which the inbox said again.
     func testStoryRepliesAndReactionsKeepWhatWasSent() throws {
-        let story: JSON = ["target_url": "https://www.instagram.com/stories/sample.stories/4000000000000000005?reel_id=10000000005",
-                           "target_id": "4000000000000000005", "header_title_text": "sample.stories",
-                           "preview_image": ["url": "https://scontent.example.invalid/v/s005.jpg", "width": 720, "height": 1280]]
-        func message(_ content: JSON) throws -> Message {
-            let json = try JSONEncoder().encode(JSON.object(["id": "mid.s", "sender_fbid": .string(kivo), "content_type": "XMA_STORY_SHARE",
-                                                             "timestamp_ms": "1000", "igd_snippet": "", "content": content]))
-            return try XCTUnwrap(Timeline.reduce(IGAdapter.events(try IG.decode(IG.Message.self, json), account: tamo), me: me).first)
+        struct Copies: Decodable { var thread, mailboxSender, mailboxReceiver: [IG.Message] }
+        let copies = try Fixture.ig(Copies.self, "ig_story_replies_kivo")
+        let thread = copies.thread.flatMap { Timeline.reduce(IGAdapter.events($0, account: kivo), me: me) }
+        XCTAssertEqual(thread.map(\.kind), [.share(.story, .unresolved), .share(.story, .unresolved)])  // "Load story"
+        XCTAssertEqual(thread.map(\.shareText), ["😢", "Droopy"])  // the row shows the emoji big, like any emoji-only message
+        XCTAssertEqual(thread.map { ShareCaption(content: $0.content).eyebrow }, ["Reacted to @Tamo Veska's story", "Replied to @Tamo Veska's story"])
+        XCTAssertEqual(ShareCaption(content: thread[1].content).author, "tamoveska")  // "Story · @tamoveska"
+        let plain = try XCTUnwrap(try self.thread().slideMessages?.nodes.first)  // "P0 capture: back"
+        XCTAssertNil(Timeline.reduce(IGAdapter.events(plain, account: tamo), me: me).first?.shareText)
+
+        // The inbox, from the mailbox's copies: what was sent, "You: " once on our side.
+        func preview(_ message: IG.Message, account: String) -> String? {
+            let room = Room(id: "!ig-test")
+            room.apply(JoinedRoom(timeline: .init(events: IGAdapter.events(message, account: account), limited: false)))
+            return Inbox.preview(of: room, me: me)?.text
         }
-        let reply = try message(["xma": story, "xma_text_body": "Where is this?"])
-        XCTAssertEqual(reply.kind, .share(.story, .unresolved))  // still the story's card, "Load story"
-        XCTAssertEqual(reply.shareText, "Where is this?")
-        let reaction = try message(["xma": story, "xma_text_body": "😍"])
-        XCTAssertEqual(reaction.shareText, "😍")  // the row shows it big, like any emoji-only message
-        XCTAssertNil(try message(["xma": story]).shareText)  // a story shared without a word
+        XCTAssertEqual(copies.mailboxSender.map { preview($0, account: kivo) }, ["You: 😢", "You: Droopy"])
+        XCTAssertEqual(copies.mailboxReceiver.map { preview($0, account: tamo) }, ["😢", "Droopy"])
+        XCTAssertEqual(preview(copies.thread[1], account: kivo), "You: Droopy")  // the same once the thread is read
 
-        let expired = try message(["xma": ["title_text": "Story unavailable"], "xma_text_body": "Where is this?"])
-        XCTAssertEqual(expired.kind, .notice)
-        XCTAssertEqual([expired.body, expired.shareText], ["Story unavailable", "Where is this?"])
+        // Any other share's mailbox copy (`xma: null`, no text) is Instagram's snippet, which names the sender itself.
+        var bare = copies.mailboxSender[0]
+        bare.textBody = ""
+        bare.igdSnippet = "You sent an attachment."
+        XCTAssertEqual(preview(bare, account: kivo), "You sent an attachment.")
 
-        // The inbox says what they wrote, after the story's symbol.
-        let room = Room(id: "!ig-test")
-        room.apply(JoinedRoom(timeline: .init(events: [Event(type: "m.room.message", content: reply.content, eventID: "mid.s",
-                                                             sender: IGAdapter.user(kivo), originServerTS: 1000)], limited: false)))
-        XCTAssertEqual(Inbox.preview(of: room, me: me), Inbox.Preview(symbol: "circle.dashed", text: "Where is this?"))
+        // An expired story (not captured): its notice, then what was sent.
+        let expired = IGAdapter.share(["title_text": "Story unavailable"], snippet: "", text: "Droopy")
+        XCTAssertEqual(MessageKind(type: "m.room.message", content: expired), .notice)
+        XCTAssertEqual([expired["body"]?.string, expired[MessageKind.shareTextKey]?.string], ["Story unavailable", "Droopy"])
     }
 
     /// Their newest message makes the chat unread; when they unsend it and ours is newest again, it's read.

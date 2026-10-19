@@ -86,6 +86,11 @@ struct MessageRow: View {
                     .accessibilityHidden(true)
             }
             if let reply = message.reply { quote(reply).padding(.leading, indent) }
+            // Instagram's own line about a share: "Replied to @Tamo Veska's story", "Reacted to your story".
+            if let eyebrow = ShareCaption(content: message.content).eyebrow, message.kind != .unsent {
+                Text(eyebrow).font(.caption).foregroundStyle(.inkSecondary).padding(.horizontal, 4).padding(.leading, indent)
+                    .accessibilityIdentifier("thread.shareEyebrow")
+            }
             HStack(alignment: .bottom, spacing: 6) {
                 if let sender = row.groupSender {
                     Group {

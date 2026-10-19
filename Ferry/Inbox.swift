@@ -431,8 +431,8 @@ nonisolated enum Inbox {
         let prefix = who.map { "\($0): " } ?? ""
 
         let kind = MessageKind(type: message.type, content: content)
-        if let text = content[MessageKind.shareTextKey]?.string {  // a story reply or reaction: what they said
-            return Preview(symbol: kind.media?.symbol, text: prefix + text)
+        if let text = content[MessageKind.shareTextKey]?.string {  // a story reply or reaction: what was said, as Instagram's
+            return Preview(symbol: nil, text: prefix + text)
         }
         let sent: String? = switch kind {
         case .share(let type, _): type.phrase
