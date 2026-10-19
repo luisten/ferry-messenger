@@ -218,7 +218,11 @@ func TestLoginAndAccount(t *testing.T) {
 		for _, th := range threads {
 			rooms = append(rooms, c.Thread(th))
 		}
-		golden(t, "login_"+name, map[string]any{"login": map[string]any{"account": l.Account, "viewer": l.Viewer, "next": next}, "rooms": rooms})
+		result := map[string]any{"account": l.Account, "viewer": l.Viewer} // IGLogin's answer; `next` only before the end
+		if next != "" {
+			result["next"] = next
+		}
+		golden(t, "login_"+name, map[string]any{"login": result, "rooms": rooms})
 	}
 	l, v := login(t, "ig_login_tamo")
 	if l.Account != tamo || v.Username != "tamoveska" || v.Professional {

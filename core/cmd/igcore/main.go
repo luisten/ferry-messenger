@@ -1,10 +1,12 @@
 // The C API the app calls: instameow (mautrix's Instagram client), one client per Instagram account, JSON in and out
-// (docs/PLAN-core.md §3). Threads, messages and deltas cross as the library's own JSON (decision C1); the state dump
-// (web tokens), cookies and the viewer's contact details never do.
+// (docs/PLAN-core.md §3). Instagram's data becomes chats here (core/chat, docs/PLAN-android.md stage 1): every change
+// to a chat reaches the app through IGNextEvent, in the order the engine made it, as `{"kind": "Room", "room",
+// "update", "profiles", "related"}` or `{"kind": "RoomRemoved", "room"}`; a call that changes chats returns the
+// `seq` of its last update, so the app can wait until it has applied it. The state dump (web tokens), cookies and
+// the viewer's contact details never cross.
 //
-// IDs: `account` is the account's FBID (the bridge's login ID). A thread has three: `thread` is ThreadInfo.id (send,
-// react, edit, typing, history), `threadLong` is ThreadInfo.thread_id (unsend, mark read), and thread_key (uploads).
-// `message` is Message.id.
+// IDs: `account` is the account's FBID (the bridge's login ID). Chats are named by their room ID
+// (`!ig-<account>-<thread>`, made by the engine; a room it didn't make is refused). `message` is Message.id.
 package main
 
 /*
@@ -13,6 +15,7 @@ package main
 import "C"
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -41,6 +44,8 @@ import (
 	"go.mau.fi/mautrix-meta/pkg/messagix/httpclient"
 	"go.mau.fi/mautrix-meta/pkg/messagix/responses"
 	"go.mau.fi/mautrix-meta/pkg/messagix/types"
+
+	"github.com/luisten/ferry-messenger/core/chat"
 )
 
 type account struct {
@@ -49,12 +54,27 @@ type account struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	count  *counter
+	chats  *book
+}
+
+// book is an account's chats, kept across a re-login. Its lock is held while an update is queued, so the app gets
+// them in the order they were applied here.
+type book struct {
+	sync.Mutex
+	*chat.Chats
 }
 
 var (
 	mu       sync.Mutex
 	accounts = map[string]*account{}
-	events   = make(chan []byte, 1024)
+
+	// The events waiting for the app. Never dropped: a lost room update would leave the app's copy silently wrong.
+	qmu    sync.Mutex
+	queue  [][]byte
+	seq    int64
+	queued = make(chan struct{}, 1)
+
+	otids atomic.Int64
 
 	captureDir atomic.Value // string; set only by DEBUG builds (IGSetCapture)
 	captureSeq atomic.Int64
@@ -92,7 +112,7 @@ func (c *counter) snapshot() map[string]int {
 	return m
 }
 
-// Writes what crosses to Swift into <dir>/<account>/, numbered in order. DEBUG builds only, for test fixtures.
+// Writes what Instagram answered into <dir>/<account>/, numbered in order. DEBUG builds only, for test fixtures.
 func capture(acct, name string, b []byte) {
 	dir, _ := captureDir.Load().(string)
 	if dir == "" {
@@ -105,12 +125,81 @@ func capture(acct, name string, b []byte) {
 	_ = os.WriteFile(filepath.Join(dir, fmt.Sprintf("%05d-%s.json", captureSeq.Add(1), name)), b, 0o600)
 }
 
-func jsonOut(acct, name string, v any) *C.char {
+// wire is Instagram's answer as JSON, what core/chat reads (and the captures hold).
+func wire(acct, name string, v any, err error) ([]byte, error) {
+	if err != nil {
+		return nil, err
+	}
+	b, err := json.Marshal(v)
+	if err == nil {
+		capture(acct, name, b)
+	}
+	return b, err
+}
+
+// push queues events for the app (an account's event, or a chat's change) and returns the last one's `seq`.
+func push(events ...any) int64 {
+	qmu.Lock()
+	for _, e := range events {
+		seq++
+		switch e := e.(type) {
+		case map[string]any:
+			e["seq"] = seq
+		case *roomEvent:
+			e.Seq = seq
+		}
+		b, _ := json.Marshal(e)
+		queue = append(queue, b)
+	}
+	n := seq
+	qmu.Unlock()
+	select {
+	case queued <- struct{}{}:
+	default:
+	}
+	return n
+}
+
+type roomEvent struct {
+	Account string `json:"account"`
+	Seq     int64  `json:"seq"`
+	chat.Envelope
+}
+
+// do changes the account's chats and queues what changed, in that order.
+func (a *account) do(f func(c *chat.Chats) []chat.Envelope) int64 {
+	a.chats.Lock()
+	defer a.chats.Unlock()
+	var events []any
+	for _, e := range f(a.chats.Chats) {
+		events = append(events, &roomEvent{Account: a.id, Envelope: e})
+	}
+	return push(events...)
+}
+
+// readThread reads one thread in full (a read; nothing is sent) into its room.
+func (a *account) readThread(thread string) (room string, n int64, err error) {
+	resp, err := a.cli.GetThread(a.ctx, slidetypes.MakeGetThreadInfoRequest(thread))
+	b, err := wire(a.id, "thread", resp, err)
+	if err != nil {
+		return "", 0, err
+	}
+	t, err := chat.ReadThread(b)
+	if err != nil {
+		return "", 0, err
+	}
+	if t == nil {
+		return "", 0, errors.New("Instagram has no such chat")
+	}
+	n = a.do(func(c *chat.Chats) []chat.Envelope { e := c.Thread(*t); room = e.Room; return []chat.Envelope{e} })
+	return room, n, nil
+}
+
+func jsonOut(v any) *C.char {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return fail(err)
 	}
-	capture(acct, name, b)
 	return C.CString(string(b))
 }
 
@@ -142,18 +231,18 @@ func classify(err error) (state, reason string) {
 	return "UNKNOWN_ERROR", ""
 }
 
-func get(acct *C.char) (*account, error) {
+func get(acct string) (*account, error) {
 	mu.Lock()
 	defer mu.Unlock()
-	if a := accounts[C.GoString(acct)]; a != nil {
+	if a := accounts[acct]; a != nil {
 		return a, nil
 	}
 	return nil, errors.New("account not started")
 }
 
-// One library call for an account, its result passed through as JSON.
-func call(acct *C.char, name string, f func(a *account) (any, error)) *C.char {
-	a, err := get(acct)
+// One library call for an account.
+func call(acct *C.char, f func(a *account) (any, error)) *C.char {
+	a, err := get(C.GoString(acct))
 	if err != nil {
 		return fail(err)
 	}
@@ -161,49 +250,92 @@ func call(acct *C.char, name string, f func(a *account) (any, error)) *C.char {
 	if err != nil {
 		return fail(err)
 	}
-	return jsonOut(a.id, name, v)
+	return jsonOut(v)
 }
 
-func handler(acct string, count *counter) func(context.Context, slidetypes.ClientEvent) error {
-	return func(_ context.Context, evt slidetypes.ClientEvent) error {
-		if acct == "" {
-			return nil // before IGLogin knows the account: only LoadIndex's ReconnectionStateUpdate (seen in P0)
-		}
-		e := map[string]any{"account": acct, "kind": fmt.Sprintf("%T", evt)[len("*slidetypes."):], "at": time.Now().UnixMilli()}
-		switch evt := evt.(type) {
-		case *slidetypes.Delta:
-			e["delta"] = json.RawMessage(evt.Raw) // the wire JSON, unknown types (SlideUQPPIGMoveThread) included
-		case *slidetypes.TypingNotification:
-			e["thread"] = evt.ThreadID
-			e["typing"] = evt
-		case *slidetypes.Connected:
-			count.add("socket connect")
-		case *slidetypes.Disconnected:
-			e["failures"] = evt.FailureCount
-			if evt.Error != nil {
-				e["error"] = evt.Error.Error()
-			}
-		case *slidetypes.AuthError:
-			if evt.Error != nil {
-				e["error"] = evt.Error.Error()
-				e["code"], e["reason"] = classify(evt.Error)
-			}
-		}
-		// SeqIDUpdate, ReconnectionStateUpdate (may hold session data), ResnapshotRequired: the kind only.
-		b, _ := json.Marshal(e)
-		capture(acct, "event-"+e["kind"].(string), b)
-		select {
-		case events <- b:
-		default: // ponytail: drops when Swift stops polling; the app polls while active
-		}
-		return nil
+type ids struct{ room, thread, long, key string }
+
+// One library call for a chat this engine made (E4): DEBUG fixture rooms and New Message drafts never get here.
+func roomCall(room *C.char, f func(a *account, r ids) (any, error)) *C.char {
+	r := ids{room: C.GoString(room)}
+	acct, _, _ := strings.Cut(strings.TrimPrefix(r.room, "!ig-"), "-")
+	a, err := get(acct)
+	if err != nil {
+		return fail(err)
 	}
+	a.chats.Lock()
+	r.thread, r.long, r.key, err = a.chats.IDs(r.room)
+	a.chats.Unlock()
+	if err != nil {
+		return fail(err)
+	}
+	v, err := f(a, r)
+	if err != nil {
+		return fail(err)
+	}
+	return jsonOut(v)
+}
+
+func (a *account) handle(evt slidetypes.ClientEvent) error {
+	if a.id == "" {
+		return nil // before IGLogin knows the account: only LoadIndex's ReconnectionStateUpdate (seen in P0)
+	}
+	e := map[string]any{"account": a.id, "kind": fmt.Sprintf("%T", evt)[len("*slidetypes."):], "at": time.Now().UnixMilli()}
+	switch evt := evt.(type) {
+	case *slidetypes.Delta:
+		e["delta"] = json.RawMessage(evt.Raw) // the wire JSON, unknown types (SlideUQPPIGMoveThread) included
+	case *slidetypes.TypingNotification:
+		e["thread"], e["typing"] = evt.ThreadID, evt
+	case *slidetypes.Connected:
+		a.count.add("socket connect")
+	case *slidetypes.Disconnected:
+		e["failures"] = evt.FailureCount
+		if evt.Error != nil {
+			e["error"] = evt.Error.Error()
+		}
+	case *slidetypes.AuthError:
+		if evt.Error != nil {
+			e["error"] = evt.Error.Error()
+			e["code"], e["reason"] = classify(evt.Error)
+		}
+	}
+	// SeqIDUpdate, ReconnectionStateUpdate (may hold session data), ResnapshotRequired: the kind only, captured.
+	b, _ := json.Marshal(e)
+	capture(a.id, "event-"+e["kind"].(string), b)
+
+	switch evt := evt.(type) {
+	case *slidetypes.Delta:
+		var reread string
+		a.do(func(c *chat.Chats) []chat.Envelope { out, r := c.Delta(evt.Raw); reread = r; return out })
+		if reread != "" { // what AppModel did on `.refresh`: the same read, from here
+			go func() { _, _, _ = a.readThread(reread) }()
+		}
+	case *slidetypes.TypingNotification:
+		var timer *chat.TypingTimer
+		a.do(func(c *chat.Chats) []chat.Envelope {
+			out, t := c.Typing(evt.ThreadID, evt.SenderID, evt.ActivityStatus == 1)
+			timer = t
+			return out
+		})
+		if timer != nil {
+			ttl := time.Duration(evt.TTL) * time.Millisecond
+			if ttl <= 0 {
+				ttl = 22 * time.Second
+			}
+			t := *timer
+			time.AfterFunc(ttl, func() { a.do(func(c *chat.Chats) []chat.Envelope { return c.TypingTimeout(t) }) })
+		}
+	case *slidetypes.Connected, *slidetypes.Disconnected, *slidetypes.AuthError:
+		push(e)
+	}
+	return nil
 }
 
 //export IGSetCapture
 func IGSetCapture(dir *C.char) { captureDir.Store(C.GoString(dir)) }
 
 // Logs in (or re-logs in) with the cookies from the web view, loads the index and mailbox, and connects the socket.
+// The mailbox's chats are queued; the result is `{account, viewer, next, seq}`, `next` the mailbox's next page.
 //
 //export IGLogin
 func IGLogin(cookiesJSON *C.char) *C.char {
@@ -217,15 +349,14 @@ func IGLogin(cookiesJSON *C.char) *C.char {
 		return fail(fmt.Errorf("missing cookies: %v", missing))
 	}
 	log := zerolog.New(os.Stderr).Level(zerolog.WarnLevel).With().Timestamp().Logger()
-	count := &counter{n: map[string]int{}}
-	var id string
+	a := &account{count: &counter{n: map[string]int{}}}
 	cli := instameow.NewClient(instameow.ClientParams{
 		Cookies: c, Log: log,
-		EventHandler: func(ctx context.Context, evt slidetypes.ClientEvent) error { return handler(id, count)(ctx, evt) },
+		EventHandler: func(_ context.Context, evt slidetypes.ClientEvent) error { return a.handle(evt) },
 	})
 	h := cli.GetHTTP()
-	count.next = h.HTTP.Transport
-	h.HTTP.Transport = count
+	a.count.next = h.HTTP.Transport
+	h.HTTP.Transport = a.count
 
 	ctx, cancel := context.WithCancel(log.WithContext(context.Background()))
 	viewer, mailbox, err := cli.LoadIndex(ctx)
@@ -238,77 +369,150 @@ func IGLogin(cookiesJSON *C.char) *C.char {
 		cancel()
 		return fail(errors.New("logged in, but Instagram didn't say which account"))
 	}
-	id = strconv.FormatInt(fbid, 10)
+	id := strconv.FormatInt(fbid, 10)
+	a.cli, a.ctx, a.cancel = cli, ctx, cancel
 
 	mu.Lock()
 	old := accounts[id]
-	accounts[id] = &account{id: id, cli: cli, ctx: ctx, cancel: cancel, count: count}
+	if old != nil {
+		a.chats = old.chats
+	} else {
+		a.chats = &book{Chats: chat.New(id)}
+	}
+	a.id = id
+	accounts[id] = a
 	mu.Unlock()
 	if old != nil {
 		old.cancel()
 		old.cli.Disconnect()
 	}
-	go cli.Connect(ctx)
 
 	if mailbox != nil {
 		mailbox.Token = ""
 	}
 	v := viewer.Data
-	return jsonOut(id, "login", map[string]any{
-		"account": id,
-		// Only what the app shows: the viewer also carries a business account's email and phone number.
-		"viewer": map[string]any{
-			"id": v.ID, "fbid": v.Fbid, "username": v.Username, "full_name": v.FullName,
-			"profile_pic_url": v.ProfilePicURL, "is_professional_account": v.IsProfessionalAccount,
-			"is_business_account": v.IsBusinessAccount, "has_tabbed_inbox": v.HasTabbedInbox,
-		},
-		"mailbox": mailbox,
+	// Only what the app shows: the viewer also carries a business account's email and phone number.
+	shown := map[string]any{
+		"id": v.ID, "fbid": v.Fbid, "username": v.Username, "full_name": v.FullName,
+		"profile_pic_url": v.ProfilePicURL, "is_professional_account": v.IsProfessionalAccount,
+		"is_business_account": v.IsBusinessAccount, "has_tabbed_inbox": v.HasTabbedInbox,
+	}
+	capture(id, "login", must(json.Marshal(map[string]any{"account": id, "viewer": shown, "mailbox": mailbox})))
+	threads, next, err := chat.Mailbox(must(json.Marshal(mailbox)))
+	if err != nil {
+		return fail(err)
+	}
+	n := a.do(func(c *chat.Chats) []chat.Envelope {
+		c.Name, c.Avatar = v.FullName, v.ProfilePicURL
+		var out []chat.Envelope
+		for _, t := range threads {
+			out = append(out, c.Thread(t))
+		}
+		return out
 	})
+	go cli.Connect(ctx) // after the chats are in: its live changes apply to them
+	return jsonOut(map[string]any{"account": id, "viewer": shown, "next": nextPage(next), "seq": n})
 }
 
+// nextPage is a next page's cursor, null at the end (an empty one would ask for the first page again).
+func nextPage(next string) *string {
+	if next == "" {
+		return nil
+	}
+	return &next
+}
+
+func must(b []byte, _ error) []byte { return b }
+
+// Everything waiting for the app (a JSON array, oldest first), or nothing after `timeoutMS` without any.
+//
 //export IGNextEvent
 func IGNextEvent(timeoutMS C.int) *C.char {
-	select {
-	case b := <-events:
-		return C.CString(string(b))
-	case <-time.After(time.Duration(timeoutMS) * time.Millisecond):
-		return nil
+	timeout := time.NewTimer(time.Duration(timeoutMS) * time.Millisecond)
+	defer timeout.Stop()
+	for {
+		qmu.Lock()
+		if len(queue) > 0 {
+			b := append(append([]byte{'['}, bytes.Join(queue, []byte{','})...), ']')
+			queue = nil
+			qmu.Unlock()
+			return C.CString(string(b))
+		}
+		qmu.Unlock()
+		select {
+		case <-queued:
+		case <-timeout.C:
+			return nil
+		}
 	}
 }
 
+// One page of a mailbox folder (`INBOX`, `PENDING`, `GENERAL`) after `cursor`: its chats are queued; the result is
+// `{next, seq}`.
+//
 //export IGInboxPage
 func IGInboxPage(acct, folder, cursor *C.char) *C.char {
 	f := C.GoString(folder)
-	return call(acct, "inbox-"+f, func(a *account) (any, error) {
+	return call(acct, func(a *account) (any, error) {
 		fbid, _ := strconv.ParseInt(a.id, 10, 64)
 		resp, err := a.cli.PaginateMailbox(a.ctx, slidetypes.MakePaginateMailboxRequest(fbid, C.GoString(cursor), f, nil))
 		if err == nil && resp.Mailbox != nil {
 			resp.Mailbox.Token = ""
 		}
-		return resp, err
+		if _, err := wire(a.id, "inbox-"+f, resp, err); err != nil {
+			return nil, err
+		}
+		threads, next, err := chat.Mailbox(must(json.Marshal(resp.Mailbox)))
+		if err != nil {
+			return nil, err
+		}
+		n := a.do(func(c *chat.Chats) []chat.Envelope {
+			var out []chat.Envelope
+			for _, t := range threads {
+				out = append(out, c.Thread(t))
+			}
+			return out
+		})
+		return map[string]any{"next": nextPage(next), "seq": n}, nil
 	})
 }
 
-//export IGThread
-func IGThread(acct, thread *C.char) *C.char {
-	return call(acct, "thread", func(a *account) (any, error) {
-		return a.cli.GetThread(a.ctx, slidetypes.MakeGetThreadInfoRequest(C.GoString(thread)))
+// The chat read in full: reactions, edits, reply targets (the mailbox's copy of a message has none, P1). A read; it
+// sends nothing. `{room, seq}`.
+//
+//export IGReadChat
+func IGReadChat(room *C.char) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
+		room, n, err := a.readThread(r.thread)
+		return map[string]any{"room": room, "seq": n}, err
 	})
 }
 
-// Older messages: after `cursor` (the previous page's end cursor), or else older than `message`.
+// The page of older messages before the room's window, as `/messages` gives it (a MessagesPage, newest first, no
+// `end` at the start of the chat), also prepended to the engine's copy. A read.
 //
 //export IGOlder
-func IGOlder(acct, thread, cursor, message *C.char) *C.char {
-	return call(acct, "older", func(a *account) (any, error) {
-		req := &slidetypes.PaginateMessagesRequest{ThreadID: C.GoString(thread), FirstN: 20, InitialMessagePageCount: 20}
-		if c := C.GoString(cursor); c != "" {
-			req.AfterCursor = &c
-		} else {
-			m := C.GoString(message)
-			req.OlderThanMessageID = &m
+func IGOlder(room *C.char) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
+		a.chats.Lock()
+		_, cursor, _ := a.chats.Older(r.room)
+		a.chats.Unlock()
+		var t *chat.Thread
+		if cursor != "" && cursor != chat.StartToken {
+			resp, err := a.cli.PaginateMessages(a.ctx, &slidetypes.PaginateMessagesRequest{
+				ThreadID: r.thread, FirstN: 20, InitialMessagePageCount: 20, AfterCursor: &cursor,
+			})
+			b, err := wire(a.id, "older", resp, err)
+			if err != nil {
+				return nil, err
+			}
+			if t, err = chat.OlderThread(b); err != nil {
+				return nil, err
+			}
 		}
-		return a.cli.PaginateMessages(a.ctx, req)
+		a.chats.Lock()
+		defer a.chats.Unlock()
+		return a.chats.Prepend(r.room, cursor, t), nil
 	})
 }
 
@@ -319,18 +523,21 @@ func optional(s *C.char) *string {
 	return nil
 }
 
-// `otid` is the offline threading ID Swift generated for its local echo; the socket's echo carries it back.
+// `otid` is the offline threading ID of the app's local echo (IGNewOTID); the socket's echo carries it back. The
+// result is `{id}`, Instagram's ID for the message.
 //
 //export IGSend
-func IGSend(acct, thread, text, replyTo, otid *C.char) *C.char {
-	return call(acct, "send", func(a *account) (any, error) {
-		return a.cli.SendMessage(a.ctx, &slidetypes.SendTextRequest{
-			IGThreadIGID:       optional(thread),
+func IGSend(room, text, replyTo, otid *C.char) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
+		resp, err := a.cli.SendMessage(a.ctx, &slidetypes.SendTextRequest{
+			IGThreadIGID:       &r.thread,
 			OfflineThreadingID: C.GoString(otid),
 			Text:               slidetypes.SensitiveString{Value: C.GoString(text)},
 			ReplyToMessageID:   optional(replyTo),
 			SendAttribution:    new("igd_web_chat_tab:in_thread"),
 		})
+		b, err := wire(a.id, "send", resp, err)
+		return map[string]string{"id": chat.SentID(b)}, err
 	})
 }
 
@@ -339,68 +546,95 @@ func IGSend(acct, thread, text, replyTo, otid *C.char) *C.char {
 //
 //export IGSendNew
 func IGSendNew(acct, recipient, text, otid *C.char) *C.char {
-	return call(acct, "send-new", func(a *account) (any, error) {
-		return a.cli.SendMessage(a.ctx, &slidetypes.SendTextRequest{
+	return call(acct, func(a *account) (any, error) {
+		resp, err := a.cli.SendMessage(a.ctx, &slidetypes.SendTextRequest{
 			RecipientIGIDs:     []string{C.GoString(recipient)},
 			OfflineThreadingID: C.GoString(otid),
 			Text:               slidetypes.SensitiveString{Value: C.GoString(text)},
 			SendAttribution:    new("igd_web_chat_tab:in_thread"),
 		})
+		_, err = wire(a.id, "send-new", resp, err)
+		return map[string]bool{"ok": true}, err
 	})
+}
+
+// A new offline threading ID, for a local echo.
+//
+//export IGNewOTID
+func IGNewOTID() *C.char {
+	return C.CString(chat.OfflineThreadingID(time.Now().UnixMilli(), otids.Add(1)))
 }
 
 //export IGAccept
-func IGAccept(acct, thread, otid *C.char) *C.char {
-	return call(acct, "accept", func(a *account) (any, error) {
-		return a.cli.AcceptMessageRequest(a.ctx, &slidetypes.AcceptMessageRequestRequest{
-			ThreadID: C.GoString(thread), OfflineThreadingID: C.GoString(otid),
+func IGAccept(room, otid *C.char) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
+		resp, err := a.cli.AcceptMessageRequest(a.ctx, &slidetypes.AcceptMessageRequestRequest{
+			ThreadID: r.thread, OfflineThreadingID: C.GoString(otid),
 		})
+		_, err = wire(a.id, "accept", resp, err)
+		return map[string]bool{"ok": true}, err
 	})
 }
 
-// Deletes the thread for this account (a request's Delete). Future requests from them aren't moved to spam.
+// Deletes the thread for this account (a request's Delete); its room goes. Future requests from them aren't moved
+// to spam.
 //
 //export IGDeleteThread
-func IGDeleteThread(acct, thread *C.char) *C.char {
-	return call(acct, "delete-thread", func(a *account) (any, error) {
-		return a.cli.DeleteThread(a.ctx, &slidetypes.DeleteThreadRequest{ThreadID: C.GoString(thread)})
+func IGDeleteThread(room *C.char) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
+		resp, err := a.cli.DeleteThread(a.ctx, &slidetypes.DeleteThreadRequest{ThreadID: r.thread})
+		if _, err = wire(a.id, "delete-thread", resp, err); err != nil {
+			return nil, err
+		}
+		return map[string]int64{"seq": a.do(func(c *chat.Chats) []chat.Envelope { return c.Remove(r.room) })}, nil
 	})
 }
 
+// People to start a chat with, as New Message's contacts.
+//
 //export IGSearch
 func IGSearch(acct, query *C.char) *C.char {
-	return call(acct, "search", func(a *account) (any, error) { return a.cli.SearchUsers(a.ctx, C.GoString(query)) })
+	return call(acct, func(a *account) (any, error) {
+		resp, err := a.cli.SearchUsers(a.ctx, C.GoString(query))
+		b, err := wire(a.id, "search", resp, err)
+		if err != nil {
+			return nil, err
+		}
+		return chat.Contacts(b)
+	})
 }
 
-// Our DM with `user` (their FBID), if there is one: `{found, thread_igid, thread_fbid}` (thread_fbid is ThreadInfo.id).
+// Our DM with `user` (their FBID), if Instagram has one, read into its room: `{found, room, seq}`.
 //
 //export IGFindDM
 func IGFindDM(acct, user *C.char) *C.char {
-	return call(acct, "find-dm", func(a *account) (any, error) {
+	return call(acct, func(a *account) (any, error) {
 		fbid, err := strconv.ParseInt(C.GoString(user), 10, 64)
 		if err != nil {
 			return nil, err
 		}
-		ids, err := a.cli.FetchThreadID(a.ctx, fbid)
+		found, err := a.cli.FetchThreadID(a.ctx, fbid)
 		if errors.Is(err, instameow.ErrThreadNotFound) {
 			return map[string]any{"found": false}, nil
 		} else if err != nil {
 			return nil, err
 		}
-		return map[string]any{"found": true, "thread_igid": ids.LongID, "thread_fbid": ids.ShortID}, nil
+		capture(a.id, "find-dm", must(json.Marshal(found)))
+		room, n, err := a.readThread(found.ShortID)
+		return map[string]any{"found": true, "room": room, "seq": n}, err
 	})
 }
 
-// Sends a photo, video or voice note (`path`, the file Swift prepared): uploads it to Instagram's media endpoint for
-// the thread (`threadKey`, ThreadInfo.thread_key), then sends it to `thread` (ThreadInfo.id). As the bridge did
-// (msgconv/mediadl/upload.go), without its Matrix download first.
+// Sends a photo, video or voice note (`path`, the file the app prepared): uploads it to Instagram's media endpoint
+// for the thread (its thread_key), then sends it. As the bridge did (msgconv/mediadl/upload.go), without its Matrix
+// download first.
 // ponytail: no Android upload fallback for videos (upload.go:104); add it if an account's video uploads come back
 // without an ID.
 //
 //export IGSendMedia
-func IGSendMedia(acct, threadKey, thread, path, mime *C.char, voice C.int, replyTo, otid *C.char) *C.char {
-	return call(acct, "send-media", func(a *account) (any, error) {
-		key, err := strconv.ParseInt(C.GoString(threadKey), 10, 64)
+func IGSendMedia(room, path, mime *C.char, voice C.int, replyTo, otid *C.char) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
+		key, err := strconv.ParseInt(r.key, 10, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -418,22 +652,30 @@ func IGSendMedia(acct, threadKey, thread, path, mime *C.char, voice C.int, reply
 		if id == 0 {
 			return nil, errors.New("Instagram didn't accept the upload")
 		}
-		return a.cli.SendMedia(a.ctx, &slidetypes.SendMediaRequest{
-			AttachmentFBID: strconv.FormatInt(id, 10), ThreadID: C.GoString(thread), OfflineThreadingID: C.GoString(otid),
+		sent, err := a.cli.SendMedia(a.ctx, &slidetypes.SendMediaRequest{
+			AttachmentFBID: strconv.FormatInt(id, 10), ThreadID: r.thread, OfflineThreadingID: C.GoString(otid),
 			ReplyToMessageID: optional(replyTo),
 		})
+		_, err = wire(a.id, "send-media", sent, err)
+		return map[string]bool{"ok": true}, err
 	})
 }
 
 var shortcode = regexp.MustCompile(`/(?:reel|p)/([a-zA-Z0-9_-]+)/?`)
 
-// A shared reel, post or story's own media (`target`, its instagram.com link; `id`, the share's target_id): the best
-// video, else the best image. A read; the bridge's resolve_media (msgconv/igconv/xma.go).
+// "Load video" on a shared reel, post or story (`message`): its own media, the best video, else the best image, in
+// place of the card as a hidden edit. A read; the bridge's resolve_media (msgconv/igconv/xma.go). `{seq}`.
 //
 //export IGResolveMedia
-func IGResolveMedia(acct, target, id *C.char) *C.char {
-	return call(acct, "resolve-media", func(a *account) (any, error) {
-		u, err := url.Parse(C.GoString(target))
+func IGResolveMedia(room, message *C.char) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
+		a.chats.Lock()
+		target, id, err := a.chats.Unresolved(r.room, C.GoString(message))
+		a.chats.Unlock()
+		if err != nil {
+			return nil, err
+		}
+		u, err := url.Parse(target)
 		if err != nil {
 			return nil, err
 		}
@@ -454,7 +696,7 @@ func IGResolveMedia(acct, target, id *C.char) *C.char {
 			if m := shortcode.FindStringSubmatch(u.Path); len(m) > 1 {
 				code = m[1]
 			}
-			resp, err := a.cli.FetchMedia(a.ctx, C.GoString(id), code)
+			resp, err := a.cli.FetchMedia(a.ctx, id, code)
 			if err != nil {
 				return nil, err
 			}
@@ -472,82 +714,107 @@ func IGResolveMedia(acct, target, id *C.char) *C.char {
 		if item == nil {
 			return nil, errors.New("Instagram has no media for this share")
 		}
-		best := map[string]any{"width": item.OriginalWidth, "height": item.OriginalHeight, "duration": item.VideoDuration}
+		best := chat.Resolved{Width: float64(item.OriginalWidth), Height: float64(item.OriginalHeight), Duration: item.VideoDuration}
+		videoWidth := 0
 		for _, v := range item.VideoVersions {
-			if w, _ := best["video_width"].(int); v.Width > w {
-				best["url"], best["video"], best["video_width"] = v.URL, true, v.Width
+			if v.Width > videoWidth {
+				best.URL, best.Video, videoWidth = v.URL, true, v.Width
 			}
 		}
-		if best["url"] == nil {
+		if best.URL == "" {
 			res := 0
 			for _, c := range item.ImageVersions2.Candidates {
 				if c.Width*c.Height > res {
-					best["url"], res = c.URL, c.Width*c.Height
+					best.URL, res = c.URL, c.Width*c.Height
 				}
 			}
 		}
-		if best["url"] == nil {
+		if best.URL == "" {
 			return nil, errors.New("Instagram has no media for this share")
 		}
-		return best, nil
+		capture(a.id, "resolve-media", must(json.Marshal(best)))
+		n := a.do(func(c *chat.Chats) (out []chat.Envelope) { out, err = c.Resolved(r.room, C.GoString(message), best); return out })
+		return map[string]int64{"seq": n}, err
 	})
 }
 
 //export IGReact
-func IGReact(acct, thread, message, emoji *C.char, remove C.int) *C.char {
-	return call(acct, "react", func(a *account) (any, error) {
+func IGReact(room, message, emoji *C.char, remove C.int) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
 		status := slidetypes.ReactionStatusCreated
 		if remove != 0 {
 			status = slidetypes.ReactionStatusDeleted
 		}
-		return a.cli.SendReaction(a.ctx, &slidetypes.CreateReactionRequest{Input: slidetypes.ReactionInput{
-			Emoji: C.GoString(emoji), MessageID: C.GoString(message), ReactionStatus: status, ThreadID: C.GoString(thread),
+		resp, err := a.cli.SendReaction(a.ctx, &slidetypes.CreateReactionRequest{Input: slidetypes.ReactionInput{
+			Emoji: C.GoString(emoji), MessageID: C.GoString(message), ReactionStatus: status, ThreadID: r.thread,
 		}})
+		_, err = wire(a.id, "react", resp, err)
+		return map[string]bool{"ok": true}, err
 	})
 }
 
 //export IGEdit
-func IGEdit(acct, thread, message, text, otid *C.char) *C.char {
-	return call(acct, "edit", func(a *account) (any, error) {
-		return a.cli.EditMessage(a.ctx, &slidetypes.EditMessageRequest{
-			ThreadID: C.GoString(thread), TargetMessageID: C.GoString(message), OfflineThreadingID: C.GoString(otid),
+func IGEdit(room, message, text, otid *C.char) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
+		resp, err := a.cli.EditMessage(a.ctx, &slidetypes.EditMessageRequest{
+			ThreadID: r.thread, TargetMessageID: C.GoString(message), OfflineThreadingID: C.GoString(otid),
 			Body: slidetypes.SensitiveString{Value: C.GoString(text)},
 		})
+		_, err = wire(a.id, "edit", resp, err)
+		return map[string]bool{"ok": true}, err
 	})
 }
 
+// Unsend, for everyone. Instagram names the thread by its long ID here (P0).
+//
 //export IGUnsend
-func IGUnsend(acct, threadLong, message *C.char) *C.char {
-	return call(acct, "unsend", func(a *account) (any, error) {
-		return a.cli.UnsendMessage(a.ctx, &slidetypes.UnsendMessageRequest{
-			MessageID: C.GoString(message), SendData: slidetypes.SendData{ThreadID: C.GoString(threadLong)},
+func IGUnsend(room, message *C.char) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
+		resp, err := a.cli.UnsendMessage(a.ctx, &slidetypes.UnsendMessageRequest{
+			MessageID: C.GoString(message), SendData: slidetypes.SendData{ThreadID: r.long},
 		})
+		_, err = wire(a.id, "unsend", resp, err)
+		return map[string]bool{"ok": true}, err
 	})
 }
 
-// Sends "Seen" up to `message` (sent at `tsMS`): the same two requests the bridge makes (handlematrix.go:323).
+// "Seen" up to `message`: the chat reads at once (an update, before Instagram is asked), then the same two requests
+// the bridge makes (handlematrix.go:323). If they fail, the chat is unread again, so the next open tries again.
+// Nothing is sent when the engine already had it read that far. `{seq}`.
 //
 //export IGMarkRead
-func IGMarkRead(acct, threadLong, message *C.char, tsMS C.longlong) *C.char {
-	return call(acct, "mark-read", func(a *account) (any, error) {
-		meta := slidetypes.MarkReadMetadata{IGThreadIGID: C.GoString(threadLong)}
+func IGMarkRead(room, message *C.char) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
+		var long string
+		var ms int64
+		var err error
+		n := a.do(func(c *chat.Chats) (out []chat.Envelope) { out, long, ms, err = c.MarkRead(r.room, C.GoString(message)); return out })
+		if err != nil || long == "" {
+			return map[string]int64{"seq": n}, err
+		}
+		meta := slidetypes.MarkReadMetadata{IGThreadIGID: long}
 		id := C.GoString(message)
-		if _, err := a.cli.MarkRead(a.ctx, &slidetypes.MarkReadRequest{
-			Metadata: meta, Data: slidetypes.MarkReadData{MessageID: id, ItemID: new("")},
-		}); err != nil {
+		_, err = a.cli.MarkRead(a.ctx, &slidetypes.MarkReadRequest{Metadata: meta, Data: slidetypes.MarkReadData{MessageID: id, ItemID: new("")}})
+		if err == nil {
+			var resp any
+			resp, err = a.cli.MarkReadValidation(a.ctx, &slidetypes.MarkReadRequest{
+				Metadata: meta, Data: slidetypes.MarkReadData{MessageID: id, MessageTimestampMS: jsontime.UnixMilliString{Time: time.UnixMilli(ms)}},
+			})
+			_, err = wire(a.id, "mark-read", resp, err)
+		}
+		if err != nil {
+			a.do(func(c *chat.Chats) []chat.Envelope { return c.Unread(r.room) })
 			return nil, err
 		}
-		return a.cli.MarkReadValidation(a.ctx, &slidetypes.MarkReadRequest{
-			Metadata: meta, Data: slidetypes.MarkReadData{MessageID: id, MessageTimestampMS: jsontime.UnixMilliString{Time: time.UnixMilli(int64(tsMS))}},
-		})
+		return map[string]int64{"seq": n}, nil
 	})
 }
 
 //export IGTyping
-func IGTyping(acct, thread *C.char, on C.int) *C.char {
-	return call(acct, "typing", func(a *account) (any, error) {
+func IGTyping(room *C.char, on C.int) *C.char {
+	return roomCall(room, func(a *account, r ids) (any, error) {
 		a.count.add("typing (socket)") // goes over the socket, so the HTTP counter doesn't see it
-		return map[string]bool{"ok": true}, a.cli.SetTyping(a.ctx, C.GoString(thread), on != 0)
+		return map[string]bool{"ok": true}, a.cli.SetTyping(a.ctx, r.thread, on != 0)
 	})
 }
 
@@ -570,7 +837,7 @@ func IGCounts() *C.char {
 //
 //export IGSession
 func IGSession(acct *C.char) *C.char {
-	a, err := get(acct)
+	a, err := get(C.GoString(acct))
 	if err != nil {
 		return fail(err)
 	}
@@ -578,6 +845,8 @@ func IGSession(acct *C.char) *C.char {
 	return C.CString(string(b))
 }
 
+// Disconnects the account and forgets its client and chats (Remove Account). Instagram isn't told.
+//
 //export IGStop
 func IGStop(acct *C.char) {
 	mu.Lock()

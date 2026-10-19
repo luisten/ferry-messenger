@@ -62,9 +62,9 @@ enum Fixture {
         try JSONDecoder().decode(JSON.self, from: data(name))
     }
 
-    /// One of P0's Instagram captures (`ig_*.json`), decoded as `core/` hands it to the app.
-    static func ig<T: Decodable>(_ type: T.Type, _ name: String) throws -> T {
-        try IG.decode(type, data(name))
+    /// What the engine makes of P0's Instagram captures (`engine_<name>.json`, written by core/chat's tests).
+    static func engine<T: Decodable>(_ type: T.Type, _ name: String) throws -> T {
+        try JSONDecoder().decode(type, from: data("engine_\(name)"))
     }
 
     private final class BundleToken {}
