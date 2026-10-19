@@ -23,8 +23,9 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 
 ### Fixed
 
-- Replies and emoji reactions to a story showed only the story. What was sent now shows under it, and in the chat
-  list.
+- Replies and emoji reactions to a story showed only the story. What was sent now shows under it, with Instagram's
+  "Replied to …'s story" line above it, and in the chat list.
+- The chat list could say "You: " twice, as in "You: You sent an attachment."
 - A chat, most often a group, could stay unread after you'd read it.
 
 ## [1.1] - 2026-10-18

@@ -151,8 +151,12 @@ captured in P0)
   `RecipientIGIDs`) makes the thread; its NewMessage delta loads it and `movedRooms` leads the draft to it.
 - **Shares (XMA)** become the bridge's shapes, so Ferry's cards work unchanged: `external_url`, `formatted_body`
   `<strong>author</strong><p>caption</p>`, `com.beeper.unresolved_media` → "Load video" (`IGResolveMedia`, a read)
-  → a hidden `m.replace`. A story reply or reaction is the story plus `content.xma_text_body` (upstream's
-  `MessageContentXMA`; not captured yet), kept under `MessageKind.shareTextKey` and shown under the card.
+  → a hidden `m.replace`. Instagram's own line about a share (`eyebrow_text`: "Replied to @Name's story", worded so on
+  both sides) is a `<blockquote>`, shown above it. A story reply or reaction is `MONTAGE_SHARE_XMA`: the thread's copy
+  is the story plus `content.xma_text_body` (kept under `MessageKind.shareTextKey`, shown under the card); the
+  mailbox's has `xma: null` and the text only in `text_body`, so it's a text until the thread is read (live
+  2026-10-19, `ig_story_replies_kivo`). Any other share's mailbox copy (`xma: null`) is its snippet as a chat event:
+  the snippet names the sender ("You sent an attachment."), and the inbox said "You: " again.
 - **GIFs** are `content_type` `GIFS` (`animated_media`: WebP and MP4 links, a preview that may be `null`); the
   mailbox's copy has `animated_media: null`, the thread's has the links. An uploaded animated GIF comes back as one of
   Instagram's GIFs on both sides (live 2026-10-17), so GIFs from Photos and pasted GIF links are sent as files

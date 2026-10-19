@@ -438,8 +438,13 @@ nonisolated enum IGAdapter {
             let line = (attachments?["text_fragments"]?.array ?? []).compactMap { $0["plaintext"]?.string }.joined()
             guard let line = nonEmpty(line) ?? nonEmpty(message.igdSnippet) else { return unsupported(message) }
             return ["msgtype": "m.notice", "body": .string(line), MessageKind.eventKey: true]
-        case _ where attachments?["xma"] != nil:  // a story reply or reaction is the story plus its text (upstream's ToMatrix)
-            return share(attachments?["xma"], snippet: message.igdSnippet, text: nonEmpty(attachments?["xma_text_body"]?.string))
+        case _ where attachments?["xma"] != nil:
+            // A story reply or reaction (`MONTAGE_SHARE_XMA`) is the story plus what was sent, `xma_text_body` (live
+            // 2026-10-19, `ig_story_replies_kivo`). The mailbox's copy has `xma: null` and the text only in `text_body`:
+            // a text until the thread is read, previewed as Instagram's own snippet does.
+            let sent = nonEmpty(attachments?["xma_text_body"]?.string) ?? nonEmpty(message.textBody)
+            if attachments?["xma"]?.object == nil, let sent { return text(sent) }
+            return share(attachments?["xma"], snippet: message.igdSnippet, text: sent)
         case "RAVEN_IMAGE":
             // The bridge's own wording is how `MessageKind` knows view-once media.
             return ["msgtype": "m.notice", "body": "This photo can only be viewed once. Use the Instagram app to view."]
@@ -473,15 +478,21 @@ nonisolated enum IGAdapter {
 
     /// A share (Instagram's XMA) in the bridge's shapes, so the cards read it as before: a reel or story waits for
     /// "Load video" (`com.beeper.unresolved_media`, then `resolved`), a post is its image, a link off Instagram is a
-    /// text with its preview, an expired story its notice. The author is Instagram's `header_title_text`. `text` is
-    /// what was sent with it (`xma_text_body`: a story reply, or a story reaction's emoji), under
-    /// `MessageKind.shareTextKey`: one message, so one menu, reaction row and unsend.
+    /// text with its preview, an expired story its notice. The author is Instagram's `header_title_text`, its own line
+    /// about it ("Replied to @…'s story") `eyebrow_text`, as the bridge's `<blockquote>`. `text` is what was sent with
+    /// it (a story reply, or a story reaction's emoji), under `MessageKind.shareTextKey`: one message, so one menu,
+    /// reaction row and unsend.
     static func share(_ xma: JSON?, snippet: String?, text: String? = nil) -> JSON {
         let link = xma?["target_url"]?.string
         let preview = xma?["preview_image"]
         let caption = [xma?["title_text"], xma?["caption_body_text"], xma?["subtitle_text"]].compactMap { $0?.string }.first { !$0.isEmpty }
         guard let link, let type = MessageKind.ShareType(instagramURL: link) else {
-            guard let link else {  // an expired story: "Story unavailable"
+            guard let link else {
+                // The mailbox's copy has no `xma`, and its snippet names the sender ("You sent an attachment."): a line
+                // that says who, so the inbox doesn't add "You: " again. The thread's copy replaces it.
+                if xma?.object == nil {
+                    return ["msgtype": "m.notice", "body": .string(nonEmpty(snippet) ?? "Shared content"), MessageKind.eventKey: true]
+                }
                 var notice: [String: JSON] = ["msgtype": "m.notice", "body": .string(caption ?? nonEmpty(snippet) ?? "Shared content")]
                 notice[MessageKind.shareTextKey] = text.map { .string($0) }
                 return .object(notice)
@@ -492,7 +503,8 @@ nonisolated enum IGAdapter {
             preview["og:image"] = xma?["preview_image"]?["url"]
             return ["msgtype": "m.text", "body": .string(text ?? link), "com.beeper.linkpreviews": [.object(preview)]]
         }
-        var html = xma?["header_title_text"]?.string.map { "<strong>\(escape($0))</strong>" } ?? ""
+        var html = nonEmpty(xma?["eyebrow_text"]?.string).map { "<blockquote>\(escape($0))</blockquote>" } ?? ""
+        html += xma?["header_title_text"]?.string.map { "<strong>\(escape($0))</strong>" } ?? ""
         if let caption { html += "<p>\(escape(caption))</p>" }
         var info: [String: JSON] = ["w": preview?["width"] ?? .null, "h": preview?["height"] ?? .null]
         var fields: [String: JSON] = ["body": .string(nonEmpty(snippet) ?? "Sent a \(type.rawValue)"), "external_url": .string(link),
