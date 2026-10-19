@@ -618,6 +618,10 @@ nonisolated enum IGAdapter {
         default:
             guard let update = update(delta, account: account) else { return .ignored }
             room.apply(update)
+            // Their message ends their typing: Instagram sends no "stopped" with it, so "typing…" held for its 22 s TTL.
+            if let fbid = delta.message?.senderFbid, room.typing.contains(user(fbid)) {
+                room.apply(typing(user(fbid), on: false, in: room.typing))
+            }
         }
         return .applied
     }
@@ -676,6 +680,12 @@ nonisolated enum IGAdapter {
     /// Who's typing in a room right now (replaces the list, as `m.typing` did).
     static func typing(_ users: [String]) -> JoinedRoom {
         JoinedRoom(ephemeral: EventList(events: [Event(type: "m.typing", content: ["user_ids": .array(users.map { .string($0) })])]))
+    }
+
+    /// One person starting or stopping, the others as they were: in a group, Instagram's notices come one person at a
+    /// time, and one person's "stopped" cleared everyone.
+    static func typing(_ user: String, on: Bool, in current: [String]) -> JoinedRoom {
+        typing(current.filter { $0 != user } + (on ? [user] : []))
     }
 
     /// The room's `m.bridge` again with its channel changed (the Instagram tab, the request flag).
