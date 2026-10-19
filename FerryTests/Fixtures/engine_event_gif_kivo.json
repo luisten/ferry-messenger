@@ -1,0 +1,37 @@
+{
+ "live": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "GIF",
+    "info": {
+     "fi.mau.gif": true,
+     "h": 240,
+     "mimetype": "image/webp",
+     "w": 240
+    },
+    "msgtype": "m.image",
+    "url": "https://scontent.example.invalid/v/g001.webp"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyneKwklmhR2bVaABAq",
+   "sender": "@ig_17841400000000301",
+   "origin_server_ts": 1792199285910
+  }
+ ],
+ "mailbox": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "GIF",
+    "info": {
+     "fi.mau.gif": true,
+     "mimetype": "image/webp"
+    },
+    "msgtype": "m.image"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyneKwklmhR2bVaABAq",
+   "sender": "@ig_17841400000000301",
+   "origin_server_ts": 1792199285910
+  }
+ ]
+}

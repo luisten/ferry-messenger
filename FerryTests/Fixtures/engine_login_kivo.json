@@ -1,0 +1,176 @@
+{
+ "login": {
+  "account": "17841400000000302",
+  "viewer": {
+   "fbid": "17841400000001302",
+   "full_name": "Kivo Studio",
+   "has_tabbed_inbox": false,
+   "id": "4200000302",
+   "is_business_account": true,
+   "is_professional_account": true,
+   "profile_pic_url": "https://scontent.example.invalid/v/f018.jpg?oe=6AD844F4",
+   "username": "kivostudio"
+  }
+ },
+ "rooms": [
+  {
+   "kind": "Room",
+   "room": "!ig-17841400000000302-1700000000000301",
+   "update": {
+    "state": {
+     "events": [
+      {
+       "type": "m.bridge",
+       "content": {
+        "channel": {
+         "displayname": "Tamo Veska",
+         "fi.mau.receiver": "17841400000000302",
+         "id": "17841400000000301"
+        },
+        "com.beeper.room_type": "dm",
+        "protocol": {
+         "displayname": "Instagram",
+         "id": "instagramgo"
+        }
+       },
+       "event_id": "$ig-m.bridge-instagram",
+       "sender": "@me",
+       "state_key": "instagram"
+      },
+      {
+       "type": "m.room.name",
+       "content": {
+        "name": "Tamo Veska"
+       },
+       "event_id": "$ig-m.room.name-",
+       "sender": "@me",
+       "state_key": ""
+      },
+      {
+       "type": "m.room.avatar",
+       "content": {
+        "url": "https://scontent.example.invalid/v/f017.jpg?oe=6AD83F0F"
+       },
+       "event_id": "$ig-m.room.avatar-",
+       "sender": "@me",
+       "state_key": ""
+      },
+      {
+       "type": "m.room.member",
+       "content": {
+        "avatar_url": "https://scontent.example.invalid/v/f018.jpg?oe=6AD844F4",
+        "displayname": "Kivo Studio",
+        "membership": "join"
+       },
+       "event_id": "$ig-member-@me",
+       "sender": "@me",
+       "state_key": "@me"
+      },
+      {
+       "type": "m.room.member",
+       "content": {
+        "avatar_url": "https://scontent.example.invalid/v/f017.jpg?oe=6AD83F0F",
+        "displayname": "Tamo Veska",
+        "membership": "join"
+       },
+       "event_id": "$ig-member-@ig_17841400000000301",
+       "sender": "@ig_17841400000000301",
+       "state_key": "@ig_17841400000000301"
+      }
+     ]
+    },
+    "timeline": {
+     "events": [
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Voice message",
+        "info": {
+         "duration": 0,
+         "mimetype": "audio/mp4"
+        },
+        "msgtype": "m.audio",
+        "org.matrix.msc1767.audio": {
+         "duration": 0
+        },
+        "org.matrix.msc3245.voice": {}
+       },
+       "event_id": "mid.$cAAAy8NQIKzyncN82pWhP5nbUWn2W",
+       "sender": "@ig_17841400000000301",
+       "origin_server_ts": 1792068415141
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "On-device spike test",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzync6ZVKmhQmELUgAAq",
+       "sender": "@ig_17841400000000301",
+       "origin_server_ts": 1792115019050
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Push test while suspended",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzync7HIY2hQmx-gAAAq",
+       "sender": "@me",
+       "origin_server_ts": 1792115769443
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Push test",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzync8bc_WhQoGTXb4HM",
+       "sender": "@me",
+       "origin_server_ts": 1792117150973
+      },
+      {
+       "type": "m.room.message",
+       "content": {
+        "body": "Another test",
+        "msgtype": "m.text"
+       },
+       "event_id": "mid.$cAAAy8NQIKzync8_scmhQoqixX4VD",
+       "sender": "@me",
+       "origin_server_ts": 1792117744754
+      }
+     ],
+     "limited": true,
+     "prev_batch": "AQHTaGMV8buQQKYcLcY5umFV5RHC0wT-QTJ7TRJOheTZ-9SLkgBFiF-09Z9-PMF18labtnwxTRPr9UNpMwrAQmHN25YX-cZRDuCmklz5cpLqG29UXNOvhGRKhaqSr_M61LfI"
+    },
+    "ephemeral": {
+     "events": [
+      {
+       "type": "m.receipt",
+       "content": {
+        "mid.$cAAAy8NQIKzync8_scmhQoqixX4VD": {
+         "m.read": {
+          "@me": {
+           "ts": 1792117744754
+          }
+         }
+        }
+       }
+      }
+     ]
+    },
+    "unread_notifications": {
+     "notification_count": 0,
+     "highlight_count": 0
+    }
+   },
+   "profiles": {
+    "@ig_17841400000000301": {
+     "name": "Tamo Veska",
+     "avatar_url": "https://scontent.example.invalid/v/f017.jpg?oe=6AD83F0F",
+     "handle": "tamoveska"
+    }
+   }
+  }
+ ]
+}

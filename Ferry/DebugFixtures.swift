@@ -6,11 +6,12 @@ import Foundation
 /// - `FERRY_DEBUG_REQUESTS=1`: adds three hand-made request rooms (I2/T2 screenshots).
 /// - `FERRY_DEBUG_GROUP=1`: adds one hand-made Instagram group (thread sender labels, Chat Info members); no group
 ///   exists on the dummies (FOLLOWUPS #24).
-///   Fixture rooms (`!debug-…`) aren't real: they have no Instagram thread (`AppModel.threadID` is nil for them) and
-///   `AppModel.checkSend` refuses them, so nothing about them leaves the app.
+///   Fixture rooms (`!debug-…`) aren't real: the engine refuses rooms it didn't make, `AppModel.hasThread` skips them
+///   and `AppModel.checkSend` refuses them, so nothing about them leaves the app.
 /// - `FERRY_DEBUG_AS_REQUEST=<room id>`: treats one real room as a request, for the "opening a request sends nothing"
-///   check in the C6 request count. Event sends to it are blocked here (Accept or Delete would act on the real thread);
-///   receipts and typing are not, so the check exercises the app's own rule.
+///   check in the C6 request count. The engine marks it one (`IGCore.setDebug`), so every request rule applies, and
+///   holds back its sends (Accept or Delete would act on the real thread); receipts and typing aren't blocked, so the
+///   check exercises the rule itself.
 /// - `FERRY_DEBUG_LOGIN_STATE=<login id>=<STATE>[,…]`: replaces the state of those accounts (needs-login banner,
 ///   A1, A3) without touching the real session.
 /// - `FERRY_DEBUG_ENDED_SESSION=<account id>[,…]`: connects those accounts with a broken `sessionid` for this launch,
@@ -20,8 +21,8 @@ import Foundation
 /// - `FERRY_DEBUG_ONBOARDING=welcome|signin|connecting|identity|another` (`1` = welcome): shows onboarding over a
 ///   signed-in session with accounts, at that step, for the first account. Nothing is disconnected; finishing it
 ///   ("Not now", Save on a later account) returns to the inbox.
-/// - `FERRY_DEBUG_BLOCK_SENDS=1`: every message send and media upload fails here, before Instagram (UI tests that
-///   exercise the composer's send gestures: if a gesture misfires, nothing reaches Instagram).
+/// - `FERRY_DEBUG_BLOCK_SENDS=1`: every message send and media upload fails in the engine, before Instagram (UI tests
+///   that exercise the composer's send gestures: if a gesture misfires, nothing reaches Instagram).
 /// - `FERRY_DEBUG_VOICE_FILE=<path to an .m4a>`: the mic records nothing; holding it "records" until release and then
 ///   sends this file through the same path (the simulator's microphone follows the Mac's input, which may not work).
 /// - `FERRY_DEBUG_STACK_EXTRA=<STATE>[,…]`: one stand-in account per state, after the real ones, in the inbox's
@@ -73,21 +74,10 @@ nonisolated enum DebugFixtures {
         return AccountIdentity(name: "Extra \(i + 1)", color: color, mark: "\(i + 1)", order: 100 + i)
     }
 
-    /// Marks the forced room as a request by re-applying its own `m.bridge` with the flag set (what the bridge would
-    /// send for a PENDING thread). Idempotent; called after every sync.
-    static func markForcedRequest(in rooms: [String: Room]) {
-        guard let id = forcedRequestRoom, let room = rooms[id], room.bridge?.isRequest == false,
-              var request = room.state["m.bridge"]?.values.first(where: { BridgeInfo(content: $0.content) != nil }),
-              case .object(var content) = request.content, case .object(var channel)? = content["channel"] else { return }
-        channel["com.beeper.message_request"] = true
-        content["channel"] = .object(channel)
-        request.content = .object(content)
-        room.apply(JoinedRoom(state: EventList(events: [request])))
-    }
-
-    /// Thrown by `AppModel.checkSend` for fixture rooms, the forced room, and every send under `FERRY_DEBUG_BLOCK_SENDS`.
+    /// Thrown by `AppModel.checkSend` for fixture rooms (the engine holds back the forced room's sends and, under
+    /// `FERRY_DEBUG_BLOCK_SENDS`, every send: `IGCore.setDebug`).
     struct Blocked: LocalizedError {
-        var errorDescription: String? { "DEBUG: blocked (a fixture room, FERRY_DEBUG_AS_REQUEST or FERRY_DEBUG_BLOCK_SENDS)." }
+        var errorDescription: String? { "DEBUG: blocked (a fixture room)." }
     }
 
     /// The hand-made rooms below; none exists on Instagram.

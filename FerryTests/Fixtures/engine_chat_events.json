@@ -1,0 +1,89 @@
+{
+ "events": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "hi",
+    "msgtype": "m.text"
+   },
+   "event_id": "mid.1",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 1000
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "there",
+    "msgtype": "m.text"
+   },
+   "event_id": "mid.1b",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 1100
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Kivo named the group Weekend",
+    "fi.ferry.event": true,
+    "msgtype": "m.notice"
+   },
+   "event_id": "mid.2",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 2000
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Sent a message Ferry can't show",
+    "fi.ferry.unsupported": "a message Ferry can't show",
+    "msgtype": "m.notice"
+   },
+   "event_id": "mid.3",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 3000
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Sent a poll",
+    "fi.ferry.unsupported": "a poll",
+    "msgtype": "m.notice"
+   },
+   "event_id": "mid.4",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 4000
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "mine",
+    "msgtype": "m.text"
+   },
+   "event_id": "mid.5",
+   "sender": "@me",
+   "origin_server_ts": 5000
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "You left the group",
+    "fi.ferry.event": true,
+    "msgtype": "m.notice"
+   },
+   "event_id": "mid.6",
+   "sender": "@me",
+   "origin_server_ts": 6000
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Sent a message Ferry can't show",
+    "fi.ferry.unsupported": "a message Ferry can't show",
+    "msgtype": "m.notice"
+   },
+   "event_id": "mid.7",
+   "sender": "@me",
+   "origin_server_ts": 7000
+  }
+ ]
+}

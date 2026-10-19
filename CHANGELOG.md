@@ -7,6 +7,14 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 
 ## [Unreleased]
 
+## [1.4] - 2026-10-19
+
+### Changed
+
+- The part of the app that talks to Instagram now also reads its messages and follows its rules (when "Seen" and
+  "typing…" go out, how often a chat reloads), so a future Android version can share it. Nothing changes in what you
+  see, or in what Instagram is asked.
+
 ## [1.3] - 2026-10-19
 
 ### Fixed
@@ -58,7 +66,8 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 - First public release: your Instagram direct messages, from all your accounts in one inbox, talking to Instagram
   straight from your iPhone.
 
-[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.3...HEAD
+[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.4...HEAD
+[1.4]: https://github.com/luisten/ferry-messenger/compare/v1.3...v1.4
 [1.3]: https://github.com/luisten/ferry-messenger/compare/v1.2...v1.3
 [1.2]: https://github.com/luisten/ferry-messenger/compare/v1.1...v1.2
 [1.1]: https://github.com/luisten/ferry-messenger/compare/v1.0...v1.1

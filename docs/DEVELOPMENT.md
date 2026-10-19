@@ -16,12 +16,15 @@ Instagram behaves): [CLAUDE.md](../CLAUDE.md).
 - **`core/`** is a Go module over [mautrix](https://github.com/mautrix/meta)'s Instagram client
   (`go.mau.fi/mautrix-meta`, pinned in `core/go.mod`). It builds to a static library with a small C API (one client
   per account, every Instagram request counted), wrapped in `build/IGCore.xcframework` (gitignored). The API is
-  [docs/PLAN-core.md](PLAN-core.md) §3.
-- **The app** (SwiftUI, no third-party Swift packages) links it through `Ferry/IGCore.swift`. `Ferry/IGAdapter.swift`
-  turns Instagram's answers into the chat model the views show (`Room`, `Timeline`, `Inbox`).
+  [docs/PLAN-core.md](PLAN-core.md) §3 as changed by [PLAN-android.md](PLAN-android.md) §3: `core/chat` turns
+  Instagram's answers into Matrix-shaped chat updates (pure Go; `cd core && go test ./...`, on the captures in
+  `core/testdata`), `cmd/igcore` is the C API around it.
+- **The app** (SwiftUI, no third-party Swift packages) links it through `Ferry/IGCore.swift` and applies the engine's
+  updates to the chat model the views show (`Room`, `Timeline`, `Inbox`). `core/chat`'s tests write what it makes of
+  each capture to `FerryTests/Fixtures/engine_*.json` (`go test ./chat -update`), which the app's `EngineTests` read.
 - **`core/spike/`** is the capture app, a one-file SwiftUI test app on the same API: log in accounts by hand, act as
-  either side of a thread, and with `FERRY_DEBUG_CAPTURE=<host dir>` write everything the core returns, for test
-  fixtures (`core/spike/build.sh`). `core/cmd/autopush` and `core/cmd/pushtool` are notification experiments (Instagram
+  either side of a thread, and with `FERRY_DEBUG_CAPTURE=<host dir>` write Instagram's answers and every live event,
+  for test fixtures (`core/spike/build.sh`). `core/cmd/autopush` and `core/cmd/pushtool` are notification experiments (Instagram
   web push); the app doesn't use them.
 
 The Xcode project, scheme, targets and folders are named `Ferry` (`Ferry.xcodeproj`, `Ferry/`, `FerryTests/`); the app's
@@ -154,13 +157,13 @@ to the launch line above. They live in `Ferry/DebugFixtures.swift` and `Ferry/Ap
 | `FERRY_DEBUG_GROUP=1` | One made-up group, "Saturday Climbs", on the first account: four senders (one who left), a reply, a reaction. Nothing about it leaves the app |
 | `FERRY_DEBUG_LOGIN_STATE=<account id>=<STATE>[,…]` | Shows that account in another state (`BAD_CREDENTIALS`, `TRANSIENT_DISCONNECT`, `UNKNOWN_ERROR`); the real session is untouched |
 | `FERRY_DEBUG_ENDED_SESSION=<account id>[,…]` | Connects that account with a broken `sessionid` for this launch, so Instagram answers as it does for a session it ended (the real signed-out banner and re-login). The Keychain keeps the real cookies; a launch without it brings the account back. One rejected inbox load per launch |
-| `FERRY_DEBUG_AS_REQUEST=<room id>` | Shows one real chat as a request, to check with the request log that opening it sends nothing; sends to it are blocked |
+| `FERRY_DEBUG_AS_REQUEST=<room id>` | The engine treats one real chat as a request, to check with the request log that opening it sends nothing; sends to it are blocked |
 | `FERRY_DEBUG_ONBOARDING=welcome\|connecting\|identity\|another` | Onboarding at that step over the signed-in accounts ("Not now" returns). Don't tap "Connect" in it unless you mean to log in |
-| `FERRY_DEBUG_BLOCK_SENDS=1` | Every message send and media upload fails in the app ("Not sent"), so nothing reaches Instagram; "Seen" and typing still go |
+| `FERRY_DEBUG_BLOCK_SENDS=1` | Every message send, media upload, reaction, edit, unsend, Accept, Delete and typing notice fails in the engine ("Not sent"), so nothing reaches Instagram; "Seen" still goes |
 | `FERRY_DEBUG_VOICE_FILE=<host path to an .m4a>` | Holding the mic "records" without the microphone and sends this file (`say -o v.aiff "…"; afconvert -f m4af -d aac v.aiff v.m4a`). The simulator reads host paths |
 | `FERRY_DEBUG_STACK_EXTRA=<STATE>[,…]` | One stand-in account per state ("Extra 1", …) after the real ones, in the inbox's account stack only |
 | `FERRY_DEBUG_PLAYER_FAILS=1` | Every video in the player and every voice note fails to play; they still download |
-| `FERRY_DEBUG_CAPTURE=<host dir>` | Writes everything `core/` returns and every live event to that folder, per account (cookies never), for fixtures. Scrub before committing ([CLAUDE.md](../CLAUDE.md) "Invariants") |
+| `FERRY_DEBUG_CAPTURE=<host dir>` | Writes Instagram's answers (as `core/chat` reads them) and every live event to that folder, per account (cookies never), for fixtures. Scrub before committing ([CLAUDE.md](../CLAUDE.md) "Invariants") |
 
 To clear the Requests card's "seen" markers, stop the simulator's cfprefsd first, or it serves the cached value. That
 restarts SpringBoard, which drops a dark appearance until SpringBoard restarts again:

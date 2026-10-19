@@ -1,0 +1,109 @@
+{
+ "expired": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Story unavailable",
+    "msgtype": "m.notice"
+   },
+   "event_id": "mid.share",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 1792172900000
+  }
+ ],
+ "link": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "https://example.com/article",
+    "com.beeper.linkpreviews": [
+     {
+      "matched_url": "https://example.com/article",
+      "og:image": "https://scontent.example.invalid/v/f101.jpg",
+      "og:title": "An article"
+     }
+    ],
+    "msgtype": "m.text"
+   },
+   "event_id": "mid.share",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 1792172900000
+  }
+ ],
+ "post": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Sent a post",
+    "external_url": "https://www.instagram.com/p/DSamplePo01/",
+    "format": "org.matrix.custom.html",
+    "formatted_body": "<strong>sample.photos</strong><p>Golden hour</p>",
+    "info": {
+     "h": 1920,
+     "w": 1080
+    },
+    "msgtype": "m.image",
+    "url": "https://scontent.example.invalid/v/f101.jpg"
+   },
+   "event_id": "mid.share",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 1792172900000
+  }
+ ],
+ "reel": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Sent a reel",
+    "com.beeper.unresolved_media": {
+     "target_id": "3400000000000000001",
+     "target_url": "https://www.instagram.com/reel/DSampleRl01/"
+    },
+    "external_url": "https://www.instagram.com/reel/DSampleRl01/",
+    "format": "org.matrix.custom.html",
+    "formatted_body": "<strong>sample.travels</strong>",
+    "info": {
+     "h": 1920,
+     "thumbnail_url": "https://scontent.example.invalid/v/f101.jpg",
+     "w": 1080
+    },
+    "msgtype": "m.video"
+   },
+   "event_id": "mid.share",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 1792172900000
+  }
+ ],
+ "resolved": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "* resolved",
+    "com.beeper.dont_render_edited": true,
+    "m.new_content": {
+     "body": "Sent a reel",
+     "external_url": "https://www.instagram.com/reel/DSampleRl01/",
+     "format": "org.matrix.custom.html",
+     "formatted_body": "<strong>sample.travels</strong>",
+     "info": {
+      "duration": 12500,
+      "h": 1280,
+      "mimetype": "video/mp4",
+      "thumbnail_url": "https://scontent.example.invalid/v/f101.jpg",
+      "w": 720
+     },
+     "msgtype": "m.video",
+     "url": "https://scontent.example.invalid/v/f102.mp4"
+    },
+    "m.relates_to": {
+     "event_id": "mid.share",
+     "rel_type": "m.replace"
+    },
+    "msgtype": "m.video"
+   },
+   "event_id": "mid.share~resolved",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 1792172900001
+  }
+ ]
+}
