@@ -1,6 +1,6 @@
 # Ferry Messenger: a shared engine, then Android (plan)
 
-> Draft, 2026-10-19, not yet accepted. Account names are the fictional stand-ins (`tamoveska` personal, `kivostudio`
+> Accepted 2026-10-19; stage 1 done the same day (§3). Account names are the fictional stand-ins (`tamoveska` personal, `kivostudio`
 > professional). Builds on [PLAN-core.md](PLAN-core.md) (P0–P7, done) and the Android spike
 > ([spikes/2026-10-19-android-core.md](spikes/2026-10-19-android-core.md)).
 
@@ -102,6 +102,35 @@ CI runs `go test ./...` in the macOS job, after `core/build.sh`.
 
 **Done when:** both test suites green; golden files reviewed; the live check (§6) gives the same C6 counts as
 today's build; cold launch with both dummies no slower than today's. About 2–3 days.
+
+**Done 2026-10-19.** `core/chat` (pure Go: the port of `IGAdapter`, the engine's copy of each chat, live deltas,
+typing and its timeout, the thread IDs) under `cmd/igcore`, which names chats by room ID; `AppModel` applies the
+engine's updates. 26 Go tests on the nine captures (`core/testdata`), golden files `FerryTests/Fixtures/engine_*.json`,
+15 `EngineTests` on them (FerryTests 292 → 281); CI runs `go test ./...`. Before `IGAdapter` went, a temporary test
+applied every golden file with `Room.apply` and compared it with `IGAdapter` on the same captures: the same rooms
+(events, state, unread, receipts, typing, paging, reply targets), except an empty transaction ID the old adapter put
+on our mailbox copies (it matched no echo). Live, after the user logged both dummies in by hand on today's build (the
+simulator's app had never had them): §6 on today's build, then on stage 1, the same counts: `tamoveska` 11 requests
+(index 2, folder page 1, thread read 1, older page 1, text, reaction, unsend, socket, typing 2), `kivostudio` 7
+(index 2, folder pages 2, thread read 1, older page 1, socket); no "Seen" (nothing was unread). Cold launch to both
+first pages: 2.14 s today, 2.45 s stage 1, one launch each; the engine's part of a login page is 0.09 ms (Mac), so
+the gap is the network.
+
+Changed from the above, as built:
+- **Every change to a chat reaches the app through `IGNextEvent`, in the engine's order**, and a call returns the
+  `seq` of its last update instead of the chats; the app waits for it where it needs the chat (a found DM, "Load
+  video", a login's first page). A call's fresh window returned directly could land after a newer live update and
+  wipe it in the app's copy only. `IGNextEvent` returns everything waiting, as an array.
+- `core/chat` reads Instagram's JSON (what the captures hold), not the library's typed structs: typed message content
+  loses its `__typename` when marshalled, so captured and live messages would decode differently.
+- `IGAdapter.swift` stays, slim (constants, the account row, New Message's draft, applying an update), so `Inbox` and
+  its tests don't change.
+- `IGMarkRead` sends nothing when the engine already has the chat read that far (the update now takes a hop to the
+  app, and a second call in between would send a second "Seen"), and makes the chat unread again itself if Instagram
+  refuses (one writer, E3).
+- `IGLogin` and `IGInboxPage` leave `next` out at the end (an empty cursor asks for the first page again); `IGOlder`
+  takes only the room; `IGDeleteThread` also sends `RoomRemoved`. `IGSetCapture` captures Instagram's answers only.
+- The capture app (`core/spike`) used the old API: moved to room IDs; it builds, not run.
 
 ## 4. Stage 2: the engine keeps Instagram's rules
 
