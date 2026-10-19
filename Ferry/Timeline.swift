@@ -24,6 +24,8 @@ nonisolated enum MessageKind: Equatable, Sendable {
 
     static let eventKey = "fi.ferry.event"
     static let unsupportedKey = "fi.ferry.unsupported"
+    /// The text sent with a share (`IGAdapter.share`): a story reply, or a story reaction's emoji.
+    static let shareTextKey = "fi.ferry.share_text"
 
     /// `other`: anything shared that isn't a reel, post or story (a profile, music…); the bridge can't fetch it.
     enum ShareType: String, Sendable { case reel, post, story, other }
@@ -285,6 +287,12 @@ nonisolated struct Message: Identifiable, Equatable, Sendable {
     var status: Status = .sent
     /// Set on our last message once someone else's read receipt is at or after it.
     var isSeen = false
+    /// On the newest message: everyone else (not us, not its sender) whose receipt is at or after it, first reader
+    /// first. Groups show it ("Seen by Maya and Sam").
+    var seenBy: [String] = []
+
+    /// What was sent with a shared story (a reply, a reaction's emoji), shown under its card.
+    var shareText: String? { content[MessageKind.shareTextKey]?.string }
 
     enum Status: Equatable, Sendable {
         /// Local echo, request in flight.
@@ -438,18 +446,31 @@ nonisolated enum Timeline {
            let at = messages[last].eventID.flatMap({ position[$0] }) {
             messages[last].isSeen = receipts.contains { user, receipt in user != me && (position[receipt.eventID] ?? -1) >= at }
         }
+        if let newest = messages.lastIndex(where: { !$0.kind.isChatEvent && $0.eventID.flatMap { position[$0] } != nil }),
+           let at = messages[newest].eventID.flatMap({ position[$0] }) {
+            let sender = messages[newest].sender
+            messages[newest].seenBy = receipts.filter { $0.key != me && $0.key != sender && (position[$0.value.eventID] ?? -1) >= at }
+                .sorted { ($0.value.ts, $0.key) < ($1.value.ts, $1.key) }.map(\.key)
+        }
         return messages
     }
 
-    /// The event to send our `m.read` for: the newest message from someone else, unless our receipt is already at
-    /// or past it. Callers must check `Inbox.allowsReceipts` first.
-    static func receiptTarget(_ room: Room, me: String) -> String? {
-        guard let target = room.lastMessage(where: { $0.sender != me }), let id = target.eventID else { return nil }
-        if let mine = room.receipts[me]?.eventID, let at = room.events.firstIndex(where: { $0.eventID == mine }),
-           let index = room.events.firstIndex(where: { $0.eventID == id }), at >= index {
-            return nil
+    /// "Seen by Maya", "Seen by Maya and Sam", "Seen by Maya, Sam + 2", or "Seen by everyone" once all of three or
+    /// more have (Instagram's web app; first names, as the rest of the thread uses).
+    static func seenByLine(_ names: [String], everyone: Bool) -> String? {
+        switch names.count {
+        case 0: nil
+        case 3... where everyone: "Seen by everyone"
+        case 1: "Seen by \(names[0])"
+        case 2: "Seen by \(names[0]) and \(names[1])"
+        default: "Seen by \(names[0]), \(names[1]) + \(names.count - 2)"
         }
-        return id
+    }
+
+    /// The event to send our "Seen" for: the newest message from someone else. Callers send it only while the chat
+    /// is unread (`AppModel.markRead`) and must check `Inbox.allowsReceipts` first.
+    static func receiptTarget(_ room: Room, me: String) -> String? {
+        room.lastMessage(where: { $0.sender != me })?.eventID
     }
 
     static func canEdit(_ message: Message, now: Date = .now) -> Bool {
@@ -485,6 +506,8 @@ nonisolated enum Timeline {
         var showsTime: Bool
         /// Groups only, on someone else's message; nil in DMs and on ours.
         var groupSender: GroupSender?
+        /// The "New messages" line goes above this row.
+        var startsUnread = false
         var id: String { message.id }
     }
 
@@ -495,9 +518,16 @@ nonisolated enum Timeline {
         var showsAvatar: Bool
     }
 
-    static func layout(_ messages: [Message], isGroup: Bool = false) -> [Row] {
+    /// `unreadAfter`: how far we'd read when the chat opened (`Room.receipts[me]`, ms), nil when it opened read. The
+    /// "New messages" line goes above the first message from someone else after it and after our own last message
+    /// (we'd read what came before that), so it goes once we reply.
+    static func layout(_ messages: [Message], isGroup: Bool = false, unreadAfter: Int64? = nil) -> [Row] {
+        let firstUnread = unreadAfter.flatMap { after in
+            let from = max(after, messages.last(where: \.isOwn)?.ts ?? .min)
+            return messages.firstIndex { !$0.isOwn && $0.ts > from }
+        }
         func joins(_ i: Int) -> Bool {
-            guard i > 0, i < messages.count else { return false }
+            guard i > 0, i < messages.count, i != firstUnread else { return false }  // the line starts a new run
             let (a, b) = (messages[i - 1], messages[i])
             return a.sender == b.sender && b.ts - a.ts < 180_000 && [a, b].allSatisfy { $0.kind != .unsent && !$0.kind.isChatEvent }
         }
@@ -509,13 +539,14 @@ nonisolated enum Timeline {
             case (true, false): .last
             }
             let showsTime = i == 0 || messages[i].ts - messages[i - 1].ts > 3_600_000
-            let spacing: Double = i == 0 ? 0 : joins(i) ? 2 : showsTime ? 16 : 10
+            let spacing: Double = i == 0 ? 0 : joins(i) ? 2 : showsTime || i == firstUnread ? 16 : 10
             let labelled = messages[i].kind != .unsent
             let sender = isGroup && !messages[i].isOwn && !messages[i].kind.isChatEvent  // a chat event spans the thread
                 ? GroupSender(showsName: labelled && (position == .single || position == .first),
                               showsAvatar: labelled && (position == .single || position == .last))
                 : nil
-            return Row(message: messages[i], position: position, spacing: spacing, showsTime: showsTime, groupSender: sender)
+            return Row(message: messages[i], position: position, spacing: spacing, showsTime: showsTime, groupSender: sender,
+                       startsUnread: i == firstUnread)
         }
     }
 

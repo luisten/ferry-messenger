@@ -72,8 +72,6 @@ final class AppModel {
     @ObservationIgnored private var fbidByUserID: [String: String] = [:]
     /// When each room was last read in full (opening a chat re-reads it, at most every 30 s).
     @ObservationIgnored private var refreshed: [String: Date] = [:]
-    /// The "Seen" we last sent per room, so a re-render doesn't send it again.
-    @ObservationIgnored private var sentReceipts: [String: String] = [:]
     @ObservationIgnored private var typingTimers: [String: Task<Void, Never>] = [:]
     /// When we last told Instagram we're typing, per room (at most once per 20 s).
     @ObservationIgnored private var typingSince: [String: Date] = [:]
@@ -232,8 +230,9 @@ final class AppModel {
     }
 
     private func apply(_ thread: IG.Thread, account: String) {
-        let thread = IGAdapter.keepingFolder(thread, of: rooms[IGAdapter.roomID(account: account, thread: thread.id)])
-        let snapshot = IGAdapter.room(thread, account: account, viewer: sessions[account]?.viewer)
+        let existing = rooms[IGAdapter.roomID(account: account, thread: thread.id)]
+        let thread = IGAdapter.keepingFolder(thread, of: existing)
+        let snapshot = IGAdapter.room(thread, account: account, viewer: sessions[account]?.viewer, readUpTo: existing?.receipts[me]?.ts ?? 0)
         let room = rooms[snapshot.id] ?? {
             let room = Room(id: snapshot.id)
             room.ownUserID = me
@@ -408,18 +407,24 @@ final class AppModel {
     }
 
     /// "Seen" on the newest incoming message: Instagram's `MarkRead` + validation (C7). Never in a request or a room we
-    /// don't know (`Inbox.allowsReceipts`): the other person would see that we'd read it.
+    /// don't know (`Inbox.allowsReceipts`): the other person would see that we'd read it. The chat is read here at once,
+    /// with our `m.read` on that message: opening a chat also re-reads it, and a read Instagram answered before the
+    /// "Seen" landed said unread again, so the dot stayed (mostly in groups); `apply(_:account:)` now weighs our
+    /// `m.read` too.
     func markRead(_ room: Room) {
         // Only when it's unread: Instagram already has our read otherwise (a reopen sent a needless "Seen" in P4).
         guard Inbox.allowsReceipts(room), room.isUnread, let account = room.bridge?.receiver, let target = Timeline.receiptTarget(room, me: me),
-              sentReceipts[room.id] != target, let long = longID(of: room),
-              let ms = room.events.first(where: { $0.eventID == target })?.originServerTS else { return }
+              let long = longID(of: room), let ms = room.events.first(where: { $0.eventID == target })?.originServerTS else { return }
         #if DEBUG
         if DebugFixtures.isFixtureRoom(room.id) { return }
         #endif
-        sentReceipts[room.id] = target
+        room.apply(IGAdapter.read(target, at: ms))
         Task {
-            do { try await IGCore.markRead(account, threadLong: long, message: target, ms: ms) } catch { sentReceipts[room.id] = nil }
+            do {
+                try await IGCore.markRead(account, threadLong: long, message: target, ms: ms)
+            } catch {
+                room.apply(JoinedRoom(unreadNotifications: .init(notificationCount: 1, highlightCount: 0)))  // so the next open tries again
+            }
         }
     }
 

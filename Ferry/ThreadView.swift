@@ -35,6 +35,11 @@ struct ThreadView: View {
     @State private var pin = BottomPin()
     /// The thread is invisible until the bottom pin has landed after the push (`revealWhenSettled`).
     @State private var revealed = false
+    /// How far we'd read when the chat opened unread (our `m.read`, ms), taken once before our "Seen" moves it: the
+    /// "New messages" line goes after it (`Timeline.layout`).
+    @State private var unreadAfter: Int64?
+    @State private var opened = false
+    @State private var sheet: ThreadSheet?
     @FocusState private var composerFocused: Bool
 
     var body: some View {
@@ -60,13 +65,21 @@ struct ThreadView: View {
             (name: room.displayName(of: user, profile: profiles[user]), avatarURL: room.avatarURL(of: user, profile: profiles[user]))
         }
         let actions = actions(room)
+        let rows = Timeline.layout(messages, isGroup: isGroup, unreadAfter: unreadAfter)
+        let unreadLine = rows.first(where: \.startsUnread)?.id
+        let seen = isGroup ? messages.first { !$0.seenBy.isEmpty } : nil
+        // Everyone but us and its sender: "Seen by everyone".
+        let seenLine = seen.flatMap { seen in
+            Timeline.seenByLine(seen.seenBy.map(name), everyone: seen.seenBy.count >= Inbox.memberCount(of: room) - (seen.isOwn ? 1 : 2))
+        }
 
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 0) {
                     top(room, identity: identity, isEmpty: messages.isEmpty)
-                    ForEach(Timeline.layout(messages, isGroup: isGroup)) { row in
+                    ForEach(rows) { row in
                         MessageRow(row: row, me: me, identity: identity, name: name, member: member, showsStatus: row.id == lastOwn,
+                                   seenLine: row.id == seen?.id ? seenLine : nil, isGroup: isGroup,
                                    highlighted: highlighted == row.id, actions: actions)
                             .padding(.top, row.spacing)
                             .background(highlighted == row.id ? Color.secondary.opacity(0.15) : .clear)
@@ -96,15 +109,22 @@ struct ThreadView: View {
             // jumped one.
             .onScrollPhaseChange { old, phase, context in
                 guard phase != old else { return }  // the first call, on appearing, is idle → idle
-                if phase == .tracking || phase == .interacting { revealed = true }
+                if phase == .tracking || phase == .interacting {
+                    revealed = true
+                    pin.holdsLine = false
+                }
                 pin.followsEnd = phase == .idle && ScrollEdge(context.geometry).distanceFromEnd < 60
             }
             .onScrollGeometryChange(for: ScrollEdge.self) { ScrollEdge($0) } action: { old, new in
-                if !revealed { revealWhenSettled(new) }
-                guard pin.followsEnd, new.container != old.container || new.content != old.content else { return }
-                proxy.scrollTo(Self.bottom, anchor: .bottom)
+                // A chat that opened unread holds its "New messages" line at the top instead, until the user scrolls;
+                // when what's new fits, the line can't reach the top and this lands on the end anyway.
+                let line = pin.holdsLine ? unreadLine : nil
+                if !revealed { revealWhenSettled(new, onLine: line != nil) }
+                guard line != nil || pin.followsEnd, new.container != old.container || new.content != old.content else { return }
+                let (target, anchor) = line.map { ($0, UnitPoint.top) } ?? (Self.bottom, .bottom)
+                proxy.scrollTo(target, anchor: anchor)
                 // Mid-push the scroll view can drop a scroll made in the same update (#17): repeat it after.
-                Task { proxy.scrollTo(Self.bottom, anchor: .bottom) }
+                Task { proxy.scrollTo(target, anchor: anchor) }
             }
             .opacity(revealed ? 1 : 0)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: revealed)
@@ -113,7 +133,9 @@ struct ThreadView: View {
                 revealed = true
             }
             .onChange(of: messages.last?.id) { _, _ in
-                if messages.last?.isOwn == true { withAnimation { proxy.scrollTo(Self.bottom, anchor: .bottom) } }
+                guard messages.last?.isOwn == true else { return }
+                pin.holdsLine = false
+                withAnimation { proxy.scrollTo(Self.bottom, anchor: .bottom) }
             }
             .onChange(of: attachment != nil) { _, shown in
                 // The bar grows the bottom inset (M7b). Added when the re-pin above never ran; not re-checked since.
@@ -125,6 +147,7 @@ struct ThreadView: View {
             }
             .onChange(of: highlighted) { _, id in
                 guard let id else { return }
+                pin.holdsLine = false
                 withAnimation { proxy.scrollTo(id, anchor: .center) }
                 Task { try? await Task.sleep(for: .seconds(0.6)); highlighted = nil }
             }
@@ -176,7 +199,14 @@ struct ThreadView: View {
         .navigationBarTitleDisplayMode(.inline)
         .tint(identity?.color.ink ?? .primary)
         // On open and on each new event while open and active (DESIGN T1). markRead refuses request rooms.
-        .task(id: room.events.last?.eventID) { if scenePhase == .active { model.markRead(room) } }
+        .task(id: room.events.last?.eventID) {
+            if !opened {  // before markRead moves our m.read
+                opened = true
+                unreadAfter = room.isUnread ? room.receipts[me]?.ts : nil
+                pin.holdsLine = unreadAfter != nil
+            }
+            if scenePhase == .active { model.markRead(room) }
+        }
         .onChange(of: scenePhase) { _, phase in if phase == .active { model.markRead(room) } }
         .onDisappear {
             model.setTyping(false, in: room)
@@ -209,6 +239,14 @@ struct ThreadView: View {
             Text(RequestCopy.deleteMessage(handle: login?.profile?.username))
         }
         .sheet(item: $relogin) { ReloginSheet(loginID: $0.id) }
+        .sheet(item: $sheet) { sheet in
+            switch sheet {
+            case .reactions(let id):
+                if let message = messages.first(where: { $0.id == id }) { ReactionList(message: message, me: me, member: member) }
+            case .person(let user):
+                PersonCard(name: member(user).name, handle: profiles[user]?.handle, avatarURL: member(user).avatarURL)
+            }
+        }
         .sheet(item: $sharing) { ShareSheet(files: $0.files).presentationDetents([.medium, .large]) }
         .confirmationDialog("Unsend message?", isPresented: Binding(get: { unsending != nil }, set: { if !$0 { unsending = nil } }),
                             titleVisibility: .visible, presenting: unsending) { message in
@@ -276,6 +314,8 @@ struct ThreadView: View {
             openMedia: { open($0, in: room) },
             resolveMedia: { model.resolveMedia($0, in: room) },
             shareAll: { shareAll($0, in: room) },
+            showReactions: { sheet = .reactions($0.id) },
+            showPerson: { sheet = .person($0) },
             readOnly: !Inbox.allowsReceipts(room))
     }
 
@@ -443,21 +483,38 @@ struct ThreadView: View {
 
     private final class BottomPin {
         var followsEnd = true
+        /// Opened unread: the "New messages" line stays at the top until the user scrolls (or it turns out to fit).
+        var holdsLine = false
         var reveal: Task<Void, Never>?
+    }
+
+    private enum ThreadSheet: Identifiable {
+        case reactions(String)
+        case person(String)
+
+        var id: String {
+            switch self {
+            case .reactions(let id): "reactions:\(id)"
+            case .person(let user): "person:\(user)"
+            }
+        }
     }
 
     /// A push lays the thread out without the bars' insets, at its end; when they arrive it jumps to the top and the
     /// re-pin scrolls it back down (#17). The first layout also shows the top spinner, so an older page lands right
     /// after, above the end, and the offset trails it for a few frames. The user saw both as a jump. So the thread
     /// appears only once it has stayed at its end, under the bars, for 100 ms (rows re-measure for a few frames after
-    /// a scroll) with no page on its way, and at the latest after 1 s or when the user touches it.
-    private func revealWhenSettled(_ edge: ScrollEdge) {
+    /// a scroll) with no page on its way, and at the latest after 1 s or when the user touches it. Held on the "New
+    /// messages" line, anywhere settled will do; if that's the end, what's new fit, and the thread follows its end.
+    private func revealWhenSettled(_ edge: ScrollEdge, onLine: Bool) {
         pin.reveal?.cancel()
-        guard edge.restsAtEnd else { return }
+        guard onLine ? edge.topInset > 0 : edge.restsAtEnd else { return }
         pin.reveal = Task {
             try? await Task.sleep(for: .milliseconds(100))
             // A page still loading changes the geometry when it lands, which schedules this again.
-            if !Task.isCancelled, !model.paginating.contains(roomID) { revealed = true }
+            guard !Task.isCancelled, !model.paginating.contains(roomID) else { return }
+            revealed = true
+            if edge.restsAtEnd { pin.holdsLine = false }
         }
     }
 

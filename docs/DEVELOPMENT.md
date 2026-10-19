@@ -200,7 +200,9 @@ another key, publishes nothing. AltStore and SideStore sign the `.ipa` with the 
    ```
 
 **Each release:** set the version (Xcode → target Ferry → General → Version, or `MARKETING_VERSION` in
-`project.pbxproj`), commit, then:
+`project.pbxproj`); in [CHANGELOG.md](../CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)),
+move what's under Unreleased into a new `## [X.Y] - YYYY-MM-DD` section dated the day you tag, and add its compare
+link at the bottom; commit, then:
 
 ```sh
 git tag -s v1.0 -m "Ferry Messenger v1.0" && git push origin main v1.0

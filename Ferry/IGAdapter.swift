@@ -221,10 +221,12 @@ nonisolated enum IG {
         var slideEditHistoryEntry: EditEntry?
         /// `SlideUQPPIGMoveThread`: Instagram's tab the thread moved to (`PRIMARY`/`GENERAL`).
         var igInboxFolder: String?
+        /// `SlideUQPPMarkRead`: how far we've read (here or on another device), ms.
+        var readTimestampMs: String?
 
         enum CodingKeys: String, CodingKey {
             case typename = "__typename", threadFbid, message, threadReadStateEffect, markedAsUnread, readReceipt
-            case messageId, reaction, textBody, slideEditHistoryEntry, igInboxFolder
+            case messageId, reaction, textBody, slideEditHistoryEntry, igInboxFolder, readTimestampMs
         }
     }
 
@@ -288,7 +290,9 @@ nonisolated enum IGAdapter {
     }
 
     /// A thread with its newest messages, as a fresh window (`limited`): applying it again replaces the last one.
-    static func room(_ thread: IG.Thread, account: String, viewer: IG.Viewer?) -> Snapshot {
+    /// `readUpTo` is how far we've read as this app knows it (our `m.read`, ms): a read that left before our "Seen"
+    /// reached Instagram still says unread, and opening a chat sends both at once.
+    static func room(_ thread: IG.Thread, account: String, viewer: IG.Viewer?, readUpTo: Int64 = 0) -> Snapshot {
         let people = (thread.users ?? []).filter { $0.interopMessagingUserFbid != nil && $0.interopMessagingUserFbid != account }
         let isDM = thread.isGroup != true
         let contact = isDM ? people.first : nil
@@ -317,7 +321,7 @@ nonisolated enum IGAdapter {
 
         let messages = (thread.slideMessages?.nodes.reversed() ?? []).filter(\.isShown)  // oldest first, as rooms keep them
         let receipts = thread.slideReadReceipts ?? []
-        let mine = receipts.first { $0.participantFbid == account }?.ms ?? 0
+        let mine = max(receipts.first { $0.participantFbid == account }?.ms ?? 0, readUpTo)
         let unread = thread.markedAsUnread == true || messages.last.map { $0.senderFbid != account && $0.ms > mine } == true
         let joined = JoinedRoom(
             state: EventList(events: state),
@@ -434,8 +438,8 @@ nonisolated enum IGAdapter {
             let line = (attachments?["text_fragments"]?.array ?? []).compactMap { $0["plaintext"]?.string }.joined()
             guard let line = nonEmpty(line) ?? nonEmpty(message.igdSnippet) else { return unsupported(message) }
             return ["msgtype": "m.notice", "body": .string(line), MessageKind.eventKey: true]
-        case _ where attachments?["xma"] != nil:
-            return share(attachments?["xma"], snippet: message.igdSnippet)
+        case _ where attachments?["xma"] != nil:  // a story reply or reaction is the story plus its text (upstream's ToMatrix)
+            return share(attachments?["xma"], snippet: message.igdSnippet, text: nonEmpty(attachments?["xma_text_body"]?.string))
         case "RAVEN_IMAGE":
             // The bridge's own wording is how `MessageKind` knows view-once media.
             return ["msgtype": "m.notice", "body": "This photo can only be viewed once. Use the Instagram app to view."]
@@ -469,20 +473,24 @@ nonisolated enum IGAdapter {
 
     /// A share (Instagram's XMA) in the bridge's shapes, so the cards read it as before: a reel or story waits for
     /// "Load video" (`com.beeper.unresolved_media`, then `resolved`), a post is its image, a link off Instagram is a
-    /// text with its preview, an expired story its notice. The author is Instagram's `header_title_text`.
-    static func share(_ xma: JSON?, snippet: String?) -> JSON {
+    /// text with its preview, an expired story its notice. The author is Instagram's `header_title_text`. `text` is
+    /// what was sent with it (`xma_text_body`: a story reply, or a story reaction's emoji), under
+    /// `MessageKind.shareTextKey`: one message, so one menu, reaction row and unsend.
+    static func share(_ xma: JSON?, snippet: String?, text: String? = nil) -> JSON {
         let link = xma?["target_url"]?.string
         let preview = xma?["preview_image"]
         let caption = [xma?["title_text"], xma?["caption_body_text"], xma?["subtitle_text"]].compactMap { $0?.string }.first { !$0.isEmpty }
         guard let link, let type = MessageKind.ShareType(instagramURL: link) else {
             guard let link else {  // an expired story: "Story unavailable"
-                return ["msgtype": "m.notice", "body": .string(caption ?? nonEmpty(snippet) ?? "Shared content")]
+                var notice: [String: JSON] = ["msgtype": "m.notice", "body": .string(caption ?? nonEmpty(snippet) ?? "Shared content")]
+                notice[MessageKind.shareTextKey] = text.map { .string($0) }
+                return .object(notice)
             }
             var preview: [String: JSON] = ["matched_url": .string(link)]
             preview["og:title"] = xma?["title_text"]
             preview["og:description"] = xma?["subtitle_text"]
             preview["og:image"] = xma?["preview_image"]?["url"]
-            return ["msgtype": "m.text", "body": .string(link), "com.beeper.linkpreviews": [.object(preview)]]
+            return ["msgtype": "m.text", "body": .string(text ?? link), "com.beeper.linkpreviews": [.object(preview)]]
         }
         var html = xma?["header_title_text"]?.string.map { "<strong>\(escape($0))</strong>" } ?? ""
         if let caption { html += "<p>\(escape(caption))</p>" }
@@ -497,6 +505,7 @@ nonisolated enum IGAdapter {
             info["thumbnail_url"] = preview?["url"]
             fields["com.beeper.unresolved_media"] = ["target_url": .string(link), "target_id": xma?["target_id"] ?? .null]
         }
+        fields[MessageKind.shareTextKey] = text.map { .string($0) }
         fields["info"] = .object(info.filter { $0.value != .null && $0.value != .number(0) })
         return .object(fields)
     }
@@ -571,6 +580,10 @@ nonisolated enum IGAdapter {
         case "SlideUQPPReadReceipt":
             guard let update = receipt(delta, account: account, events: room.events) else { return .ignored }
             room.apply(update)
+        case "SlideUQPPMarkRead":  // read here or on another device, and how far: the "New messages" line starts after it
+            let ms = Int64(delta.readTimestampMs ?? "")
+            let seen = room.events.last { $0.isBaseMessage && ($0.originServerTS ?? 0) <= ms ?? .max }
+            room.apply(read(seen?.eventID, at: ms ?? seen?.originServerTS ?? 0))
         case "SlideUQPPCreateReaction", "SlideUQPPDeleteReaction", "SlideUQPPEditMessage", "SlideUQPPDeleteMessage":
             switch change(delta, account: account, events: room.events) {
             case .apply(let update): room.apply(update)
@@ -642,6 +655,12 @@ nonisolated enum IGAdapter {
         }
     }
 
+    /// We've read up to `eventID` (`ms`): the chat is read, and our `m.read` moves there.
+    static func read(_ eventID: String?, at ms: Int64) -> JoinedRoom {
+        JoinedRoom(ephemeral: eventID.map { EventList(events: [receiptEvent([(me, $0, ms)])]) },
+                   unreadNotifications: .init(notificationCount: 0, highlightCount: 0))
+    }
+
     /// Who's typing in a room right now (replaces the list, as `m.typing` did).
     static func typing(_ users: [String]) -> JoinedRoom {
         JoinedRoom(ephemeral: EventList(events: [Event(type: "m.typing", content: ["user_ids": .array(users.map { .string($0) })])]))
@@ -665,11 +684,11 @@ nonisolated enum IGAdapter {
         Event(type: "m.room.redaction", content: ["redacts": .string(id)], eventID: "\(id)~unsent", sender: sender, originServerTS: ms)
     }
 
+    /// Everyone's watermark as `m.read`, ours as `me`'s (where the "New messages" line starts).
     private static func readReceipts(_ receipts: [IG.ReadReceipt], account: String, messages: [IG.Message]) -> Event? {
         let reads: [(String, String, Int64)] = receipts.compactMap { receipt in
-            guard let who = receipt.participantFbid, who != account,
-                  let seen = messages.last(where: { $0.ms <= receipt.ms }) else { return nil }
-            return (user(who), seen.id, receipt.ms)
+            guard let who = receipt.participantFbid, let seen = messages.last(where: { $0.ms <= receipt.ms }) else { return nil }
+            return (who == account ? me : user(who), seen.id, receipt.ms)
         }
         return reads.isEmpty ? nil : receiptEvent(reads)
     }

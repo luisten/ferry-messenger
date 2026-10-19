@@ -170,10 +170,11 @@ nonisolated enum DebugFixtures {
     /// One hand-made Instagram group on `receiver`, modelled on real shapes: the `m.bridge` content is the real DM event
     /// (`FerryTests/Fixtures/state_bridge_dm.json`) without `com.beeper.room_type`(`.v2`), which is how the bridge
     /// marks a group (S7.6), with a group's channel; the member events copy the real ghost, bot and double-puppet ones
-    /// of `sync_initial.json`. Four senders, runs, a reply, a reaction, a time gap and two chat events (Instagram's line
-    /// for Priya leaving, a poll the app can't show; `IGAdapter`'s shapes). No avatars, so no media requests
-    /// (initials). Priya left: a leave is a bare `{"membership": "leave"}`, so her old message is named from her ghost
-    /// profile, the thread's fallback for a member event without a name.
+    /// of `sync_initial.json`. Four senders, runs, a reply, reactions (three people on one emoji), a time gap and two
+    /// chat events (Instagram's line for Priya leaving, a poll the app can't show; `IGAdapter`'s shapes). Unread, with
+    /// our `m.read` on Sam's last message, so it opens with the "New messages" line, and Maya and Sam have seen the
+    /// newest. No avatars, so no media requests (initials). Priya left: a leave is a bare `{"membership": "leave"}`, so
+    /// her old message is named from her ghost profile, the thread's fallback for a member event without a name.
     static func groupRoom(receiver: String, me: String, now: Date = .now) -> Room {
         let ms = Int64(now.timeIntervalSince1970 * 1000)
         let bot = "@instagrambot:igm.home.arpa"
@@ -223,13 +224,22 @@ nonisolated enum DebugFixtures {
             Event(type: "m.room.message", content: ["msgtype": "m.notice", "body": "Sent a poll", MessageKind.unsupportedKey: "a poll"],
                   eventID: "$debug-group-poll", sender: sam, originServerTS: ms - 20 * 60_000),
         ], at: events.count - 1)
-        events.append(Event(type: "m.reaction", content: ["m.relates_to": ["rel_type": "m.annotation", "event_id": "$debug-group-msg-4", "key": "❤️"]],
-                            eventID: "$debug-group-reaction", sender: maya, originServerTS: ms - 47 * 60_000))
+        for (i, (target, key, sender)) in [(4, "❤️", maya), (4, "🔥", theo), (6, "👍", theo), (6, "👍", maya), (6, "👍", me)].enumerated() {
+            events.append(Event(type: "m.reaction", content: ["m.relates_to": ["rel_type": "m.annotation", "event_id": .string("$debug-group-msg-\(target)"), "key": .string(key)]],
+                                eventID: "$debug-group-reaction-\(i)", sender: sender, originServerTS: ms - 47 * 60_000))
+        }
         events.append(state("m.room.member", priya, ["membership": "leave"], sender: priya, at: ms - 30 * 60_000))
+        func read(_ minutesAgo: Double) -> JSON { ["ts": .number(Double(ms) - minutesAgo * 60_000)] }
+        let receipts: JSON = [
+            "$debug-group-msg-6": ["m.read": .object([me: read(47)])],
+            "$debug-group-msg-7": ["m.read": .object([maya: read(10), sam: read(5)])],
+        ]
 
         let room = Room(id: "!debug-group")
         room.ownUserID = me
-        room.apply(JoinedRoom(timeline: .init(events: events, limited: false, prevBatch: "debug-start")))
+        room.apply(JoinedRoom(timeline: .init(events: events, limited: false, prevBatch: "debug-start"),
+                              ephemeral: EventList(events: [Event(type: "m.receipt", content: receipts)]),
+                              unreadNotifications: .init(notificationCount: 1, highlightCount: 0)))
         room.prepend(MessagesPage(chunk: []), from: "debug-start")  // the start of the chat: "You're messaging from X."
         return room
     }
