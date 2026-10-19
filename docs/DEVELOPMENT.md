@@ -157,9 +157,9 @@ to the launch line above. They live in `Ferry/DebugFixtures.swift` and `Ferry/Ap
 | `FERRY_DEBUG_GROUP=1` | One made-up group, "Saturday Climbs", on the first account: four senders (one who left), a reply, a reaction. Nothing about it leaves the app |
 | `FERRY_DEBUG_LOGIN_STATE=<account id>=<STATE>[,…]` | Shows that account in another state (`BAD_CREDENTIALS`, `TRANSIENT_DISCONNECT`, `UNKNOWN_ERROR`); the real session is untouched |
 | `FERRY_DEBUG_ENDED_SESSION=<account id>[,…]` | Connects that account with a broken `sessionid` for this launch, so Instagram answers as it does for a session it ended (the real signed-out banner and re-login). The Keychain keeps the real cookies; a launch without it brings the account back. One rejected inbox load per launch |
-| `FERRY_DEBUG_AS_REQUEST=<room id>` | Shows one real chat as a request, to check with the request log that opening it sends nothing; sends to it are blocked |
+| `FERRY_DEBUG_AS_REQUEST=<room id>` | The engine treats one real chat as a request, to check with the request log that opening it sends nothing; sends to it are blocked |
 | `FERRY_DEBUG_ONBOARDING=welcome\|connecting\|identity\|another` | Onboarding at that step over the signed-in accounts ("Not now" returns). Don't tap "Connect" in it unless you mean to log in |
-| `FERRY_DEBUG_BLOCK_SENDS=1` | Every message send and media upload fails in the app ("Not sent"), so nothing reaches Instagram; "Seen" and typing still go |
+| `FERRY_DEBUG_BLOCK_SENDS=1` | Every message send, media upload, reaction, edit, unsend, Accept, Delete and typing notice fails in the engine ("Not sent"), so nothing reaches Instagram; "Seen" still goes |
 | `FERRY_DEBUG_VOICE_FILE=<host path to an .m4a>` | Holding the mic "records" without the microphone and sends this file (`say -o v.aiff "…"; afconvert -f m4af -d aac v.aiff v.m4a`). The simulator reads host paths |
 | `FERRY_DEBUG_STACK_EXTRA=<STATE>[,…]` | One stand-in account per state ("Extra 1", …) after the real ones, in the inbox's account stack only |
 | `FERRY_DEBUG_PLAYER_FAILS=1` | Every video in the player and every voice note fails to play; they still download |

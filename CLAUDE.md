@@ -58,9 +58,9 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   (professional), `sample.*` for third parties. `git grep` for the real names must stay empty.
 - **Live checks cost Instagram actions** (ban risk on the dummies): every login, every launch (an index and mailbox
   load per account, then the rest of the inbox page by page), send, search. Opening a chat with unread incoming
-  messages is one ("Seen"), so is each typing burst. Count them (C6, Commands) and report them. "Seen" (`IGMarkRead`)
-  and typing go only where `Inbox.allowsReceipts(room)` allows (never in requests), and "Seen" only when the chat is
-  unread.
+  messages is one ("Seen"), so is each typing burst. Count them (C6, Commands) and report them. The engine decides
+  them (`core/chat/rules.go`, stage 2): "Seen" (`IGMarkRead`) only when the chat is unread, typing at most once per
+  20 s, neither ever in a request; a chat opened is read again at most every 30 s.
 - **Remove Account** forgets the account here (Keychain, client, chats) and tells Instagram nothing; adding it back
   takes a new login by the user. Never remove an account without the user, and never a real one. A3's re-login must
   finish as the same account (`AppModel.connect(cookies:reloginID:)` refuses another and stops a stranger's client).
@@ -84,7 +84,9 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
 - **Instagram's data becomes chats in `core/chat`** (pure Go, tested on the captures in `core/testdata`), which keeps
   its own copy of each chat and is the only writer of what Instagram says (PLAN-android E3): `AppModel` applies its
   updates (`IG.Update`, from `IGNextEvent` only, in order) and keeps only its own state (local echoes, the optimistic
-  Accept, archive, request "seen" markers, identities). Calls name chats by room ID. A change to the mapping changes
+  Accept, archive, request "seen" markers, identities). Calls name chats by room ID. **Instagram's rules live there
+  too** (`rules.go`, stage 2: re-reads, "Seen", typing, requests, edits, New Message's drafts, folder paging, login
+  retries): a rule that decides whether Instagram is asked goes in Go with a test, never in `AppModel`. A change to the mapping changes
   `FerryTests/Fixtures/engine_*.json` (`go test ./chat -update`), which `EngineTests` read: review that diff like code.
 - The thread is `Timeline.reduce(room)`, a pure fold over the raw window: never mutate `Room.events` to apply an edit,
   reaction or redaction. `core/chat` emits Instagram's changes as events (`m.reaction`, `m.replace`, redactions) for it
@@ -95,8 +97,8 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   card `.inkSecondaryOnBubble` (inkSecondary is 4.30 on #E9E9EB); status text `.statusOK/.statusWarn/.statusError`
   (not system green/orange/red, 2.2–3.5:1 on white).
 - DEBUG switches live in `DebugFixtures.swift` (docs/DEVELOPMENT.md): fake request rooms and a fake group (`FERRY_DEBUG_GROUP`), an
-  account state override, a real chat shown as a request (sends to it are blocked; "Seen" and typing are not, on
-  purpose), onboarding at a given step over the real accounts, made-up data only (`FERRY_DEBUG_DEMO`: two made-up
+  account state override, a real chat shown as a request (the engine treats it as one, `IGCore.setDebug`; its sends
+  are held back, "Seen" and typing aren't, so the request rule itself keeps them back), onboarding at a given step over the real accounts, made-up data only (`FERRY_DEBUG_DEMO`: two made-up
   accounts stand in for the Keychain's and never connect, identities in memory only; screenshots and the UI tests),
   every send and upload blocked (`FERRY_DEBUG_BLOCK_SENDS`), a voice file standing in for the microphone
   (`FERRY_DEBUG_VOICE_FILE`), stand-in accounts in the toolbar stack only (`FERRY_DEBUG_STACK_EXTRA`), failing
@@ -105,7 +107,7 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   web sessions be removed from "Where you're logged in").
   **Fixture rooms (`!debug-…`) never reach Instagram:** the engine refuses a room it didn't make (E4),
   `AppModel.hasThread` skips them (and New Message drafts) and `AppModel.checkSend` refuses them. A new Instagram call
-  for a room takes its room ID and goes through `checkSend`.
+  for a room takes its room ID and goes through `checkSend`; DEBUG's send block is the engine's (`blocked`).
 - **Groups (#24):** sender labels only where `BridgeInfo.roomType == .group`, never on our own (`@me`) messages:
   `Timeline.layout(_:isGroup:)` sets `Row.groupSender` (name on the first of a run, avatar on the last, a tombstone
   neither). Names are `.inkSecondary`, never an account colour. Who a user is: `Room.displayName` = member event name
@@ -154,9 +156,10 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   while Instagram lists the thread `PRIMARY` (live 2026-10-17; Ferry's bridge patch reads it, which filed new DMs
   under General there). Deltas reach
   `core/chat` as Instagram's raw JSON: the library's types drop the fields they don't know.
-- **New Message:** an existing DM opens (ours, else `IGFindDM`, which reads Instagram's); otherwise a draft (`!ig-<account>-new-
-  <fbid>`, outside `rooms`, so the inbox and search never show an empty chat) until the first message (`IGSendNew`,
-  `RecipientIGIDs`) makes the thread; its NewMessage delta loads it and `movedRooms` leads the draft to it.
+- **New Message:** `IGOpenDM` opens our DM, else Instagram's (`FetchThreadID`, then a read), else a draft
+  (`!ig-<account>-new-<fbid>`, the engine's `Draft` update, kept outside `rooms`, so the inbox and search never show an
+  empty chat) until the first message (`IGSend` with `RecipientIGIDs`) makes the thread; its NewMessage delta loads it
+  and the engine's `RoomMoved` leads the draft to it (`movedRooms`).
 - **Shares (XMA)** become the bridge's shapes, so Ferry's cards work unchanged: `external_url`, `formatted_body`
   `<strong>author</strong><p>caption</p>`, `com.beeper.unresolved_media` → "Load video" (`IGResolveMedia`, a read)
   → a hidden `m.replace`. Instagram's own line about a share (`eyebrow_text`: "Replied to @Name's story", worded so on
@@ -244,7 +247,8 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   simulator screenshot** (points = pixels ÷ 3), never from a scaled or side-by-side image. Both mistakes started (then
   cancelled) real logins in Ferry: M7a hit "Add Instagram account", M7b hit A3's "Log in again".
 - **Every N1 search is an Instagram request** (`IGSearch`): 300 ms debounce, 2+ characters. A result opens our own
-  room when one matches (`Inbox.existingDM`: receiver + DM channel ID) and only otherwise asks Instagram (`IGFindDM`).
+  room when one matches (the engine's `ExistingDM`: receiver + DM channel ID) and only otherwise asks Instagram
+  (`IGOpenDM`).
 - SwiftUI `WebPage` drops the `Mobile/15E148` UA suffix a stock `WKWebView` sends; without it instagram.com shows a
   "tablet app" interstitial. `ConnectSheet` sets `applicationNameForUserAgent` back to the stock value. Don't
   otherwise change the UA.
