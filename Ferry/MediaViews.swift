@@ -177,7 +177,7 @@ private struct VideoCard: View {
                         Spacer(minLength: 0)
                         if share == .reel {
                             Image(systemName: "play.rectangle.on.rectangle").font(.caption).frame(width: 26, height: 26)
-                                .glassEffect(.regular, in: .circle)
+                                .mediaGlass(in: .circle)
                         }
                     }
                     .font(.footnote.weight(.semibold))
@@ -218,15 +218,15 @@ private struct VideoCard: View {
         if let progress {
             DownloadRing(progress: progress)
         } else if resolve == .running {
-            ProgressView().controlSize(.large).tint(.white).frame(width: 56, height: 56).glassEffect(.regular, in: .circle)
+            ProgressView().controlSize(.large).tint(.white).frame(width: 56, height: 56).mediaGlass(in: .circle)
         } else if failed {
             Label("Try again", systemImage: "arrow.clockwise").font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 14).frame(height: 36).glassEffect(.regular, in: .capsule)
+                .padding(.horizontal, 14).frame(height: 36).mediaGlass(in: .capsule)
         } else if unresolved {
             Label("Load \(noun)", systemImage: "arrow.down.circle").font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 14).frame(height: 36).glassEffect(.regular, in: .capsule)
+                .padding(.horizontal, 14).frame(height: 36).mediaGlass(in: .capsule)
         } else if info.isVideo {
-            Image(systemName: "play.fill").font(.system(size: 24)).frame(width: 56, height: 56).glassEffect(.regular, in: .circle)
+            Image(systemName: "play.fill").font(.system(size: 24)).frame(width: 56, height: 56).mediaGlass(in: .circle)
         }
     }
 
@@ -330,7 +330,7 @@ private struct PhotoCard: View {
                     if let progress = uploading ?? info.url.flatMap({ model.media.progress[$0] }) { DownloadRing(progress: progress) }
                     else if info.url.map(model.media.failed.contains) == true {
                         Image(systemName: "arrow.clockwise").font(.title3.weight(.semibold)).foregroundStyle(.white)
-                            .frame(width: 44, height: 44).glassEffect(.regular, in: .circle)
+                            .frame(width: 44, height: 44).mediaGlass(in: .circle)
                     }
                 }
         }
@@ -339,7 +339,7 @@ private struct PhotoCard: View {
             if let gif, gif.frames.count > 1, gifPlay == nil, uploading == nil {
                 Button { gifPlay = GIFPlay(start: .now, loops: 1) } label: {
                     Image(systemName: "play.fill").font(.system(size: 24)).frame(width: 56, height: 56)  // the video card's
-                        .glassEffect(.regular, in: .circle)
+                        .mediaGlass(in: .circle)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Play GIF")
@@ -626,7 +626,7 @@ private struct DownloadRing: View {
         .foregroundStyle(.white)
         .frame(width: 46, height: 46)
         .padding(5)
-        .glassEffect(.regular, in: .circle)
+        .mediaGlass(in: .circle)
         .animation(.linear(duration: 0.15), value: progress)
         .accessibilityIdentifier("media.downloading")
     }

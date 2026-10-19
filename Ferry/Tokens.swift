@@ -68,4 +68,10 @@ extension View {
     /// monochrome tint (white in dark mode) or an account's ink (light in dark mode) that's white on white. The
     /// screen background's color is the opposite of either tint.
     func labelOnTint() -> some View { foregroundStyle(Color(.systemBackground)) }
+
+    /// Glass for a control on a photo or video: a dim layer under its white glyph. Glass takes the brightness of
+    /// what's behind it, so over a bright frame in light mode it was white under white (1.03:1, 2026-10-19).
+    func mediaGlass(in shape: some Shape, interactive: Bool = false) -> some View {
+        background(.black.opacity(0.65), in: shape).glassEffect(.regular.interactive(interactive), in: shape)
+    }
 }

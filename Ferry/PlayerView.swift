@@ -48,7 +48,7 @@ struct PlayerView: View {
                     failure(info)
                 } else if !playback.isPlaying {
                     Image(systemName: "play.fill").font(.system(size: 26)).foregroundStyle(.white)
-                        .frame(width: 64, height: 64).glassEffect(.regular, in: .circle).allowsHitTesting(false)
+                        .frame(width: 64, height: 64).mediaGlass(in: .circle).allowsHitTesting(false)
                 }
                 overlay(info)
             }
@@ -88,14 +88,14 @@ struct PlayerView: View {
             HStack {
                 Button("Close", systemImage: "xmark") { close(direction: 1) }
                     .labelStyle(.iconOnly).font(.title3.weight(.semibold))
-                    .frame(width: 44, height: 44).glassEffect(.regular.interactive(), in: .circle)
+                    .frame(width: 44, height: 44).mediaGlass(in: .circle, interactive: true)
                     .accessibilityIdentifier("player.close")
                 Spacer()
                 Button(playback.isMuted ? "Unmute" : "Mute", systemImage: playback.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill") {
                     playback.isMuted.toggle()
                 }
                 .labelStyle(.iconOnly).font(.body.weight(.semibold))
-                .frame(width: 44, height: 44).glassEffect(.regular.interactive(), in: .circle)
+                .frame(width: 44, height: 44).mediaGlass(in: .circle, interactive: true)
             }
             .overlay(alignment: .top) {
                 Capsule().fill(.white.opacity(0.55)).frame(width: 36, height: 5).offset(y: -12).accessibilityHidden(true)
@@ -112,7 +112,7 @@ struct PlayerView: View {
                             Link(destination: url) {
                                 Label("Open in Instagram", systemImage: "arrow.up.forward").labelStyle(TrailingIcon())
                                     .font(.footnote.weight(.semibold)).padding(.horizontal, 12).frame(height: 30)
-                                    .glassEffect(.regular.interactive(), in: .capsule)
+                                    .mediaGlass(in: .capsule, interactive: true)
                             }
                             .accessibilityIdentifier("player.openInInstagram")
                         }
@@ -316,7 +316,7 @@ private struct PlayerLayer: UIViewRepresentable {
 private extension View {
     /// The failure's buttons: glass capsules, 44 pt tall.
     func capsule() -> some View {
-        font(.subheadline.weight(.semibold)).padding(.horizontal, 16).frame(minHeight: 44).glassEffect(.regular.interactive(), in: .capsule)
+        font(.subheadline.weight(.semibold)).padding(.horizontal, 16).frame(minHeight: 44).mediaGlass(in: .capsule, interactive: true)
     }
 }
 
@@ -361,11 +361,11 @@ struct PhotoViewer: View {
                 HStack {
                     Button("Close", systemImage: "xmark") { dismiss() }
                         .labelStyle(.iconOnly).font(.title3.weight(.semibold))
-                        .frame(width: 44, height: 44).glassEffect(.regular.interactive(), in: .circle)
+                        .frame(width: 44, height: 44).mediaGlass(in: .circle, interactive: true)
                         .accessibilityIdentifier("photo.close")
                     Spacer()
                     ShareLink(item: item.file) { Image(systemName: "square.and.arrow.up").font(.body.weight(.semibold)) }
-                        .frame(width: 44, height: 44).glassEffect(.regular.interactive(), in: .circle)
+                        .frame(width: 44, height: 44).mediaGlass(in: .circle, interactive: true)
                 }
                 .padding(.horizontal, 16)
                 Spacer()

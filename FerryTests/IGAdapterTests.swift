@@ -519,6 +519,13 @@ final class IGAdapterTests: XCTestCase {
         XCTAssertEqual(room.typing, [IGAdapter.user(kivo)])
         room.apply(IGAdapter.typing([]))
         XCTAssertEqual(room.typing, [])
+        // Their message arriving ends it: Instagram sends no "stopped" with a send. Our own message doesn't.
+        let deltas = try deltas()
+        room.apply(IGAdapter.typing([IGAdapter.user(kivo)]))
+        XCTAssertEqual(IGAdapter.apply(try XCTUnwrap(deltas.last { $0.typename == "SlideUQPPNewMessage" }), account: tamo, to: room), .applied)
+        XCTAssertEqual(room.typing, [IGAdapter.user(kivo)])
+        XCTAssertEqual(IGAdapter.apply(try XCTUnwrap(deltas.first { $0.typename == "SlideUQPPNewMessage" }), account: tamo, to: room), .applied)
+        XCTAssertEqual(room.typing, [])
         // The notice names the thread by its long ID and the person by their Instagram user ID (P0).
         let typing = try Fixture.ig([IG.Event].self, "ig_events_tamo").first { $0.kind == "TypingNotification" }
         XCTAssertEqual(typing?.thread, try thread().threadId)

@@ -618,6 +618,10 @@ nonisolated enum IGAdapter {
         default:
             guard let update = update(delta, account: account) else { return .ignored }
             room.apply(update)
+            // Their message ends their typing: Instagram sends no "stopped" with it, so "typing…" held for its 22 s TTL.
+            if let fbid = delta.message?.senderFbid, room.typing.contains(user(fbid)) {
+                room.apply(typing(room.typing.filter { $0 != user(fbid) }))
+            }
         }
         return .applied
     }
