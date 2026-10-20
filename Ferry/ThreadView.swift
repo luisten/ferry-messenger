@@ -35,6 +35,8 @@ struct ThreadView: View {
     @State private var pin = BottomPin()
     /// The thread is invisible until the bottom pin has landed after the push (`revealWhenSettled`).
     @State private var revealed = false
+    /// The jump-to-newest button (`updateJump`).
+    @State private var jumpShown = false
     /// How far we'd read when the chat opened unread (our `m.read`, ms), taken once before our "Seen" moves it: the
     /// "New messages" line goes after it (`Timeline.layout`).
     @State private var unreadAfter: Int64?
@@ -114,23 +116,50 @@ struct ThreadView: View {
                     pin.holdsLine = false
                 }
                 pin.followsEnd = phase == .idle && ScrollEdge(context.geometry).distanceFromEnd < 60
+                if phase == .idle { updateJump(ScrollEdge(context.geometry), atRest: true) }
             }
             .onScrollGeometryChange(for: ScrollEdge.self) { ScrollEdge($0) } action: { old, new in
                 // A chat that opened unread holds its "New messages" line at the top instead, until the user scrolls;
                 // when what's new fits, the line can't reach the top and this lands on the end anyway.
+                pin.edge = new
                 let line = pin.holdsLine ? unreadLine : nil
-                if !revealed { revealWhenSettled(new, onLine: line != nil) }
+                if !revealed { revealWhenSettled(new, onLine: line != nil, proxy: proxy) }
+                updateJump(new, atRest: false)
                 guard line != nil || pin.followsEnd, new.container != old.container || new.content != old.content else { return }
                 let (target, anchor) = line.map { ($0, UnitPoint.top) } ?? (Self.bottom, .bottom)
                 proxy.scrollTo(target, anchor: anchor)
                 // Mid-push the scroll view can drop a scroll made in the same update (#17): repeat it after.
                 Task { proxy.scrollTo(target, anchor: anchor) }
             }
+            .overlay(alignment: .bottomTrailing) {  // above the composer (its inset) and the keyboard
+                VStack {
+                    if jumpShown {
+                        Button {
+                            pin.holdsLine = false
+                            jumpShown = false
+                            withAnimation(reduceMotion ? nil : .smooth) { proxy.scrollTo(Self.bottom, anchor: .bottom) }
+                        } label: {
+                            Image(systemName: "chevron.down").font(.body.weight(.semibold))
+                                .foregroundStyle(Color.primary)  // chrome: never the account's colour
+                                .frame(width: 44, height: 44).contentShape(.circle)
+                        }
+                        .buttonStyle(.plain)
+                        .glassEffect(.regular.interactive(), in: .circle)
+                        .accessibilityLabel("Jump to newest message")
+                        .accessibilityIdentifier("thread.jump")
+                        .transition(reduceMotion ? .opacity : .scale(scale: 0.8).combined(with: .opacity))
+                    }
+                }
+                .padding(.trailing, 12)
+                .padding(.bottom, 8)
+                .animation(.easeOut(duration: 0.2), value: jumpShown)
+            }
             .opacity(revealed ? 1 : 0)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: revealed)
             .task {  // never left hidden
                 try? await Task.sleep(for: .seconds(1))
                 revealed = true
+                if let edge = pin.edge { updateJump(edge, atRest: false) }
             }
             .onChange(of: messages.last?.id) { _, _ in
                 guard messages.last?.isOwn == true else { return }
@@ -140,6 +169,7 @@ struct ThreadView: View {
             .onChange(of: attachment != nil) { _, shown in
                 // The bar grows the bottom inset (M7b). Added when the re-pin above never ran; not re-checked since.
                 guard shown else { return }
+                pin.holdsLine = false  // as a send does, or the next size change snaps back to the line
                 Task {
                     try? await Task.sleep(for: .milliseconds(50))
                     withAnimation { proxy.scrollTo(Self.bottom, anchor: .bottom) }
@@ -483,9 +513,12 @@ struct ThreadView: View {
 
     private final class BottomPin {
         var followsEnd = true
-        /// Opened unread: the "New messages" line stays at the top until the user scrolls (or it turns out to fit).
+        /// Opened unread: the "New messages" line stays at the top until the user scrolls (or it turns out that what's
+        /// new overflows by little, `ScrollEdge.endIsNear`).
         var holdsLine = false
         var reveal: Task<Void, Never>?
+        /// The latest geometry, for the 1 s reveal.
+        var edge: ScrollEdge?
     }
 
     private enum ThreadSheet: Identifiable {
@@ -505,17 +538,31 @@ struct ThreadView: View {
     /// after, above the end, and the offset trails it for a few frames. The user saw both as a jump. So the thread
     /// appears only once it has stayed at its end, under the bars, for 100 ms (rows re-measure for a few frames after
     /// a scroll) with no page on its way, and at the latest after 1 s or when the user touches it. Held on the "New
-    /// messages" line, anywhere settled will do; if that's the end, what's new fit, and the thread follows its end.
-    private func revealWhenSettled(_ edge: ScrollEdge, onLine: Bool) {
+    /// messages" line, anywhere settled will do, unless what's new overflows by little (`endIsNear`): then the end
+    /// instead, so the newest message is never cut off by the composer, and the thread follows its end.
+    private func revealWhenSettled(_ edge: ScrollEdge, onLine: Bool, proxy: ScrollViewProxy) {
         pin.reveal?.cancel()
         guard onLine ? edge.topInset > 0 : edge.restsAtEnd else { return }
         pin.reveal = Task {
             try? await Task.sleep(for: .milliseconds(100))
             // A page still loading changes the geometry when it lands, which schedules this again.
             guard !Task.isCancelled, !model.paginating.contains(roomID) else { return }
+            if onLine, edge.endIsNear {
+                pin.holdsLine = false
+                proxy.scrollTo(Self.bottom, anchor: .bottom)
+                if !edge.restsAtEnd { return }  // the scroll's geometry schedules this again, at the end
+            }
             revealed = true
-            if edge.restsAtEnd { pin.holdsLine = false }
+            updateJump(edge, atRest: false)
         }
+    }
+
+    /// DESIGN §5 T1's scroll-to-bottom button, without its count for now. It shows once the thread has appeared away
+    /// from its end: held on the "New messages" line, or where the user's scroll came to rest. Never mid-scroll or
+    /// while the pin catches up (the keyboard, a row growing), and it hides as soon as the end is close.
+    private func updateJump(_ edge: ScrollEdge, atRest: Bool) {
+        let shown = revealed && edge.distanceFromEnd > 60 && (jumpShown || pin.holdsLine || atRest)
+        if shown != jumpShown { jumpShown = shown }
     }
 
     /// What the bottom pin reads from the scroll geometry. The offset and top inset are part of the value, so the
@@ -542,6 +589,11 @@ struct ThreadView: View {
         /// At the end (give or take the list's 8 pt bottom padding) with the navigation bar's inset in place: mid-push,
         /// before the insets arrive, the thread is also at its end, and then jumps.
         var restsAtEnd: Bool { topInset > 0 && distanceFromEnd < 20 }
+
+        /// Held on the "New messages" line, how far below the end is, i.e. how much that's new doesn't fit: up to a
+        /// quarter of the screen opens at the end instead (the line and a bubble or two go under the header; the user
+        /// saw the newest message cut off by the composer, 2026-10-20).
+        var endIsNear: Bool { distanceFromEnd <= container / 4 }
     }
 
     /// "Kivo" for the ghost named "Kivo Studio". Without a member event: their ghost profile, the room name in a DM

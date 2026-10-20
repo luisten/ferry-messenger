@@ -123,8 +123,13 @@ recipient, no groups.
   semibold), "@handle" in a DM (when known) or "N members" in a group, the AccountTag, 22 pt above and 20 pt below;
   "You're messaging from X." only while the chat has no messages (otherwise the composer says it). Opens on the newest
   message (also the first open after launch) and stays on it as rows, the keyboard or the typing bubble change its size,
-  until you scroll up. When what's new doesn't fit, it opens with the "New messages" line at the top instead and holds
-  it there the same way until you scroll, reply or tap a quote. The bubbles appear (a 0.15 s fade, none under Reduce
+  until you scroll up. When what's new overflows the screen by more than a quarter of it, it opens with the "New
+  messages" line at the top instead and holds it there the same way until you scroll, reply, attach or tap a quote; by
+  less, it opens at the end (the line goes under the header), so the newest message is never cut off by the composer.
+  A **jump-to-newest button** (44 pt glass circle, `chevron.down`, never the account's colour; "Jump to newest
+  message") sits bottom-right above the composer and keyboard while the thread rests away from its end: held on the
+  line, or after a scroll that stopped more than 60 pt up. It hides near the end; a tap goes there (animated, not
+  under Reduce Motion). DESIGN's count of new messages on it isn't built yet. The bubbles appear (a 0.15 s fade, none under Reduce
   Motion) only once the thread rests there under the bars with no older page loading, so the push never shows it
   jumping; at the latest after 1 s or on touch. Only a new last message animates; older pages land without animation.
 - **Groups:** the sender's display name (`.caption`, grey: never an account

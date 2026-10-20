@@ -63,7 +63,7 @@ t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
 
-t test -only-testing:FerryTests           # unit tests (286), on real captured Instagram data
+t test -only-testing:FerryTests           # unit tests (283), on real captured Instagram data
 t test -only-testing:FerryUITests         # UI tests on made-up data (below)
 ```
 
@@ -159,6 +159,7 @@ to the launch line above. They live in `Ferry/DebugFixtures.swift` and `Ferry/Ap
 | `FERRY_DEBUG_DEMO=1` | Made-up data only, for screenshots and the UI tests: two made-up accounts ("Tamo Veska", "Kivo Studio") stand in for the Keychain's and never connect, so nothing reaches Instagram; four made-up chats, a group and three requests. Identities are defaults kept in memory. With `FERRY_DEBUG_ONBOARDING=welcome` it gives a welcome screen with those accounts |
 | `FERRY_DEBUG_REQUESTS=1` | Three made-up message requests (they have no Instagram thread, and the app refuses sends to them). The Requests card shows only for requests newer than the last time Requests was opened (`requests.seen` in the app's `UserDefaults`); to see it again, run the snippet below first |
 | `FERRY_DEBUG_GROUP=1` | One made-up group, "Saturday Climbs", on the first account: four senders (one who left), a reply, a reaction. Nothing about it leaves the app |
+| `FERRY_DEBUG_GROUP_EXTRA=<n>` | n more unread messages in that group (with `FERRY_DEBUG_GROUP` or `FERRY_DEBUG_DEMO`), so what's new overflows the screen: where the thread opens and its jump-to-newest button. On an iPhone 17, 7 overflow by a little (139 pt: it opens at the end), 14 by a lot (807 pt: on the "New messages" line, with the button) |
 | `FERRY_DEBUG_LOGIN_STATE=<account id>=<STATE>[,…]` | Shows that account in another state (`BAD_CREDENTIALS`, `TRANSIENT_DISCONNECT`, `UNKNOWN_ERROR`); the real session is untouched |
 | `FERRY_DEBUG_ENDED_SESSION=<account id>[,…]` | Connects that account with a broken `sessionid` for this launch, so Instagram answers as it does for a session it ended (the real signed-out banner and re-login). The Keychain keeps the real cookies; a launch without it brings the account back. One rejected inbox load per launch |
 | `FERRY_DEBUG_AS_REQUEST=<room id>` | The engine treats one real chat as a request, to check with the request log that opening it sends nothing; sends to it are blocked |

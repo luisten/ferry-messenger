@@ -25,7 +25,7 @@ SIM=$(xcrun simctl list devices booted | grep -oE '[0-9A-F-]{36}' | head -1)
 t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
-t test -only-testing:FerryTests              # 281 unit tests, ~3 s
+t test -only-testing:FerryTests              # 283 unit tests, ~3 s
 (cd core && go test ./...)                    # core/chat on P0's captures; -update in ./chat rewrites the golden files
 t test -only-testing:FerryUITests            # UI tests on made-up data (live ones opt-in: docs/DEVELOPMENT.md)
 t build-for-testing                           # all 3 targets
@@ -99,7 +99,7 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
 - **Colors live in `Tokens.swift`.** Small text: `.inkSecondary` (not `.secondary`, 3.4:1), and on an incoming-bubble
   card `.inkSecondaryOnBubble` (inkSecondary is 4.30 on #E9E9EB); status text `.statusOK/.statusWarn/.statusError`
   (not system green/orange/red, 2.2–3.5:1 on white).
-- DEBUG switches live in `DebugFixtures.swift` (docs/DEVELOPMENT.md): fake request rooms and a fake group (`FERRY_DEBUG_GROUP`), an
+- DEBUG switches live in `DebugFixtures.swift` (docs/DEVELOPMENT.md): fake request rooms and a fake group (`FERRY_DEBUG_GROUP`; `FERRY_DEBUG_GROUP_EXTRA=<n>` more unread in it), an
   account state override, a real chat shown as a request (the engine treats it as one, `IGCore.setDebug`; its sends
   are held back, "Seen" and typing aren't, so the request rule itself keeps them back), onboarding at a given step over the real accounts, made-up data only (`FERRY_DEBUG_DEMO`: two made-up
   accounts stand in for the Keychain's and never connect, identities in memory only; screenshots and the UI tests),

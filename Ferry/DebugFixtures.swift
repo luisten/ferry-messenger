@@ -6,6 +6,8 @@ import Foundation
 /// - `FERRY_DEBUG_REQUESTS=1`: adds three hand-made request rooms (I2/T2 screenshots).
 /// - `FERRY_DEBUG_GROUP=1`: adds one hand-made Instagram group (thread sender labels, Chat Info members); no group
 ///   exists on the dummies (FOLLOWUPS #24).
+///   `FERRY_DEBUG_GROUP_EXTRA=<n>` adds n more unread messages to it, so what's new overflows the screen (where the
+///   thread opens, its jump-to-newest button).
 ///   Fixture rooms (`!debug-…`) aren't real: the engine refuses rooms it didn't make, `AppModel.hasThread` skips them
 ///   and `AppModel.checkSend` refuses them, so nothing about them leaves the app.
 /// - `FERRY_DEBUG_AS_REQUEST=<room id>`: treats one real room as a request, for the "opening a request sends nothing"
@@ -36,6 +38,7 @@ nonisolated enum DebugFixtures {
     private static let env = ProcessInfo.processInfo.environment
     static let addsRequests = env["FERRY_DEBUG_REQUESTS"] == "1" || demo
     static let addsGroup = env["FERRY_DEBUG_GROUP"] == "1" || demo
+    static let groupExtra = Int(env["FERRY_DEBUG_GROUP_EXTRA"] ?? "") ?? 0
     static let demo = env["FERRY_DEBUG_DEMO"] == "1"
     static let onboardingStep = env["FERRY_DEBUG_ONBOARDING"].flatMap { $0.isEmpty ? nil : $0 }
     static let forcedRequestRoom = env["FERRY_DEBUG_AS_REQUEST"].flatMap { $0.isEmpty ? nil : $0 }
@@ -214,6 +217,14 @@ nonisolated enum DebugFixtures {
             Event(type: "m.room.message", content: ["msgtype": "m.notice", "body": "Sent a poll", MessageKind.unsupportedKey: "a poll"],
                   eventID: "$debug-group-poll", sender: sam, originServerTS: ms - 20 * 60_000),
         ], at: events.count - 1)
+        // `FERRY_DEBUG_GROUP_EXTRA`: more that's new, after Theo's last message, to overflow the screen by as much.
+        let lines = ["On my way", "Bringing chalk and the long rope, plus snacks for after", "👍",
+                     "Anyone need a ride from the station? Two seats left in the back, leaving at 8:45 sharp"]
+        for i in 0..<groupExtra {
+            events.append(Event(type: "m.room.message", content: ["msgtype": "m.text", "body": .string(lines[i % lines.count])],
+                                eventID: "$debug-group-extra-\(i)", sender: [maya, sam, theo][i % 3],
+                                originServerTS: ms - 11 * 60_000 + Int64(i) * 1000))
+        }
         for (i, (target, key, sender)) in [(4, "❤️", maya), (4, "🔥", theo), (6, "👍", theo), (6, "👍", maya), (6, "👍", me)].enumerated() {
             events.append(Event(type: "m.reaction", content: ["m.relates_to": ["rel_type": "m.annotation", "event_id": .string("$debug-group-msg-\(target)"), "key": .string(key)]],
                                 eventID: "$debug-group-reaction-\(i)", sender: sender, originServerTS: ms - 47 * 60_000))

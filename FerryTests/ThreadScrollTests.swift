@@ -68,4 +68,14 @@ final class ThreadRevealTests: XCTestCase {
     func testShortThreadRestsAtTheEnd() {
         XCTAssertTrue(edge(offset: -116, content: 300, container: 666, insets: bars).restsAtEnd)
     }
+
+    /// A chat that opens unread holds its "New messages" line at the top only when what's new overflows by more than a
+    /// quarter of the screen; otherwise it opens at the end, the newest message whole (2026-10-20: the user saw it cut
+    /// off by the composer). Geometry logged with the line held (`FERRY_DEBUG_GROUP_EXTRA=7`: 207 pt below).
+    func testHeldLineGivesWayWhenLittleIsBelow() {
+        XCTAssertFalse(edge(offset: 564.67, content: 1554, container: 666, insets: bars).endIsNear)  // 207 pt: holds
+        XCTAssertTrue(edge(offset: 607, content: 1554, container: 666, insets: bars).endIsNear)  // 165 pt: the end
+        XCTAssertTrue(edge(offset: 757, content: 1554, container: 666, insets: bars).endIsNear)  // 15 pt: the end
+        XCTAssertTrue(edge(offset: -116, content: 300, container: 666, insets: bars).endIsNear)  // it all fits
+    }
 }

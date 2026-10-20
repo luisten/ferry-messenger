@@ -7,8 +7,14 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 
 ## [Unreleased]
 
+### Added
+
+- A button to jump to the newest message, when you've scrolled up or a chat opened at "New messages".
+
 ### Fixed
 
+- A chat with a few new messages could open with the newest one partly hidden behind the message field. It now opens
+  at the bottom unless there's a lot that's new, and then the new button takes you down.
 - GIFs and stickers sent from Instagram's GIF picker said the app couldn't show them. They now play in the chat like
   other GIFs, and the chat list says "GIF" or "Sticker".
 
