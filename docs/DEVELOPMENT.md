@@ -95,7 +95,8 @@ xcrun simctl spawn $SIM log show --last 2m --predicate "subsystem == \"$APP\" AN
 
 Most run on `FERRY_DEBUG_DEMO`'s made-up accounts and chats, which never connect: nothing reaches Instagram, and the
 simulator's own accounts are left alone. They cover the inbox, an account's chip, a chat and Chat Info; Requests and a
-request thread; a group (senders named to VoiceOver, Chat Info's members); the welcome screen; New Message; the mic.
+request thread; a group (senders named to VoiceOver, Chat Info's members); where an unread chat opens and its
+jump-to-newest button; the welcome screen; New Message; the mic.
 
 These skip unless you opt in:
 

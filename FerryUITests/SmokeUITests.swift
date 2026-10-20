@@ -262,6 +262,32 @@ final class SmokeUITests: XCTestCase {
         XCTAssertTrue(bubbles.firstMatch.waitForExistence(timeout: 5))
     }
 
+    /// Where an unread chat opens (2026-10-20) on the made-up group with more unread (`FERRY_DEBUG_GROUP_EXTRA`): much
+    /// more that's new than fits holds the "New messages" line with the jump-to-newest button, which goes to the end and
+    /// hides; a little more opens at the end, no button. The held thread is queried but never scrolled by a gesture.
+    @MainActor
+    func testUnreadOverflowOpensOnTheLineOrAtTheEnd() throws {
+        func openGroup(_ app: XCUIApplication) {
+            let row = app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier == 'inbox.row' AND label BEGINSWITH 'Saturday Climbs'")).firstMatch
+            XCTAssertTrue(row.waitForExistence(timeout: 15))
+            row.tap()
+            XCTAssertTrue(app.descendants(matching: .any)["composer.field"].waitForExistence(timeout: 10))
+            Thread.sleep(forTimeInterval: 1.5)  // the thread appears once it rests
+        }
+        var app = launch(["FERRY_DEBUG_GROUP_EXTRA": "14"])
+        openGroup(app)
+        let jump = app.buttons["thread.jump"]
+        XCTAssertTrue(jump.waitForExistence(timeout: 5))
+        XCTAssertEqual(jump.label, "Jump to newest message")
+        jump.tap()
+        XCTAssertTrue(jump.waitForNonExistence(timeout: 5))
+
+        app = launch(["FERRY_DEBUG_GROUP_EXTRA": "7"])
+        openGroup(app)
+        XCTAssertFalse(app.buttons["thread.jump"].exists)
+    }
+
     /// Design-pass screenshots (`TEST_RUNNER_FERRY_UITEST_TOUR=<folder>`, e.g. the gitignored `docs/verification`;
     /// `TEST_RUNNER_FERRY_UITEST_TOUR_SUFFIX=light|dark` to match `simctl ui appearance`), all on the made-up data, so
     /// they're safe to share. Never taps Add, Log in, Connect or anything that sends. The group scrolled to its start
