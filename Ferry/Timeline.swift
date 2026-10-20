@@ -26,6 +26,8 @@ nonisolated enum MessageKind: Equatable, Sendable {
     static let unsupportedKey = "fi.ferry.unsupported"
     /// The text sent with a share (`IGAdapter.share`): a story reply, or a story reaction's emoji.
     static let shareTextKey = "fi.ferry.share_text"
+    /// A sticker from Instagram's GIPHY picker: an animated image (`MediaInfo.isAnimated`) shown as a sticker.
+    static let stickerKey = "fi.ferry.sticker"
 
     /// `other`: anything shared that isn't a reel, post or story (a profile, music…); the bridge can't fetch it.
     enum ShareType: String, Sendable { case reel, post, story, other }
@@ -47,6 +49,7 @@ nonisolated enum MessageKind: Equatable, Sendable {
         }
         let body = content["body"]?.string ?? ""
         switch content["msgtype"]?.string {
+        case "m.image" where content[Self.stickerKey] != nil: self = .sticker
         case "m.image": self = share.map { .share($0, .ready) } ?? (content["info"]?["fi.mau.gif"]?.bool == true ? .gif : .image)
         case "m.video": self = share.map { .share($0, .ready) } ?? .video
         case "m.audio": self = content["org.matrix.msc3245.voice"] != nil ? .voice : .audio
@@ -132,6 +135,8 @@ nonisolated struct MediaInfo: Equatable, Sendable {
     var externalURL: URL?
     /// Photos and videos sent together, each its own content (`IGAdapter.album`); empty for one.
     var album: [JSON]
+    /// A GIF, or a sticker from Instagram's GIPHY picker: plays like one (`info.fi.mau.gif`).
+    var isAnimated: Bool
 
     static let albumKey = "fi.ferry.album"
 
@@ -147,6 +152,7 @@ nonisolated struct MediaInfo: Equatable, Sendable {
         thumbnailURL = info?["thumbnail_url"]?.string
         externalURL = content["external_url"]?.string.flatMap(URL.init(string:))
         album = content[Self.albumKey]?.array ?? []
+        isAnimated = info?["fi.mau.gif"]?.bool == true
     }
 
     var isVideo: Bool { msgtype == "m.video" }

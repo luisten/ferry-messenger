@@ -465,6 +465,47 @@ func TestAGIFIsAnAnimatedImage(t *testing.T) {
 	golden(t, "event_gif_kivo", map[string][]Event{"live": live, "mailbox": mailbox})
 }
 
+// A sticker, then a GIF, from Instagram's GIPHY picker (live 2026-10-20, `ig_animated_images_tamo`: the thread's copies
+// and both sides' mailbox copies): `INSTAGRAM_MESSAGING_ANIMATED_IMAGE`, the GIF's `animated_media` with `is_sticker`.
+// Ferry said it couldn't show them. The mailbox's copies have no media, and only their snippet says "sticker".
+func TestGIPHYStickersAndGIFsAreAnimatedImages(t *testing.T) {
+	var copies struct {
+		Thread          []Message `json:"thread"`
+		MailboxSender   []Message `json:"mailbox_sender"`
+		MailboxReceiver []Message `json:"mailbox_receiver"`
+	}
+	fixture(t, "ig_animated_images_tamo", &copies)
+	events := func(messages []Message, account string) (out []Event) {
+		for _, m := range messages {
+			out = append(out, messageEvents(m, account)...)
+		}
+		if len(out) != 2 {
+			t.Fatalf("%d events for two messages", len(out))
+		}
+		return out
+	}
+	thread := events(copies.Thread, tamo)
+	for i, want := range []struct {
+		body, url string
+		sticker   bool
+	}{{"Sticker", "https://scontent.example.invalid/v/a001.webp", true}, {"GIF", "https://scontent.example.invalid/v/a003.webp", false}} {
+		c := thread[i].Content
+		info := obj(c["info"])
+		if c["msgtype"] != "m.image" || c["body"] != want.body || c["url"] != want.url || info["fi.mau.gif"] != true ||
+			info["mimetype"] != "image/webp" || has(c, stickerKey) != want.sticker || has(c, unsupportedKey) {
+			t.Errorf("%s: %v", want.body, c)
+		}
+	}
+	sender, receiver := events(copies.MailboxSender, tamo), events(copies.MailboxReceiver, kivo)
+	for _, mailbox := range [][]Event{sender, receiver} {
+		if mailbox[0].Content[stickerKey] != true || mailbox[1].Content["body"] != "GIF" || has(mailbox[1].Content, stickerKey) ||
+			has(mailbox[0].Content, "url") || obj(mailbox[1].Content["info"])["fi.mau.gif"] != true {
+			t.Errorf("mailbox %v", mailbox)
+		}
+	}
+	golden(t, "animated_images_tamo", map[string][]Event{"thread": thread, "mailbox_sender": sender, "mailbox_receiver": receiver})
+}
+
 // Three photos sent at once from the Instagram app (live 2026-10-18): one message with every photo, in order, so it
 // keeps one menu, one row of reactions and one unsend. Ferry showed only the first.
 func TestPhotosSentTogetherAreOneMessageWithAll(t *testing.T) {

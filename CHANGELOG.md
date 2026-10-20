@@ -7,6 +7,11 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 
 ## [Unreleased]
 
+### Fixed
+
+- GIFs and stickers sent from Instagram's GIF picker said the app couldn't show them. They now play in the chat like
+  other GIFs, and the chat list says "GIF" or "Sticker".
+
 ## [1.4] - 2026-10-19
 
 ### Changed

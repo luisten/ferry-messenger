@@ -202,13 +202,14 @@ Footer: "To add or remove people, use Instagram." No other actions on members.
 | Post / other share | Author, image, two caption lines | Open in Instagram |
 | Photo | Up to 240×320 | M2 |
 | Photos sent together (one message; videos mixed in alike) | A pile: the first on top at a photo's size, up to four more tilted behind it (±3°, ±6°), "3 photos" on it; only those previews load. One menu and one row of reactions for the set | Unfolds in place into a card each, stacked like a run, each opening on its own (M2 / M1), and "Show less" under them folds it back. While "Share All" downloads, the pile shows the ring and a tap cancels |
-| GIF (Instagram's `GIFS`) | Up to 240×320 (its WebP, downloaded as it appears, like a photo; Instagram's still preview first when it sends one). Plays three times the first time it's on screen in a launch, then rests on its first frame with a play button (the video card's) that plays it once more. In a request, or under Reduce Motion, only the button. In the inbox, "GIF" | M2 (first frame) |
+| GIF (Instagram's `GIFS`, and `INSTAGRAM_MESSAGING_ANIMATED_IMAGE` from its GIPHY picker) | Up to 240×320 (its WebP, downloaded as it appears, like a photo; Instagram's still preview first when it sends one). Plays three times the first time it's on screen in a launch, then rests on its first frame with a play button (the video card's) that plays it once more. In a request, or under Reduce Motion, only the button. In the inbox, "GIF" | M2 (first frame) |
+| Sticker (the GIPHY picker's, `is_sticker`) | Like a GIF, up to 140×140 with no grey behind it. In the inbox, "Sticker" | M2 (first frame) |
 | Voice (`m.audio` + voice flag) | Play/pause, static bars (drag to seek), 1×/1.5×/2×, duration; our own while sending: the upload ring in the play circle; after a failed play "Can't play" and a retry arrow in the circle (a tap retries) | Plays in the bubble (AVPlayer on Instagram's `.mp4`, or our own `.m4a`) |
 | Video (not a share) | Like a reel without author: Instagram's preview image, duration pill; ours while sending: the upload ring | Download (ring, tap cancels) → M1 |
 | Link preview | Text with a preview card | Opens the link |
 
 View-once photos show a "View-once photo · Open Instagram to view it" card; other kinds the app doesn't show
-(view-once videos, stickers, polls and the like) are chat events (Thread): "Sam sent a message Ferry can't show. Open
+(view-once videos, polls and the like) are chat events (Thread): "Sam sent a message Ferry can't show. Open
 Instagram to see it."
 
 - **M1 player:** full screen, one video, loops; swipe down or up (or ✕) returns to the chat. Mute, scrubber (only once
