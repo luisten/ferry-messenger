@@ -90,11 +90,12 @@ struct ThreadView: View {
                             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                     }
                     if typing { TypingBubble().padding(.top, 10).padding(.leading, isGroup ? MessageRow.groupIndent : 0) }
-                    Color.clear.frame(height: 1).id(Self.bottom)
+                    // The list's bottom margin, so a scroll to the end shows it: as a 1 pt marker above an 8 pt padding,
+                    // the newest message sat flush on the composer after every open (QA 2026-10-20).
+                    Color.clear.frame(height: 9).id(Self.bottom)
                 }
                 .environment(\.autoplaysGIFs, !Inbox.isRequest(room))
                 .padding(.horizontal, 12)
-                .padding(.bottom, 8)
                 // Only the newest message animates. An older page (loaded on every open while the top spinner shows)
                 // bounced the whole thread when it arrived just after the push.
                 .animation(reduceMotion ? .easeInOut(duration: 0.2) : .bouncy(duration: 0.45, extraBounce: 0.05), value: messages.last?.id)
@@ -589,8 +590,8 @@ struct ThreadView: View {
         /// 26.4, so its re-pin never ran (ThreadScrollTests).
         var distanceFromEnd: CGFloat { content - container - topInset - offset }
 
-        /// At the end (give or take the list's 8 pt bottom padding) with the navigation bar's inset in place: mid-push,
-        /// before the insets arrive, the thread is also at its end, and then jumps.
+        /// At the end (give or take a few points while rows re-measure) with the navigation bar's inset in place:
+        /// mid-push, before the insets arrive, the thread is also at its end, and then jumps.
         var restsAtEnd: Bool { topInset > 0 && distanceFromEnd < 20 }
 
         /// Held on the "New messages" line, how far below the end is, i.e. how much that's new doesn't fit: up to a
