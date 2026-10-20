@@ -136,6 +136,7 @@ struct ThreadView: View {
                     if jumpShown {
                         Button {
                             pin.holdsLine = false
+                            pin.followsEnd = true  // a scroll made here goes through no phase change that would say so
                             jumpShown = false
                             withAnimation(reduceMotion ? nil : .smooth) { proxy.scrollTo(Self.bottom, anchor: .bottom) }
                         } label: {
@@ -164,12 +165,14 @@ struct ThreadView: View {
             .onChange(of: messages.last?.id) { _, _ in
                 guard messages.last?.isOwn == true else { return }
                 pin.holdsLine = false
+                pin.followsEnd = true
                 withAnimation { proxy.scrollTo(Self.bottom, anchor: .bottom) }
             }
             .onChange(of: attachment != nil) { _, shown in
                 // The bar grows the bottom inset (M7b). Added when the re-pin above never ran; not re-checked since.
                 guard shown else { return }
                 pin.holdsLine = false  // as a send does, or the next size change snaps back to the line
+                pin.followsEnd = true
                 Task {
                     try? await Task.sleep(for: .milliseconds(50))
                     withAnimation { proxy.scrollTo(Self.bottom, anchor: .bottom) }
