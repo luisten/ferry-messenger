@@ -78,6 +78,9 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
 - **Dependencies:** none in Swift. The one exception is `core/`: `go.mau.fi/mautrix-meta` pinned to an exact tag in
   `core/go.mod` with `go.sum`, built with Go 1.27.1 (its `toolchain` line). Bump either only on purpose, after
   reading upstream's changelog; say what changes before pulling it.
+- **`core/` has a second consumer, the Android app** (ferry-messenger-android, PLAN-android stage 3), which pins a
+  commit of it. Its JNI bridge is `core/cmd/igcore/jni_android.c` (E6), one function per export, compiled only for
+  Android: change an exported function's signature and it changes too, in the same commit.
 - Zero third-party dependencies; no protocol-for-swappability abstractions; pure logic is `nonisolated` and
   unit-tested with real fixtures (`FerryTests/Fixtures`). App target defaults to `MainActor`, test targets to
   `nonisolated`.

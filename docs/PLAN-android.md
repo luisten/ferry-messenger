@@ -201,6 +201,20 @@ in or send are live checks on the dummies only, counted (C6) and announced to th
 
 About 4–5 weeks of work in all; a guess, the screens are most of it.
 
+**A0 done 2026-10-20** (ferry-messenger-android; this commit adds the bridge). The engine is pinned at 443b80e in
+that repo's `go.mod` (plus core's `replace`, which doesn't carry over), built by its `build-engine.sh` with
+`cmd/igcore/jni_android.c` from here (one JNI function per export but `IGFree`; byte arrays both ways). Gradle 9.7.1,
+AGP 9.4.1, Kotlin 2.4.20, Compose BOM 2026.09.00, activity-compose 1.13.0, all checksummed. **instagram.com treats
+Android's WebView like any phone browser:** the usual mobile login form, no app interstitial, the user agent left as
+it is (`; wv` and all). It first looked otherwise: the page stayed blank because Compose's `AndroidView` gives a
+WebView `WRAP_CONTENT`, which makes CSS's viewport 0 px tall (the app's bug; removing `; wv` changed nothing). One
+login by the user (`tamoveska`), then the chat count on screen (2): the engine's requests were the iOS baseline's
+(index 2, folder page 1, socket), plus Instagram's own web login. The session is stored encrypted with a Keystore key,
+outside backups; the web view's cookies were 0 afterwards.
+
+Changed from the above: Compose 1.12 needs `compileSdk` 37 (SDK Platform 37.0 installed, with the user's OK);
+`targetSdk` stays 36. No app library beyond E7's: the platform covers the web view, the Keystore and JSON.
+
 **From iOS to Android:**
 
 | iOS | Android |
