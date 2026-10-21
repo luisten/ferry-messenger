@@ -779,8 +779,8 @@ private struct Composer: View {
                 Text(lockText).font(.subheadline).padding().frame(idealWidth: 280).presentationCompactAdaptation(.popover)
             }
             VStack(alignment: .leading, spacing: 2) {
-                // The system placeholder grey is ~2:1; the mockups' placeholder is label-2 (DESIGN §11). After a tap on
-                // the mic it says "Hold to record" for a moment instead of a hint floating over the thread (#14).
+                // The system placeholder grey is ~2:1; the mockups' placeholder is label-2 (DESIGN §11). A voice note too
+                // short to send says so here for a moment instead of a hint floating over the thread (#14).
                 TextField("Message as \(accountName)", text: $draft,
                           prompt: Text(recorder.hint ?? "Message as \(accountName)").foregroundStyle(.inkSecondary), axis: .vertical)
                     .lineLimit(1...6)

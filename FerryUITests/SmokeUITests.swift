@@ -81,17 +81,19 @@ final class SmokeUITests: XCTestCase {
     /// that doesn't exist standing in for the microphone (`FERRY_DEBUG_VOICE_FILE`), so even a misfire sends nothing: a
     /// tap only says "Hold to record" (the field's placeholder for 2 s); holding records, and sliding left cancels.
     @MainActor
-    func testMicTapHintsAndSlideCancels() throws {
+    func testMicTapRecordsHandsFreeAndSlideCancels() throws {
         let app = launch(["FERRY_DEBUG_BLOCK_SENDS": "1", "FERRY_DEBUG_VOICE_FILE": "/nonexistent/voice.m4a"])
         try openReadChat(app)
         let mic = app.descendants(matching: .any)["composer.mic"]
-        let field = app.descendants(matching: .any)["composer.field"]
         XCTAssertTrue(mic.waitForExistence(timeout: 5))
-        let placeholder = field.placeholderValue
+        // A tap records hands-free: the mic is Send, the strip has the trash.
         mic.tap()
-        XCTAssertTrue(field.waitForPlaceholder("Hold to record", timeout: 2))
-        attachScreenshot(app, "mic-hint")
-        XCTAssertTrue(field.waitForPlaceholder(try XCTUnwrap(placeholder), timeout: 4), "the hint goes after 2 s")
+        XCTAssertTrue(app.buttons["composer.voiceSend"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.descendants(matching: .any)["composer.recording"].exists)
+        attachScreenshot(app, "mic-hands-free")
+        app.buttons["composer.voiceTrash"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["composer.recordingCancelled"].waitForExistence(timeout: 2))
+        XCTAssertTrue(mic.waitForExistence(timeout: 4))
 
         let start = mic.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         start.press(forDuration: 1.2, thenDragTo: start.withOffset(CGVector(dx: -220, dy: 0)))
@@ -357,8 +359,8 @@ final class SmokeUITests: XCTestCase {
         app = launch(["FERRY_DEBUG_BLOCK_SENDS": "1", "FERRY_DEBUG_VOICE_FILE": "/nonexistent/voice.m4a"])
         try openReadChat(app)
         any(app, "composer.mic").tap()
-        XCTAssertTrue(any(app, "composer.field").waitForPlaceholder("Hold to record", timeout: 2))
-        try XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(folder)/v3-mic-hint\(suffix).png"))
+        XCTAssertTrue(app.buttons["composer.voiceSend"].waitForExistence(timeout: 2))  // a tap records hands-free
+        try XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(folder)/v3-mic-hands-free\(suffix).png"))
 
         app = launch(["FERRY_DEBUG_ONBOARDING": "another"])
         XCTAssertTrue(app.buttons["another.connect"].waitForExistence(timeout: 10))
@@ -467,11 +469,6 @@ final class SmokeUITests: XCTestCase {
 private extension XCUIElement {
     func waitForSelected(timeout: TimeInterval = 5) -> Bool {
         XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == true"), object: self)],
-                         timeout: timeout) == .completed
-    }
-
-    func waitForPlaceholder(_ text: String, timeout: TimeInterval) -> Bool {
-        XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "placeholderValue == %@", text), object: self)],
                          timeout: timeout) == .completed
     }
 

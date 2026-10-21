@@ -63,7 +63,7 @@ t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
 
-t test -only-testing:FerryTests           # unit tests (290), on real captured Instagram data
+t test -only-testing:FerryTests           # unit tests (292), on real captured Instagram data
 t test -only-testing:FerryUITests         # UI tests on made-up data (below)
 ```
 
@@ -96,7 +96,8 @@ xcrun simctl spawn $SIM log show --last 2m --predicate "subsystem == \"$APP\" AN
 Most run on `FERRY_DEBUG_DEMO`'s made-up accounts and chats, which never connect: nothing reaches Instagram, and the
 simulator's own accounts are left alone. They cover the inbox, an account's chip, a chat and Chat Info; Requests and a
 request thread; a group (senders named to VoiceOver, Chat Info's members); where an unread chat opens and its
-jump-to-newest button; the welcome screen; New Message; the mic.
+jump-to-newest button; the welcome screen; New Message; the mic (a tap records hands-free and the trash cancels;
+hold and slide cancels).
 
 These skip unless you opt in:
 

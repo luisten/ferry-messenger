@@ -8,13 +8,38 @@ final class VoiceMessageTests: XCTestCase {
 
     // MARK: Touch and hold
 
-    /// A quick tap only shows "Hold to record": the recorder never starts.
-    func testQuickTapIsAHintAndNeverRecords() {
+    /// A quick tap records hands-free (the user's call, 2026-10-21; it used to be a "Hold to record" hint): from when the
+    /// finger lifts, until Send.
+    func testQuickTapRecordsHandsFreeUntilSend() {
         var hold = Hold()
         XCTAssertNil(hold.tick(held: 0.1, recorded: 0))
         XCTAssertNil(hold.tick(held: Hold.tapLimit - 0.01, recorded: 0))
-        XCTAssertEqual(hold.release(recorded: 0), .hint)
-        XCTAssertNil(hold.tick(held: 1, recorded: 0), "nothing after the finger lifts")
+        XCTAssertEqual(hold.release(recorded: 0), .start)
+        XCTAssertTrue(hold.isHandsFree)
+        XCTAssertNil(hold.tick(held: 4, recorded: 3.7), "it keeps recording")
+        XCTAssertNil(hold.drag(-200), "no finger, no slide")
+        XCTAssertEqual(hold.finish(recorded: 3.7), .send)
+        XCTAssertNil(hold.finish(recorded: 4), "one send")
+        XCTAssertFalse(hold.isHandsFree)
+    }
+
+    func testHandsFreeUnderASecondIsDroppedAndTheTrashCancels() {
+        var short = Hold()
+        _ = short.release(recorded: 0)
+        XCTAssertEqual(short.finish(recorded: 0.99), .discard)
+        var trashed = Hold()
+        _ = trashed.release(recorded: 0)
+        XCTAssertEqual(trashed.cancel(), .cancel)
+        XCTAssertNil(trashed.finish(recorded: 5))
+        var pressing = Hold()
+        XCTAssertNil(pressing.cancel(), "nothing to cancel before it records")
+    }
+
+    func testHandsFreeSendsByItselfAtTheMaximum() {
+        var hold = Hold()
+        _ = hold.release(recorded: 0)
+        XCTAssertEqual(hold.tick(held: 301, recorded: Hold.maxDuration), .send)
+        XCTAssertNil(hold.finish(recorded: Hold.maxDuration))
     }
 
     func testHoldingPastTheTapLimitStartsOnce() {
@@ -23,9 +48,12 @@ final class VoiceMessageTests: XCTestCase {
         XCTAssertNil(hold.tick(held: 0.5, recorded: 0.2))
     }
 
-    func testReleaseUnderASecondIsDiscarded() {
+    /// Let go too soon to send: it carries on hands-free instead of throwing the start away.
+    func testReleaseUnderASecondCarriesOnHandsFree() {
         var hold = Hold(recording: true)
-        XCTAssertEqual(hold.release(recorded: 0.99), .discard)
+        XCTAssertNil(hold.release(recorded: 0.99))
+        XCTAssertTrue(hold.isHandsFree)
+        XCTAssertEqual(hold.finish(recorded: 2), .send)
     }
 
     func testReleaseFromASecondSends() {
@@ -57,7 +85,8 @@ final class VoiceMessageTests: XCTestCase {
     func testSlideBeforeRecordingIsStillATap() {
         var hold = Hold()
         XCTAssertNil(hold.drag(-200))
-        XCTAssertEqual(hold.release(recorded: 0), .hint)
+        XCTAssertEqual(hold.release(recorded: 0), .start)
+        XCTAssertTrue(hold.isHandsFree)
     }
 
     /// At the maximum it sends by itself, once; the finger lifting later does nothing.

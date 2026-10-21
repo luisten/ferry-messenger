@@ -13,6 +13,7 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 
 - A button to jump to the newest message, when you've scrolled up or a chat opened at "New messages". It shows how
   many new messages have arrived since.
+- Tap the mic to record a voice message hands-free, then tap Send, or the trash to cancel. Holding the mic still works.
 - React with any emoji. Touch and hold a message for big buttons with the reactions you used last, and "+" for every
   emoji. Reply, Copy, Edit and Unsend are there too.
 
