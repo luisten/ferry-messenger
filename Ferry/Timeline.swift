@@ -461,6 +461,12 @@ nonisolated enum Timeline {
         return messages
     }
 
+    /// The jump-to-newest button's count: messages from others (no chat events or tombstones) newer than `ms`, the
+    /// newest message's time when the button appeared.
+    static func newCount(_ messages: [Message], after ms: Int64) -> Int {
+        messages.count { !$0.isOwn && !$0.kind.isChatEvent && $0.kind != .unsent && $0.ts > ms }
+    }
+
     /// "Seen by Maya", "Seen by Maya and Sam", "Seen by Maya, Sam + 2", or "Seen by everyone" once all of three or
     /// more have (Instagram's web app; first names, as the rest of the thread uses).
     static func seenByLine(_ names: [String], everyone: Bool) -> String? {

@@ -79,3 +79,21 @@ final class ThreadRevealTests: XCTestCase {
         XCTAssertTrue(edge(offset: -116, content: 300, container: 666, insets: bars).endIsNear)  // it all fits
     }
 }
+
+/// The jump-to-newest button's count (`Timeline.newCount`): what others sent after it appeared, never our own,
+/// Instagram's lines about the chat or an unsent message.
+final class JumpCountTests: XCTestCase {
+    private func message(_ id: String, ts: Int64, own: Bool = false, kind: MessageKind = .text) -> Message {
+        Message(id: id, sender: own ? "@me" : "@ig_1", ts: ts, kind: kind, body: id, content: [:], isOwn: own)
+    }
+
+    func testCountsOnlyWhatOthersSentSince() {
+        let messages = [
+            message("before", ts: 100), message("since", ts: 200), message("mine", ts: 300, own: true),
+            message("left the group", ts: 400, kind: .event), message("poll", ts: 500, kind: .unsupported("a poll")),
+            message("unsent", ts: 600, kind: .unsent), message("photo", ts: 700, kind: .image),
+        ]
+        XCTAssertEqual(Timeline.newCount(messages, after: 100), 2)  // "since" and the photo
+        XCTAssertEqual(Timeline.newCount(messages, after: 700), 0)
+    }
+}

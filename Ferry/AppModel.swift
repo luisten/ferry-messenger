@@ -296,7 +296,17 @@ final class AppModel {
         }
         if DebugFixtures.addsGroup, let receiver = logins.map(\.id).sorted().first {
             let group = DebugFixtures.groupRoom(receiver: receiver, me: me)
-            if rooms[group.id] == nil { rooms[group.id] = group }
+            if rooms[group.id] == nil {
+                rooms[group.id] = group
+                if DebugFixtures.groupIncoming > 0 {
+                    Task {
+                        for i in 0... {
+                            try? await Task.sleep(for: .seconds(DebugFixtures.groupIncoming))
+                            group.apply(JoinedRoom(timeline: .init(events: [DebugFixtures.groupIncomingEvent(i)], limited: false)))
+                        }
+                    }
+                }
+            }
             profiles.merge(DebugFixtures.groupProfiles) { current, _ in current }
         }
         #endif

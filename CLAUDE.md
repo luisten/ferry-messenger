@@ -99,7 +99,7 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
 - **Colors live in `Tokens.swift`.** Small text: `.inkSecondary` (not `.secondary`, 3.4:1), and on an incoming-bubble
   card `.inkSecondaryOnBubble` (inkSecondary is 4.30 on #E9E9EB); status text `.statusOK/.statusWarn/.statusError`
   (not system green/orange/red, 2.2–3.5:1 on white).
-- DEBUG switches live in `DebugFixtures.swift` (docs/DEVELOPMENT.md): fake request rooms and a fake group (`FERRY_DEBUG_GROUP`; `FERRY_DEBUG_GROUP_EXTRA=<n>` more unread in it), an
+- DEBUG switches live in `DebugFixtures.swift` (docs/DEVELOPMENT.md): fake request rooms and a fake group (`FERRY_DEBUG_GROUP`; `FERRY_DEBUG_GROUP_EXTRA=<n>` more unread in it, `…_INCOMING=<s>` one arriving every s seconds), an
   account state override, a real chat shown as a request (the engine treats it as one, `IGCore.setDebug`; its sends
   are held back, "Seen" and typing aren't, so the request rule itself keeps them back), onboarding at a given step over the real accounts, made-up data only (`FERRY_DEBUG_DEMO`: two made-up
   accounts stand in for the Keychain's and never connect, identities in memory only; screenshots and the UI tests),
@@ -173,12 +173,13 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   the snippet names the sender ("You sent an attachment."), and the inbox said "You: " again.
 - **GIFs** are `content_type` `GIFS` (`animated_media`: WebP and MP4 links, a preview that may be `null`), or
   `INSTAGRAM_MESSAGING_ANIMATED_IMAGE` from Instagram's GIPHY picker, a sticker when `is_sticker` (live 2026-10-20,
-  `ig_animated_images_tamo`; `fi.ferry.sticker`, drawn at sticker size); the mailbox's copy has `animated_media: null`
-  (only its snippet says "sticker"), the thread's has the links. An uploaded animated GIF comes back as one of
-  Instagram's GIFs on both sides (live 2026-10-17), so GIFs from Photos and pasted GIF links are sent as files
-  (`PhotoMessage.gif`). A GIF card plays three times once per launch (`MediaCache.playedGIFs`), then rests on frame 0
-  with a play button for one more; none of that by itself in a request (`autoplaysGIFs`) or under Reduce Motion.
-  Links to GIFs that others send stay links. No GIF search: no outside service (the user's calls, 2026-10-17).
+  `ig_animated_images_tamo`; `fi.ferry.sticker`, drawn at sticker size and looping, the user's call 2026-10-21); the
+  mailbox's copy has `animated_media: null` (only its snippet says "sticker"), the thread's has the links. An uploaded
+  animated GIF comes back as one of Instagram's GIFs on both sides (live 2026-10-17), so GIFs from Photos and pasted GIF
+  links are sent as files (`PhotoMessage.gif`). A GIF card plays three times once per launch (`MediaCache.playedGIFs`),
+  then rests on frame 0 with a play button for one more; none of that by itself in a request (`autoplaysGIFs`) or under
+  Reduce Motion. Links to GIFs that others send stay links. No GIF search: no outside service (the user's calls,
+  2026-10-17).
 - **Several photos sent at once** are one `IMAGES` message with every attachment (live 2026-10-18,
   `ig_message_photos_tamo`); `core/chat`'s `album` keeps the first as the content and all of them under `fi.ferry.album`
   (`MediaInfo.album`), which `AlbumStack` shows as a pile that unfolds in place: one message, so one menu, reaction

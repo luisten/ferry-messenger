@@ -35,8 +35,10 @@ struct ThreadView: View {
     @State private var pin = BottomPin()
     /// The thread is invisible until the bottom pin has landed after the push (`revealWhenSettled`).
     @State private var revealed = false
-    /// The jump-to-newest button (`updateJump`).
+    /// The jump-to-newest button (`updateJump`), and the newest message's time when it appeared: what's newer is its
+    /// count.
     @State private var jumpShown = false
+    @State private var jumpSince: Int64?
     /// How far we'd read when the chat opened unread (our `m.read`, ms), taken once before our "Seen" moves it: the
     /// "New messages" line goes after it (`Timeline.layout`).
     @State private var unreadAfter: Int64?
@@ -69,6 +71,7 @@ struct ThreadView: View {
         let actions = actions(room)
         let rows = Timeline.layout(messages, isGroup: isGroup, unreadAfter: unreadAfter)
         let unreadLine = rows.first(where: \.startsUnread)?.id
+        let newBelow = jumpSince.map { Timeline.newCount(messages, after: $0) } ?? 0
         let seen = isGroup ? messages.first { !$0.seenBy.isEmpty } : nil
         // Everyone but us and its sender: "Seen by everyone".
         let seenLine = seen.flatMap { seen in
@@ -139,15 +142,23 @@ struct ThreadView: View {
                             pin.holdsLine = false
                             pin.followsEnd = true  // a scroll made here goes through no phase change that would say so
                             jumpShown = false
+                            jumpSince = nil
                             withAnimation(reduceMotion ? nil : .smooth) { proxy.scrollTo(Self.bottom, anchor: .bottom) }
                         } label: {
-                            Image(systemName: "chevron.down").font(.body.weight(.semibold))
-                                .foregroundStyle(Color.primary)  // chrome: never the account's colour
-                                .frame(width: 44, height: 44).contentShape(.circle)
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.down").font(.body.weight(.semibold))
+                                if newBelow > 0 {
+                                    Text(newBelow > 99 ? "99+" : "\(newBelow)").font(.subheadline.weight(.semibold)).monospacedDigit()
+                                }
+                            }
+                            .foregroundStyle(Color.primary)  // chrome: never the account's colour, no red badge
+                            .padding(.horizontal, newBelow > 0 ? 14 : 0)
+                            .frame(minWidth: 44, minHeight: 44).contentShape(.capsule)
                         }
                         .buttonStyle(.plain)
-                        .glassEffect(.regular.interactive(), in: .circle)
+                        .glassEffect(.regular.interactive(), in: .capsule)  // a circle until there's a count
                         .accessibilityLabel("Jump to newest message")
+                        .accessibilityValue(newBelow > 0 ? "\(newBelow) new message\(newBelow == 1 ? "" : "s")" : "")
                         .accessibilityIdentifier("thread.jump")
                         .transition(reduceMotion ? .opacity : .scale(scale: 0.8).combined(with: .opacity))
                     }
@@ -561,12 +572,15 @@ struct ThreadView: View {
         }
     }
 
-    /// DESIGN §5 T1's scroll-to-bottom button, without its count for now. It shows once the thread has appeared away
-    /// from its end: held on the "New messages" line, or where the user's scroll came to rest. Never mid-scroll or
-    /// while the pin catches up (the keyboard, a row growing), and it hides as soon as the end is close.
+    /// DESIGN §5 T1's scroll-to-bottom button. It shows once the thread has appeared away from its end: held on the
+    /// "New messages" line, or where the user's scroll came to rest. Never mid-scroll or while the pin catches up (the
+    /// keyboard, a row growing), and it hides as soon as the end is close. It counts what others send meanwhile
+    /// (`Timeline.newCount`): nothing scrolls when they do, so the count is the only sign below the fold.
     private func updateJump(_ edge: ScrollEdge, atRest: Bool) {
         let shown = revealed && edge.distanceFromEnd > 60 && (jumpShown || pin.holdsLine || atRest)
-        if shown != jumpShown { jumpShown = shown }
+        guard shown != jumpShown else { return }
+        jumpShown = shown
+        jumpSince = shown ? model.room(roomID)?.lastActivity : nil
     }
 
     /// What the bottom pin reads from the scroll geometry. The offset and top inset are part of the value, so the
