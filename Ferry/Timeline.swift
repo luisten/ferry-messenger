@@ -300,6 +300,10 @@ nonisolated struct Message: Identifiable, Equatable, Sendable {
     /// What was sent with a shared story (a reply, a reaction's emoji), shown under its card.
     var shareText: String? { content[MessageKind.shareTextKey]?.string }
 
+    /// Ours, sent from this device and not back from Instagram yet. Our own message from Instagram's app or website
+    /// arrives as an event, like theirs.
+    var isLocalEcho: Bool { id.hasPrefix("txn:") }
+
     enum Status: Equatable, Sendable {
         /// Local echo, request in flight.
         case sending

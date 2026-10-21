@@ -129,7 +129,8 @@ recipient, no groups.
   A **jump-to-newest button** (44 pt glass circle, `chevron.down`, never the account's colour; "Jump to newest
   message") sits bottom-right above the composer and keyboard while the thread rests away from its end: held on the
   line, or after a scroll that stopped more than 60 pt up. It hides near the end; a tap goes there (animated, not
-  under Reduce Motion). Nothing scrolls when a message arrives while you're up the thread: the button counts what
+  under Reduce Motion), as does a send from this device (our own message sent from Instagram's app or website doesn't
+  move the thread). Nothing scrolls when a message arrives while you're up the thread: the button counts what
   others have sent since it appeared (not chat events; a capsule with the number, monospaced, "99+" at most, no red
   badge; VoiceOver "3 new messages"); a chat that opens on the line starts with no count. The bubbles appear (a 0.15 s fade, none under Reduce
   Motion) only once the thread rests there under the bars with no older page loading, so the push never shows it

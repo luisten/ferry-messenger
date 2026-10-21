@@ -175,7 +175,9 @@ struct ThreadView: View {
                 if let edge = pin.edge { updateJump(edge, atRest: false) }
             }
             .onChange(of: messages.last?.id) { _, _ in
-                guard messages.last?.isOwn == true else { return }
+                // A send from here goes to the end. Ours from Instagram's app or website doesn't pull the user out of
+                // what they're reading, as theirs doesn't.
+                guard messages.last?.isLocalEcho == true else { return }
                 pin.holdsLine = false
                 pin.followsEnd = true
                 withAnimation { proxy.scrollTo(Self.bottom, anchor: .bottom) }

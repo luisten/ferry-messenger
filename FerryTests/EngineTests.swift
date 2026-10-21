@@ -258,6 +258,19 @@ final class EngineTests: XCTestCase {
         XCTAssertEqual(rows.filter(\.startsUnread).map(\.id), [try XCTUnwrap(messages.last).id])
     }
 
+    /// The same chat as its mailbox copy has it, only the newest message, which is past our watermark: our m.read
+    /// still comes (on the only message, with our watermark's time), so the line has its place. Without it an unread
+    /// live chat opened with no "New messages" line (QA 2026-10-20).
+    func testOurWatermarkComesWithAnUnreadMailboxCopy() throws {
+        let room = room([try Fixture.engine(IG.Update.self, "unread_window_kivo")])
+        XCTAssertTrue(room.isUnread)
+        XCTAssertEqual(room.receipts[me]?.ts, 1_792_115_019_051)
+        let messages = Timeline.reduce(room, me: me)
+        XCTAssertEqual(messages.count, 1)
+        let rows = Timeline.layout(messages, unreadAfter: room.receipts[me]?.ts)
+        XCTAssertEqual(rows.filter(\.startsUnread).map(\.id), [try XCTUnwrap(messages.first).id])
+    }
+
     /// A reply and an emoji reaction to tamoveska's story, sent by kivostudio from the Instagram app (live 2026-10-19,
     /// `ig_story_replies_kivo`: the thread's copies and both sides' mailbox copies). The thread's copy is the story plus
     /// what was sent and Instagram's line about it; Ferry showed only the story. The mailbox's copy is the text, and its

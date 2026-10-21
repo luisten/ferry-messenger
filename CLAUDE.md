@@ -25,7 +25,7 @@ SIM=$(xcrun simctl list devices booted | grep -oE '[0-9A-F-]{36}' | head -1)
 t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
-t test -only-testing:FerryTests              # 283 unit tests, ~3 s
+t test -only-testing:FerryTests              # 286 unit tests, ~3 s
 (cd core && go test ./...)                    # core/chat on P0's captures; -update in ./chat rewrites the golden files
 t test -only-testing:FerryUITests            # UI tests on made-up data (live ones opt-in: docs/DEVELOPMENT.md)
 t build-for-testing                           # all 3 targets
@@ -150,7 +150,9 @@ captured in P0; mapped in `core/chat`)
   `read_timestamp_ms`, and `IGMarkRead`, which clears the dot at once, before Instagram is asked, and sends nothing if
 the engine already had it read that far). A thread read weighs it too (`readUpTo`):
   opening a chat sends "Seen" and re-reads it together, and a read answered before the "Seen" landed said unread, so
-  the dot stayed. The "New messages" line goes after the watermark `ThreadView` took when the chat opened. An empty
+  the dot stayed. The "New messages" line goes after the watermark `ThreadView` took when the chat opened; our receipt
+  comes even when every loaded message is newer (a mailbox copy of an unread chat: on the oldest, the app reads only
+  its time), or the chat opened with no line (2026-10-20). An empty
   `replied_to_message_id` means no reply (P2: every bubble showed a loading quote).
 - **Folders:** requests are `system_folder` `PENDING`/`SPAM`; General is `folder` `GENERAL` (professional accounts, the
   viewer's `is_professional_account`), moved live by `SlideUQPPIGMoveThread` (its `ig_inbox_folder`). Only mailbox

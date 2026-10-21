@@ -712,11 +712,19 @@ func readReceipts(receipts []ReadReceipt, account string, messages []Message) *E
 		if r.FBID == "" {
 			continue
 		}
+		found := false
 		for _, m := range slices.Backward(messages) {
 			if m.ms() <= ms {
 				reads = append(reads, read{senderID(r.FBID, account), m.ID, ms})
+				found = true
 				break
 			}
+		}
+		// Ours, older than every message loaded (an unread chat's mailbox copy is its last message or two): still how
+		// far we'd read, on the oldest, or the app's "New messages" line has no place (QA 2026-10-20). The app reads
+		// only our receipt's time; others' that predate them all say nothing, as they've seen none of these.
+		if !found && r.FBID == account && ms > 0 && len(messages) > 0 {
+			reads = append(reads, read{Me, messages[0].ID, ms})
 		}
 	}
 	if len(reads) == 0 {

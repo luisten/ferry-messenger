@@ -333,6 +333,30 @@ func TestUnreadIsAnIncomingMessagePastOurWatermark(t *testing.T) {
 	}
 }
 
+// A mailbox page has a chat's last message or two. When they're all newer than our watermark (the chat is unread), our
+// receipt still says how far we'd read, so the app's "New messages" line has its place: an unread live chat opened
+// without it (QA 2026-10-20, kivostudio's side of the dummies' DM after the GIPHY sticker and GIF).
+func TestOurWatermarkComesEvenWhenEveryLoadedMessageIsNewer(t *testing.T) {
+	th := thread(t)
+	th.SlideMessages.Edges = th.SlideMessages.Edges[:1] // the newest only (newest first), as the mailbox has it
+	var mine int64
+	for _, r := range th.ReadReceipts {
+		if r.FBID == kivo {
+			mine = parseMS(r.WatermarkMS)
+		}
+	}
+	newest := th.SlideMessages.Edges[0].Node
+	env := New(kivo).Thread(th)
+	if mine == 0 || newest.ms() <= mine || env.Update.UnreadNotifications.NotificationCount != 1 || env.Update.Ephemeral == nil {
+		t.Fatalf("not the unread case: watermark %d, newest %d, %+v", mine, newest.ms(), env.Update)
+	}
+	ours := obj(obj(obj(env.Update.Ephemeral.Events[0].Content[newest.ID])["m.read"])[Me])
+	if ours["ts"] != mine {
+		t.Errorf("our receipt %v, want ts %d on %s", env.Update.Ephemeral.Events[0].Content, mine, newest.ID)
+	}
+	golden(t, "unread_window_kivo", env)
+}
+
 func TestTheThreadReducesToItsMessages(t *testing.T) {
 	env := New(tamo).Thread(thread(t))
 	golden(t, "thread_tamo", map[string]Envelope{"tamo": env, "kivo": New(kivo).Thread(thread(t))})

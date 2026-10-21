@@ -80,6 +80,21 @@ final class ThreadRevealTests: XCTestCase {
     }
 }
 
+/// Only a send from this device takes the thread to its end (`Message.isLocalEcho`): our own message sent from
+/// Instagram's app arrives as an event (with its offline threading ID, like any of ours) and leaves the scroll alone.
+final class LocalEchoTests: XCTestCase {
+    func testOnlyWhatWeSendFromHereIsALocalEcho() {
+        let elsewhere = Event(type: "m.room.message", content: ["msgtype": "m.text", "body": "from the Instagram app"],
+                              eventID: "$own", sender: "@me", originServerTS: 1, unsigned: Event.Unsigned(transactionID: "751"))
+        let messages = Timeline.reduce([elsewhere], me: "@me", pending: [
+            PendingMessage(txnID: "t1", content: ["msgtype": "m.text", "body": "sending"], ts: 2, state: .sending),
+            PendingMessage(txnID: "t2", content: ["msgtype": "m.text", "body": "sent, not back yet"], ts: 3, state: .sent("$t2")),
+        ])
+        XCTAssertEqual(messages.map(\.isOwn), [true, true, true])
+        XCTAssertEqual(messages.map(\.isLocalEcho), [false, true, true])
+    }
+}
+
 /// The jump-to-newest button's count (`Timeline.newCount`): what others sent after it appeared, never our own,
 /// Instagram's lines about the chat or an unsent message.
 final class JumpCountTests: XCTestCase {
