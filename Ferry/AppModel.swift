@@ -556,9 +556,12 @@ final class AppModel {
     /// request (the engine refuses).
     func react(_ key: String, to message: Message, in room: Room) {
         guard let target = message.eventID else { return }
-        let remove = message.reacted(key, by: me)
-        if !remove { RecentReactions.use(key) }
-        perform(room) { try await IGCore.react(room.id, message: target, emoji: key, remove: remove) }
+        let mine = message.reactions.first { Message.Reaction.same($0.key, key) && $0.senders.contains(me) }
+        if mine == nil { RecentReactions.use(key) }
+        // A removal names Instagram's own key ("❤" for our "❤️"): with ours, it took the removal and kept the heart
+        // (Android's A4/A5 checks, 2026-10-21).
+        let emoji = mine?.key ?? key
+        perform(room) { try await IGCore.react(room.id, message: target, emoji: emoji, remove: mine != nil) }
     }
 
     /// Our own text, within 15 minutes and 5 edits (the engine refuses otherwise; `Timeline.canEdit` hides the menu item).

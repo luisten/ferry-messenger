@@ -389,7 +389,7 @@ struct MessageSheet: View {
                         .accessibilityHint(isMine ? "Removes your reaction" : "")
                     }
                     if EmojiField.isAvailable {
-                        Button { picking = true; detent = .large } label: {
+                        Button { picking = true } label: {
                             Image(systemName: "plus").font(.title2.weight(.semibold)).foregroundStyle(Color.primary)
                                 .frame(maxWidth: .infinity, minHeight: 52)
                                 .background(Color.primary.opacity(0.06), in: .circle)

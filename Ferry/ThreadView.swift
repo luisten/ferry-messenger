@@ -786,6 +786,9 @@ private struct Composer: View {
                           prompt: Text(recorder.hint ?? "Message as \(accountName)").foregroundStyle(.inkSecondary), axis: .vertical)
                     .lineLimit(1...6)
                     .focused(focused)
+                    // Hands-free or listening back, the field is under the strip: no keyboard for it (a Reply meanwhile
+                    // only shows its bar; QA 2026-10-21 typed into it unseen). A hold keeps it, so the keyboard stays put.
+                    .disabled(recorder.handsFree)
                     .accessibilityLabel("Message, sending as \(accountName)")
                     .accessibilityIdentifier("composer.field")
                 // DESIGN §6.9: a counter from 900; Send disables past 1000 (Instagram's limit, from the bridge).
