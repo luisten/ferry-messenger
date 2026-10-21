@@ -5,6 +5,7 @@ import (
 	"errors"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // ErrUnknownRoom refuses a room this engine didn't make (E4): a New Message draft, or a DEBUG fixture room.
@@ -513,9 +514,17 @@ func change(d delta, account string, events []Event) (j *JoinedRoom, refresh boo
 		}
 		reaction := find(d.Reaction.LogID)
 		if reaction == nil {
-			return nil, true
+			// One that came with the thread: a read names reactions by message and sender (`messageEvents`), the delete
+			// only by its log entry (P0), so a removal left it on screen (Android's A4 check, 2026-10-21; the re-read
+			// came too soon to drop it). With one on that message, it's that one.
+			// ponytail: several (a group, or both of a DM) can't be told apart; those still re-read the thread.
+			if loaded := historyReactions(events, d.MessageID); len(loaded) == 1 {
+				reaction = loaded[0]
+			} else {
+				return nil, true
+			}
 		}
-		return update(redaction(d.Reaction.LogID, nonEmpty(reaction.Sender, Me), now("")))
+		return update(redaction(reaction.EventID, nonEmpty(reaction.Sender, Me), now("")))
 	case "SlideUQPPEditMessage":
 		if target == nil || d.TextBody == nil {
 			return nil, true
@@ -532,4 +541,23 @@ func change(d delta, account string, events []Event) (j *JoinedRoom, refresh boo
 		return update(redaction(d.MessageID, nonEmpty(target.Sender, Me), now("")))
 	}
 	return nil, false
+}
+
+// historyReactions are a message's reactions that came with a thread read (`<message>~react<sender>`) and are still on.
+func historyReactions(events []Event, message string) []*Event {
+	gone := map[string]bool{}
+	for _, e := range events {
+		if e.Type == "m.room.redaction" {
+			if id, _ := e.Content["redacts"].(string); id != "" {
+				gone[id] = true
+			}
+		}
+	}
+	var out []*Event
+	for i, e := range events {
+		if e.Type == "m.reaction" && strings.HasPrefix(e.EventID, message+"~react") && !gone[e.EventID] {
+			out = append(out, &events[i])
+		}
+	}
+	return out
 }

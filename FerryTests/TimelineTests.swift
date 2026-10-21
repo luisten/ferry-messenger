@@ -503,3 +503,45 @@ extension Event {
         Event(type: "m.room.redaction", content: ["redacts": .string(target)], eventID: id, sender: sender, originServerTS: ts)
     }
 }
+
+/// The long press's reactions (`MessageSheet`, 2026-10-21): the last six used, in place; our current one always there.
+/// And a reaction is the same with or without its variation selector: we send "❤️", Instagram echoes "❤".
+final class ReactionPickerTests: XCTestCase {
+    func testRecentsStayInPlaceAndTheNewestGoesFirst() {
+        XCTAssertEqual(RecentReactions.row(nil), ["❤️", "😂", "😮", "😢", "🔥", "👍"])
+        XCTAssertEqual(RecentReactions.row(["🙈"]), ["🙈", "❤️", "😂", "😮", "😢", "🔥"])  // the defaults pad it
+        let row = RecentReactions.row(nil)
+        XCTAssertEqual(RecentReactions.adding("🔥", to: row), row)  // already there: nothing moves under the thumb
+        XCTAssertEqual(RecentReactions.adding("❤", to: row), row)  // Instagram's heart is the same heart
+        XCTAssertEqual(RecentReactions.adding("🙈", to: row), ["🙈", "❤️", "😂", "😮", "😢", "🔥"])
+    }
+
+    func testOurReactionIsShownEvenWhenItIsNotRecent() {
+        let row = RecentReactions.row(nil)
+        XCTAssertEqual(RecentReactions.shown(row, current: "🦖"), ["❤️", "😂", "😮", "😢", "🔥", "🦖"])
+        XCTAssertEqual(RecentReactions.shown(row, current: "❤"), row)
+        XCTAssertEqual(RecentReactions.shown(row, current: nil), row)
+    }
+
+    func testInstagramsHeartIsOurs() {
+        let echoed = Event(type: "m.reaction", content: ["m.relates_to": ["rel_type": "m.annotation", "event_id": "$m", "key": "❤"]],
+                           eventID: "$r1", sender: "@me", originServerTS: 2)
+        let theirs = Event(type: "m.reaction", content: ["m.relates_to": ["rel_type": "m.annotation", "event_id": "$m", "key": "❤️"]],
+                           eventID: "$r2", sender: "@ig_1", originServerTS: 3)
+        let message = Event(type: "m.room.message", content: ["msgtype": "m.text", "body": "hi"], eventID: "$m", sender: "@ig_1", originServerTS: 1)
+        let reduced = try? XCTUnwrap(Timeline.reduce([message, echoed, theirs], me: "@me").first)
+        XCTAssertEqual(reduced?.reactions.count, 1)  // one heart, two people
+        XCTAssertEqual(reduced?.reactions.first?.senders, ["@me", "@ig_1"])
+        XCTAssertEqual(reduced?.reacted("❤️", by: "@me"), true)  // the palette's heart: choosing it again removes ours
+        XCTAssertEqual(reduced?.reacted("😂", by: "@me"), false)
+    }
+
+    func testOnlyEmojiArePicked() {
+        XCTAssertTrue(EmojiField.isEmoji("😀"))
+        XCTAssertTrue(EmojiField.isEmoji("❤️"))
+        XCTAssertTrue(EmojiField.isEmoji("👍🏽"))
+        XCTAssertTrue(EmojiField.isEmoji("👨‍👩‍👧"))
+        XCTAssertFalse(EmojiField.isEmoji("1"))
+        XCTAssertFalse(EmojiField.isEmoji("a"))
+    }
+}

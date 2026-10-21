@@ -595,7 +595,7 @@ private struct VoiceBubble: View {
 }
 
 /// Static bars (3 pt wide, 2 pt gaps) seeded by the event ID, played part opaque, the rest at 35%.
-private struct VoiceBars: View {
+struct VoiceBars: View {
     let seed: String
     let progress: Double
     let seek: (Double) -> Void

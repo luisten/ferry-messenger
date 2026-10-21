@@ -18,6 +18,10 @@ struct MessageActions {
     var shareAll: (Message) -> Void
     /// A tap on the reactions: who reacted with what.
     var showReactions: (Message) -> Void
+    /// A long press: `MessageSheet`.
+    var showMenu: (Message) -> Void
+    /// Our user ID ("@me"), for "is this reaction ours".
+    var me: String
     /// A tap on someone's picture in a group: who they are.
     var showPerson: (String) -> Void
     /// Request rooms: nothing that sends. The bridge marks the chat read on Instagram for *every* event we send
@@ -111,13 +115,7 @@ struct MessageRow: View {
                 }
                 bubble
                     .modifier(SpokenSender(name: row.groupSender != nil && message.kind != .unsent ? member(message.sender).name : nil))
-                    .overlay(alignment: own ? .bottomLeading : .bottomTrailing) {
-                        if !message.reactions.isEmpty {
-                            ReactionPills(reactions: message.reactions, me: me, face: isGroup ? member : nil,
-                                          show: { actions.showReactions(message) })
-                                .offset(x: own ? -8 : 8, y: 14)
-                        }
-                    }
+                    .overlay(alignment: own ? .bottomLeading : .bottomTrailing) { if message.shareText == nil { pills } }
                     .padding(.bottom, reactionsInset)
                     .frame(maxWidth: .infinity, alignment: alignment)
                     .containerRelativeFrame(.horizontal, alignment: alignment) { width, _ in width * 0.75 }
@@ -155,15 +153,24 @@ struct MessageRow: View {
 
     // MARK: Bubble
 
-    /// A story reply or reaction is the story with what was sent under it, as Instagram shows them.
+    /// A story reply or reaction is the story with what was sent under it, as Instagram shows them. Its reactions sit
+    /// on what was sent, not by the card's far edge (Android's live check, 2026-10-21).
     @ViewBuilder private var bubble: some View {
         if let text = message.shareText {
             VStack(alignment: own ? .trailing : .leading, spacing: 4) {
                 content
-                textBubble(text)
+                textBubble(text).overlay(alignment: own ? .bottomLeading : .bottomTrailing) { pills }
             }
         } else {
             content
+        }
+    }
+
+    /// DESIGN §6.2: the reactions on the bubble's bottom edge.
+    @ViewBuilder private var pills: some View {
+        if !message.reactions.isEmpty {
+            ReactionPills(reactions: message.reactions, me: me, face: isGroup ? member : nil, show: { actions.showReactions(message) })
+                .offset(x: own ? -8 : 8, y: 14)
         }
     }
 
@@ -321,7 +328,7 @@ private struct SpokenSender: ViewModifier {
     }
 }
 
-// MARK: - Context menu (DESIGN §6.2: reaction palette, Reply, Copy, Edit, Unsend)
+// MARK: - Long-press sheet (DESIGN §6.2: reactions, Reply, Copy, Edit, Unsend)
 
 private extension View {
     func menu(_ message: Message, _ actions: MessageActions) -> some View {
@@ -329,59 +336,208 @@ private extension View {
     }
 }
 
+/// Double-tap hearts; a long press opens `MessageSheet` (VoiceOver: "React or reply").
 private struct MessageMenu: ViewModifier {
     let message: Message
     let actions: MessageActions
-    static let palette = ["❤️", "😂", "😮", "😢", "🔥", "👍"]
 
     func body(content: Content) -> some View {
         content
             // Double-tap hearts it, like Instagram (DESIGN §6.2). Not on media: its taps play, load or cancel.
-            .gesture(TapGesture(count: 2).onEnded { if canSend && !isMineAlready("❤️") { actions.react("❤️", message) } },
+            .gesture(TapGesture(count: 2).onEnded { if canSend && !message.reacted("❤️", by: actions.me) { actions.react("❤️", message) } },
                      including: message.kind.media == nil ? .all : .subviews)
-            .contextMenu {
-                if canSend {
-                    Picker("React", selection: reaction) {
-                        ForEach(Self.palette, id: \.self) { Text($0).tag(Optional($0)) }
+            .onLongPressGesture(minimumDuration: 0.4) { actions.showMenu(message) }
+            .accessibilityAction(named: "React or reply") { actions.showMenu(message) }
+    }
+
+    private var canSend: Bool { !actions.readOnly && message.eventID != nil }
+}
+
+/// The long press (2026-10-21, the user's call over the stock context menu, whose palette iOS draws small): one line
+/// naming the message, a big row of recent reactions and "+" for any emoji (Instagram takes any, one per person: the
+/// same again removes it), then what the menu held. No reactions where nothing can be sent (requests, ours on its way).
+struct MessageSheet: View {
+    let message: Message
+    /// "You", or their first name.
+    let sender: String
+    let actions: MessageActions
+    /// Closes the sheet, then runs what's given (Reply focuses the composer, Unsend confirms) once it's gone.
+    let close: (@escaping () -> Void) -> Void
+    @State private var picking = false
+    /// The content's height: the sheet fits it until "+" opens the emoji keyboard (`.large`).
+    @State private var height: CGFloat = 320
+    @State private var detent = PresentationDetent.height(320)
+    @State private var row = RecentReactions.row()
+
+    var body: some View {
+        let mine = message.reactions.first { $0.myEventID != nil }?.key
+        VStack(alignment: .leading, spacing: 18) {
+            Text("\(sender): \(message.kind.media?.label ?? message.body)")
+                .font(.footnote).foregroundStyle(.inkSecondary).lineLimit(1)
+            if canSend {
+                HStack(spacing: 4) {
+                    ForEach(RecentReactions.shown(row, current: mine), id: \.self) { key in
+                        let isMine = mine.map { Message.Reaction.same($0, key) } ?? false
+                        Button { react(key) } label: {
+                            Text(key).font(.largeTitle).dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                                .frame(maxWidth: .infinity, minHeight: 52)
+                                .background { if isMine { Circle().fill(Color.primary.opacity(0.12)) } }
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(isMine ? .isSelected : [])
+                        .accessibilityHint(isMine ? "Removes your reaction" : "")
                     }
-                    .pickerStyle(.palette)
-                    .menuActionDismissBehavior(.enabled)  // a palette keeps the menu open by default (iOS 26.4)
-                    Button("Reply", systemImage: "arrowshape.turn.up.left") { actions.reply(message) }
-                }
-                if let text = message.shareText ?? (message.kind.media == nil && !message.body.isEmpty ? message.body : nil) {
-                    Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = text }
-                }
-                if !actions.readOnly, Timeline.canEdit(message) {
-                    Button("Edit", systemImage: "pencil") { actions.edit(message) }
-                }
-                if case let info = MediaInfo(content: message.content), info.album.count > 1 {
-                    Button { actions.shareAll(message) } label: {
-                        Label("Share All", systemImage: "square.and.arrow.up.on.square")
-                        Text(info.albumLabel)
+                    if EmojiField.isAvailable {
+                        Button { picking = true } label: {
+                            Image(systemName: "plus").font(.title2.weight(.semibold)).foregroundStyle(Color.primary)
+                                .frame(maxWidth: .infinity, minHeight: 52)
+                                .background(Color.primary.opacity(0.06), in: .circle)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("All emoji")
+                        .accessibilityIdentifier("sheet.allEmoji")
                     }
                 }
-                if let url = message.content["external_url"]?.string.flatMap(URL.init(string:)) {
-                    Link(destination: url) { Label("Open in Instagram", systemImage: "arrow.up.forward.app") }
-                }
-                if !actions.readOnly, message.isOwn, message.eventID != nil {
-                    Button("Unsend", systemImage: "arrow.uturn.backward", role: .destructive) { actions.unsend(message) }
-                } else if message.isOwn, case .failed = message.status {
-                    Button("Delete", systemImage: "trash", role: .destructive) { actions.discard(message) }
-                }
+                .background { EmojiField(active: $picking, picked: react).frame(width: 1, height: 1).opacity(0) }
+                .accessibilityIdentifier("sheet.reactions")
             }
+            VStack(spacing: 0) { actionRows }
+                .background(Color.primary.opacity(0.05), in: .rect(cornerRadius: 16))
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 28)
+        .padding(.bottom, 12)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { new in
+            height = new
+            if !picking { detent = .height(new) }
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+        .presentationDetents([.height(height), .large], selection: $detent)
+        .presentationDragIndicator(.visible)
+    }
+
+    @ViewBuilder private var actionRows: some View {
+        if canSend { row("Reply", "arrowshape.turn.up.left") { close { actions.reply(message) } } }
+        if let text = message.shareText ?? (message.kind.media == nil && !message.body.isEmpty ? message.body : nil) {
+            row("Copy", "doc.on.doc") { UIPasteboard.general.string = text; close {} }
+        }
+        if !actions.readOnly, Timeline.canEdit(message) { row("Edit", "pencil") { close { actions.edit(message) } } }
+        if case let info = MediaInfo(content: message.content), info.album.count > 1 {
+            row("Share All", "square.and.arrow.up.on.square", detail: info.albumLabel) { close { actions.shareAll(message) } }
+        }
+        if let url = message.content["external_url"]?.string.flatMap(URL.init(string:)) {
+            row("Open in Instagram", "arrow.up.forward.app") { close { UIApplication.shared.open(url) } }
+        }
+        if !actions.readOnly, message.isOwn, message.eventID != nil {
+            row("Unsend", "arrow.uturn.backward", destructive: true) { close { actions.unsend(message) } }
+        } else if message.isOwn, case .failed = message.status {
+            row("Delete", "trash", destructive: true) { close { actions.discard(message) } }
+        }
+    }
+
+    private func row(_ title: String, _ symbol: String, detail: String? = nil, destructive: Bool = false,
+                     action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: symbol).frame(width: 24)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                    if let detail { Text(detail).font(.footnote).foregroundStyle(.inkSecondary) }
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(destructive ? Color.statusError : Color.primary)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("sheet.\(title)")
     }
 
     private var canSend: Bool { !actions.readOnly && message.eventID != nil }
 
-    private func isMineAlready(_ key: String) -> Bool { message.reactions.contains { $0.key == key && $0.myEventID != nil } }
+    private func react(_ key: String) {
+        actions.react(key, message)
+        close {}
+    }
+}
 
-    /// Highlights our current reaction. Choosing it again removes it; the setter sees either that same key or nil
-    /// (palette pickers may deselect), and both mean "remove".
-    private var reaction: Binding<String?> {
-        let mine = message.reactions.first { $0.myEventID != nil }?.key
-        return Binding(get: { mine }, set: { new in
-            if let key = new ?? mine { actions.react(key, message) }
-        })
+/// The reactions a long press offers first: the last six used on this device, any account, kept in place so the row
+/// never shuffles under a thumb (a new one goes first, the oldest drops off); the defaults until then.
+nonisolated enum RecentReactions {
+    static let defaults = ["❤️", "😂", "😮", "😢", "🔥", "👍"]
+    private static let storeKey = "reactions.recent"
+
+    /// `stored`, or the defaults for what's missing.
+    static func row(_ stored: [String]? = UserDefaults.standard.stringArray(forKey: storeKey)) -> [String] {
+        var row = Array((stored ?? []).prefix(defaults.count))
+        for key in defaults where row.count < defaults.count && !row.contains(where: { Message.Reaction.same($0, key) }) {
+            row.append(key)
+        }
+        return row
+    }
+
+    static func adding(_ key: String, to row: [String]) -> [String] {
+        row.contains { Message.Reaction.same($0, key) } ? row : Array(([key] + row).prefix(defaults.count))
+    }
+
+    /// Our current reaction, in the last place when it isn't one of the six: it's how to remove it.
+    static func shown(_ row: [String], current: String?) -> [String] {
+        guard let current, !row.contains(where: { Message.Reaction.same($0, current) }) else { return row }
+        return row.dropLast() + [current]
+    }
+
+    static func use(_ key: String) {
+        UserDefaults.standard.set(adding(key, to: row()), forKey: storeKey)
+    }
+}
+
+/// A hidden field on the system emoji keyboard (search, skin tones): iOS has no emoji picker, but a field can ask for
+/// that keyboard (`textInputMode`). The first emoji typed is the pick; anything else is ignored.
+struct EmojiField: UIViewRepresentable {
+    @Binding var active: Bool
+    let picked: (String) -> Void
+
+    /// Not without the emoji keyboard among the user's keyboards.
+    static var isAvailable: Bool { UITextInputMode.activeInputModes.contains { $0.primaryLanguage == "emoji" } }
+
+    func makeUIView(context: Context) -> Field {
+        let field = Field()
+        field.delegate = context.coordinator
+        field.tintColor = .clear
+        return field
+    }
+
+    func updateUIView(_ field: Field, context: Context) {
+        context.coordinator.picked = picked
+        if active, !field.isFirstResponder { field.becomeFirstResponder() }
+        if !active, field.isFirstResponder { field.resignFirstResponder() }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(picked: picked) }
+
+    final class Field: UITextField {
+        override var textInputMode: UITextInputMode? {
+            UITextInputMode.activeInputModes.first { $0.primaryLanguage == "emoji" } ?? super.textInputMode
+        }
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        var picked: (String) -> Void
+        init(picked: @escaping (String) -> Void) { self.picked = picked }
+
+        func textField(_ field: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+            if let emoji = string.first(where: EmojiField.isEmoji) { picked(String(emoji)) }
+            return false
+        }
+    }
+
+    /// An emoji, not a digit or a letter that has an emoji form ("1", "#").
+    nonisolated static func isEmoji(_ character: Character) -> Bool {
+        guard let first = character.unicodeScalars.first, first.properties.isEmoji else { return false }
+        return first.properties.isEmojiPresentation || character.unicodeScalars.count > 1
     }
 }
 

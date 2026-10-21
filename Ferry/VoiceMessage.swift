@@ -35,11 +35,13 @@ nonisolated enum VoiceMessage {
         min(max((Double(decibels) + 50) / 50, 0), 1)
     }
 
-    /// The mic's touch-and-hold rules (DESIGN §6.9), fed by `VoiceRecorder`: a tap is only a hint; holding records;
-    /// sliding left past `cancelDistance` cancels at once; lifting sends from a second on; at the maximum it sends
-    /// by itself. Each hold produces at most one of cancel, hint, discard or send.
+    /// The mic's rules (DESIGN §6.9), fed by `VoiceRecorder`. A tap records hands-free until Send (from a second on;
+    /// sooner, it's dropped), Stop (to listen back first, then Send) or the trash (the user's calls, 2026-10-21: a tap
+    /// used to be only a "Hold to record" hint).
+    /// Holding records; sliding left past `cancelDistance` cancels at once; lifting sends from a second on, and sooner
+    /// carries on hands-free. At the maximum it sends by itself. Each recording ends in one of cancel, discard or send.
     struct Hold: Equatable {
-        /// Shorter presses are taps, so the recorder (and the microphone prompt) never starts for them.
+        /// Shorter presses are taps: hands-free, from when the finger lifts.
         static let tapLimit: TimeInterval = 0.3
         static let minDuration: TimeInterval = 1
         /// The user's choice (2026-10-15); the bridge sets no `MaxDuration` for voice, and Instagram's app caps its own
@@ -48,15 +50,18 @@ nonisolated enum VoiceMessage {
         /// Points left of where the finger went down.
         static let cancelDistance = 120.0
 
-        enum Action: Equatable { case start, cancel, hint, discard, send }
+        enum Action: Equatable { case start, cancel, discard, send, stop }
 
-        private enum Phase { case pressing, recording, done }
+        private enum Phase { case pressing, recording, handsFree, review, done }
         private var phase: Phase
 
-        /// `recording`: VoiceOver's activation starts the recorder at once (it can't hold).
+        /// `recording`: the finger is down and the recorder already runs.
         init(recording: Bool = false) {
             phase = recording ? .recording : .pressing
         }
+
+        /// The finger is up, recording or listening back: the composer shows Send and the trash.
+        var isHandsFree: Bool { phase == .handsFree || phase == .review }
 
         /// On a timer while the finger is down: `held` since it went down, `recorded` the recorder's time.
         mutating func tick(held: TimeInterval, recorded: TimeInterval) -> Action? {
@@ -64,7 +69,7 @@ nonisolated enum VoiceMessage {
             case .pressing where held >= Self.tapLimit:
                 phase = .recording
                 return .start
-            case .recording where recorded >= Self.maxDuration:
+            case .recording where recorded >= Self.maxDuration, .handsFree where recorded >= Self.maxDuration:
                 phase = .done
                 return .send
             default:
@@ -80,12 +85,40 @@ nonisolated enum VoiceMessage {
         }
 
         mutating func release(recorded: TimeInterval) -> Action? {
-            defer { phase = .done }
             switch phase {
-            case .pressing: return .hint
-            case .recording: return recorded < Self.minDuration ? .discard : .send
-            case .done: return nil
+            case .pressing:
+                phase = .handsFree
+                return .start
+            case .recording where recorded < Self.minDuration:
+                phase = .handsFree
+                return nil
+            case .recording:
+                phase = .done
+                return .send
+            case .handsFree, .review, .done:
+                return nil
             }
+        }
+
+        /// Stop, hands-free: the recording waits to be listened back to and sent.
+        mutating func stop() -> Action? {
+            guard phase == .handsFree else { return nil }
+            phase = .review
+            return .stop
+        }
+
+        /// Send, hands-free or after listening back.
+        mutating func finish(recorded: TimeInterval) -> Action? {
+            guard phase == .handsFree || phase == .review else { return nil }
+            phase = .done
+            return recorded < Self.minDuration ? .discard : .send
+        }
+
+        /// The trash, or VoiceOver's Cancel.
+        mutating func cancel() -> Action? {
+            guard phase == .recording || phase == .handsFree || phase == .review else { return nil }
+            phase = .done
+            return .cancel
         }
 
         /// 0 at rest, 1 at the threshold: the "Slide to cancel" label fades out on the way.
@@ -99,7 +132,7 @@ nonisolated enum VoiceMessage {
 /// held, then puts the audio session back as it was. `VoiceMessage.Hold` decides what each touch means.
 @Observable
 final class VoiceRecorder {
-    enum State: Equatable { case idle, recording, cancelled }
+    enum State: Equatable { case idle, recording, reviewing, cancelled }
 
     private(set) var state = State.idle
     /// Seconds recorded so far.
@@ -108,8 +141,12 @@ final class VoiceRecorder {
     private(set) var levels: [Double] = []
     /// How far the finger is left of where it went down (≤ 0): the mic follows it and "Slide to cancel" fades.
     private(set) var slide: Double = 0
-    /// "Hold to record" for 2 s after a tap or a note under a second: the composer field's placeholder meanwhile.
+    /// "Too short to send" (or why it couldn't start) for 2 s: the composer field's placeholder meanwhile.
     private(set) var hint: String?
+    /// Recording with the finger up, or listening back (`Hold.isHandsFree`): the mic is Send, the strip has the trash.
+    private(set) var handsFree = false
+    /// Stopped to listen back (`reviewing`): the note Send sends.
+    private(set) var review: VoiceMessage.Recorded?
     /// The microphone is off for this app: the composer says why it's needed and links to Settings.
     var permissionDenied = false
     /// Haptic triggers (DESIGN §10).
@@ -149,6 +186,7 @@ final class VoiceRecorder {
         pressedAt = .now
         slide = 0
         startTicker()
+        prepare(warmUp: true)
     }
 
     func drag(_ translation: Double) {
@@ -164,23 +202,28 @@ final class VoiceRecorder {
             return
         }
         perform(hold?.release(recorded: elapsed))
+        handsFree = hold?.isHandsFree ?? false
     }
 
-    /// VoiceOver can't hold: activating the mic starts recording, activating it again sends (or discards under 1 s).
-    func toggle(send: @escaping (VoiceMessage.Recorded) -> Void) {
-        if hold != nil { return release() }
-        if state == .cancelled { state = .idle }
-        hold = VoiceMessage.Hold(recording: true)
-        self.send = send
-        pressedAt = .now
-        startTicker()
-        begin()
+    /// A tap, or VoiceOver's activation (it can't hold): recording hands-free.
+    func tap(send: @escaping (VoiceMessage.Recorded) -> Void) {
+        press(send: send)
+        release()
     }
 
-    /// The slide's cancel, for VoiceOver.
+    /// Send, after a tap started it: under a second it's dropped.
+    func finish() {
+        perform(hold?.finish(recorded: elapsed))
+    }
+
+    /// The trash, or VoiceOver's Cancel.
     func cancel() {
-        guard hold != nil else { return }
-        perform(.cancel)
+        perform(hold?.cancel())
+    }
+
+    /// Stop, hands-free: listen back before sending.
+    func stop() {
+        perform(hold?.stop())
     }
 
     /// The touch was taken away (a call, an alert) or the thread went away: whatever was recorded is dropped.
@@ -202,16 +245,27 @@ final class VoiceRecorder {
             state = .cancelled
             cancelled += 1
             if !fingerDown { clearCancelled() }  // VoiceOver's Cancel
-        case .hint, .discard:
+        case .discard:
             discardRecording()
             endHold()
-            showHint("Hold to record")
+            showHint("Too short to send")
         case .send:
-            let note = finishRecording()
+            let listenedBack = review != nil
+            let note = review ?? finishRecording()
+            review = nil
             let send = send
             endHold()
-            stopped += 1
+            if !listenedBack { stopped += 1 }
             if let note { send?(note) }
+        case .stop:
+            stopped += 1
+            ticker?.cancel()
+            guard let note = finishRecording() else {
+                endHold()
+                return showHint("Couldn't keep the recording")
+            }
+            review = note
+            state = .reviewing
         case nil:
             break
         }
@@ -237,7 +291,27 @@ final class VoiceRecorder {
             permissionDenied = true
             return
         }
+        prepare(warmUp: false)
+        guard let recorder, recorder.record() else {
+            discardRecording()
+            endHold()
+            return showHint("Couldn't start recording")
+        }
+        recording()
+    }
+
+    /// The audio session and a recorder ready to go: on touch-down (`warmUp`), so they're set up while `Hold` waits to
+    /// tell a hold from a tap, and the hold only has to start it (a hold took 690 ms to record here, 366 ms of it this
+    /// setup, the user found it slow on the phone, 2026-10-21). Not for a tap's sake: never without the microphone
+    /// granted (no prompt on a tap), and not while another app plays audio, which activating the session would pause.
+    /// A tap's recorder never records; `discardRecording` drops it.
+    private func prepare(warmUp: Bool) {
+        guard recorder == nil, AVAudioApplication.shared.recordPermission == .granted else { return }
+        #if DEBUG
+        if DebugFixtures.voiceFile != nil { return }
+        #endif
         let session = AVAudioSession.sharedInstance()
+        if warmUp && session.isOtherAudioPlaying { return }
         savedSession = (session.category, session.mode, session.categoryOptions)
         do {
             try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
@@ -245,13 +319,10 @@ final class VoiceRecorder {
             let file = URL.temporaryDirectory.appending(path: "voice-\(UUID().uuidString).m4a")
             let recorder = try AVAudioRecorder(url: file, settings: Self.settings)
             recorder.isMeteringEnabled = true
-            guard recorder.record() else { throw CocoaError(.fileWriteUnknown) }
+            guard recorder.prepareToRecord() else { throw CocoaError(.fileWriteUnknown) }
             self.recorder = recorder
-            recording()
         } catch {
             restoreSession()
-            endHold()
-            showHint("Couldn't start recording")
         }
     }
 
@@ -303,7 +374,10 @@ final class VoiceRecorder {
         return VoiceMessage.Recorded(file: recorder.url, duration: Int(duration * 1000), size: size)
     }
 
+    /// Drops what was recorded: the recorder's file, or the one waiting to be listened back to.
     private func discardRecording() {
+        if let review { try? FileManager.default.removeItem(at: review.file) }
+        review = nil
         #if DEBUG
         fakeSince = nil
         #endif
@@ -316,10 +390,11 @@ final class VoiceRecorder {
 
     private func endHold() {
         hold = nil
+        handsFree = false
         ticker?.cancel()
         ticker = nil
         slide = 0
-        if state == .recording { state = .idle }
+        if state == .recording || state == .reviewing { state = .idle }
     }
 
     /// Back to the category the app had (playback sets `.playback` for voice notes and videos).
@@ -365,8 +440,9 @@ final class VoiceRecorder {
 
 // MARK: - Composer pieces (DESIGN §6.9)
 
-/// The composer's mic, where Send is when the field is empty: touch and hold to record, slide left to cancel, lift
-/// to send. VoiceOver: activate to start, activate again to send, or the Cancel action.
+/// The composer's mic, where Send is when the field is empty: tap to record hands-free (then it's Send, and the strip
+/// has the trash), or touch and hold to record, slide left to cancel, lift to send. VoiceOver: activate to start, then
+/// Send, or the Cancel action.
 struct MicButton: View {
     let recorder: VoiceRecorder
     let tint: Color
@@ -376,8 +452,25 @@ struct MicButton: View {
     @State private var pressed = false
 
     var body: some View {
+        if recorder.handsFree {
+            Button { recorder.finish() } label: {
+                Image(systemName: "arrow.up").font(.body.weight(.bold)).foregroundStyle(.white)
+                    .frame(width: 32, height: 32)
+                    .background(tint, in: .circle)
+                    .padding(6).contentShape(.rect).padding(-6)  // 44 pt target (DESIGN §11)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Send voice message")
+            .accessibilityActions { Button("Cancel recording") { recorder.cancel() } }
+            .accessibilityIdentifier("composer.voiceSend")
+        } else {
+            mic
+        }
+    }
+
+    private var mic: some View {
         let recording = recorder.state == .recording
-        Image(systemName: recording ? "mic.fill" : "mic")
+        return Image(systemName: recording ? "mic.fill" : "mic")
             .font(.body.weight(.semibold))
             .foregroundStyle(recording ? Color.white : Color.primary)
             .frame(width: 32, height: 32)
@@ -411,9 +504,9 @@ struct MicButton: View {
             }
             .accessibilityElement()
             .accessibilityLabel(recording ? "Stop and send voice message" : "Record voice message")
-            .accessibilityHint(recording ? "" : "Touch and hold to record, lift to send, slide left to cancel.")
+            .accessibilityHint(recording ? "" : "Records until you send it. Or touch and hold to record, lift to send, slide left to cancel.")
             .accessibilityAddTraits(.isButton)
-            .accessibilityAction { recorder.toggle(send: send) }
+            .accessibilityAction { recorder.tap(send: send) }
             .accessibilityActions {
                 if recording { Button("Cancel recording") { recorder.cancel() } }
             }
@@ -421,12 +514,48 @@ struct MicButton: View {
     }
 }
 
-/// What the field shows while recording: a red dot, the time, the level, and "Slide to cancel" fading as the finger
-/// nears the threshold; then "Cancelled" for a moment.
+/// What the field shows while recording: hands-free, the trash first and Stop last; a red dot, the time, the level, and
+/// while held "Slide to cancel" fading as the finger nears the threshold. Stopped, the recording to listen back to.
+/// Then "Cancelled" for a moment.
 struct RecordingStrip: View {
     let recorder: VoiceRecorder
 
     var body: some View {
+        HStack(spacing: 8) {
+            if recorder.handsFree {
+                Button { recorder.cancel() } label: {
+                    Image(systemName: "trash").frame(width: 44, height: 44).contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.statusError)
+                .padding(.vertical, -12).padding(.leading, -12)  // the strip keeps its height and inset
+                .accessibilityLabel("Delete recording")
+                .accessibilityIdentifier("composer.voiceTrash")
+            }
+            if recorder.state == .reviewing, let note = recorder.review {
+                ReviewPlayer(note: note)
+            } else {
+                info
+                if recorder.handsFree && recorder.state == .recording {
+                    Button { recorder.stop() } label: {
+                        Image(systemName: "stop.fill").frame(width: 44, height: 44).contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.vertical, -12)
+                    .accessibilityLabel("Stop and listen back")
+                    .accessibilityIdentifier("composer.voiceStop")
+                }
+            }
+        }
+        .font(.subheadline)
+        .foregroundStyle(recorder.state == .cancelled ? Color.statusError : Color.primary)
+        .lineLimit(1)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(recorder.state == .cancelled ? "composer.recordingCancelled" : "composer.recording")
+    }
+
+    private var info: some View {
         HStack(spacing: 8) {
             if recorder.state == .cancelled {
                 Image(systemName: "trash")
@@ -437,22 +566,50 @@ struct RecordingStrip: View {
                 Text(clockText(recorder.elapsed)).monospacedDigit()
                 LevelMeter(levels: recorder.levels).frame(width: 64, height: 20)
                 Spacer(minLength: 4)
-                ViewThatFits(in: .horizontal) {
-                    Label("Slide to cancel", systemImage: "chevron.left")
-                    Image(systemName: "chevron.left")
+                if !recorder.handsFree {
+                    ViewThatFits(in: .horizontal) {
+                        Label("Slide to cancel", systemImage: "chevron.left")
+                        Image(systemName: "chevron.left")
+                    }
+                    .foregroundStyle(.inkSecondary)
+                    .opacity(1 - VoiceMessage.Hold.cancelProgress(recorder.slide))
+                    .padding(.trailing, 4)
                 }
-                .foregroundStyle(.inkSecondary)
-                .opacity(1 - VoiceMessage.Hold.cancelProgress(recorder.slide))
-                .padding(.trailing, 4)
             }
         }
-        .font(.subheadline)
-        .foregroundStyle(recorder.state == .cancelled ? Color.statusError : Color.primary)
-        .lineLimit(1)
-        .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(recorder.state == .cancelled ? "Recording cancelled" : "Recording, \(clockText(recorder.elapsed))")
-        .accessibilityIdentifier(recorder.state == .cancelled ? "composer.recordingCancelled" : "composer.recording")
+    }
+}
+
+/// The stopped recording, listened back to on the voice notes' player (DESIGN §6.8: its bars, drag to seek); Send or
+/// the trash next to it.
+private struct ReviewPlayer: View {
+    @Environment(AppModel.self) private var model
+    let note: VoiceMessage.Recorded
+    private static let id = "composer.review"
+
+    var body: some View {
+        let voice = model.voice
+        let current = voice.current == Self.id
+        let duration = Double(note.duration) / 1000
+        HStack(spacing: 8) {
+            Button { voice.toggle(Self.id, file: note.file, duration: duration) } label: {
+                Image(systemName: current && voice.isPlaying ? "pause.fill" : "play.fill").frame(width: 44, height: 44).contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .padding(.vertical, -12)
+            .accessibilityLabel(current && voice.isPlaying ? "Pause recording" : "Play recording")
+            .accessibilityValue(clockText(duration))
+            .accessibilityIdentifier("composer.voicePlay")
+            VoiceBars(seed: note.file.lastPathComponent, progress: current ? voice.progress : 0) { fraction in
+                voice.seek(Self.id, file: note.file, to: fraction, duration: duration)
+            }
+            .frame(height: 20)
+            .accessibilityHidden(true)
+            Text(clockText(current && voice.elapsed > 0 ? voice.elapsed : duration)).monospacedDigit()
+                .accessibilityHidden(true)
+        }
     }
 }
 

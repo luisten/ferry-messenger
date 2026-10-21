@@ -320,6 +320,18 @@ nonisolated struct Message: Identifiable, Equatable, Sendable {
         /// Our reaction event with this key, so choosing it again can redact it.
         var myEventID: String?
         var count: Int { senders.count }
+
+        /// One reaction with or without its variation selector: we send "❤️", Instagram stores and echoes "❤" (Android's
+        /// A4 check, 2026-10-21: choosing ❤️ again reacted again instead of removing it).
+        static func same(_ a: String, _ b: String) -> Bool {
+            // By scalar: "❤️" is one Character, so a String search never finds the selector inside it.
+            a.unicodeScalars.filter { $0 != "\u{FE0F}" }.elementsEqual(b.unicodeScalars.filter { $0 != "\u{FE0F}" })
+        }
+    }
+
+    /// Whether `user` reacted with `key`.
+    func reacted(_ key: String, by user: String) -> Bool {
+        reactions.contains { Reaction.same($0.key, key) && $0.senders.contains(user) }
     }
 
     struct Reply: Equatable, Sendable {
@@ -573,7 +585,7 @@ nonisolated enum Timeline {
         for event in reactions.sorted(by: { position[$0.eventID ?? ""] ?? 0 < position[$1.eventID ?? ""] ?? 0 }) {
             guard let key = event.content["m.relates_to"]?["key"]?.string, let sender = event.sender else { continue }
             let mine = sender == me ? event.eventID : nil
-            if let i = groups.firstIndex(where: { $0.key == key }) {
+            if let i = groups.firstIndex(where: { Message.Reaction.same($0.key, key) }) {
                 groups[i].senders.append(sender)
                 groups[i].myEventID = groups[i].myEventID ?? mine
             } else {

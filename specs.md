@@ -148,10 +148,15 @@ recipient, no groups.
   it replaces "Seen".
   VoiceOver reads every incoming group bubble as "From Theo Park, …" and skips the visible name and avatar. Names
   come from the thread (Instagram always names its participants). DMs look exactly as before.
-- **Context menu:** reaction palette ❤️ 😂 😮 😢 🔥 👍 (same emoji again removes ours; double-tap = ❤️), Reply, Copy,
-  Edit (own text, within 15 min, at most 5 edits), Share All ("3 photos": photos sent together; downloads them all,
+- **Long press** (a sheet fitted to its content; VoiceOver: "React or reply" on any bubble): one line naming the
+  message ("Jonas: These are amazing…"), a big row of the last six reactions used on this device (any account; a new one
+  goes first and the oldest drops off, so nothing moves under the thumb; ❤️ 😂 😮 😢 🔥 👍 until then; ours circled,
+  and in the last place when it isn't one of them) and "+" (the system emoji keyboard, search and skin tones: the first
+  emoji picked reacts; hidden without that keyboard). Instagram takes any emoji, one per person: the same again
+  removes ours, and "❤" counts as "❤️" (Instagram drops the variation selector). No reactions in a request or on ours
+  still sending. Then the actions: Reply, Copy, Edit (own text, within 15 min, at most 5 edits), Share All ("3 photos": photos sent together; downloads them all,
   then the share sheet, whose "Save 3 Images" asks for Photos access once), Open in Instagram (shares), Unsend (own;
-  confirmation, removed for everyone), Delete (a failed send that never reached Instagram).
+  confirmation, removed for everyone), Delete (a failed send that never reached Instagram). Double-tap = ❤️.
 - **Composer:** account avatar (tap: "This chat belongs to X. Replies always come from this account."), "Message as
   X", counter from 900 characters, Send off past 1000. Reply and edit modes show a bar with ✕. With the field empty
   the mic sits where Send is.
@@ -169,13 +174,16 @@ recipient, no groups.
   the link back, ≤ 20 MB) and goes as that GIF; anything that doesn't load as an animated image goes as the link.
   Links to GIFs that others send stay links (the user's call: no fetching what someone else linked). No GIF search
   (no outside service).
-- **Voice notes:** touch and hold the mic: after 0.3 s it records (AAC `.m4a`, mono, 44.1 kHz) with a red dot, the
-  time and a level meter; lift to send (a reply when replying); slide left 120 pt to cancel at once ("Cancelled",
-  medium haptic); at 5 min it sends by itself. A quick tap only turns the field's placeholder into "Hold to record" for
-  2 s (no microphone prompt, nothing over the thread); under 1 s it's dropped with the same hint. Sent to Instagram as a voice clip
-  (`audio/mp4`, no waveform). The first hold asks for the microphone;
-  when it's off, an alert explains and opens Settings. VoiceOver: activate to start, again to send, or the "Cancel
-  recording" action.
+- **Voice notes** (AAC `.m4a`, mono, 44.1 kHz; the microphone gets ready from the touch, unless another app is playing
+  audio), recorded with a red dot, the time and a level meter: **tap the mic** to record hands-free (the user's call,
+  2026-10-21: a tap used to be only a "Hold to record" hint): the mic becomes Send (the account's fill) and the strip
+  starts with a red trash, which cancels ("Cancelled", medium haptic), and ends with Stop: the recording then waits to
+  be listened back to (play/pause, the voice notes' bars to seek, its length) before Send or the trash. Or **touch and
+  hold**: after 0.3 s it records; lift to send; slide left 120 pt to cancel at once; let go under 1 s and it carries on
+  hands-free. Either way it's sent as a reply when replying, at 5 min by itself, and Send under 1 s drops it ("Too short
+  to send" in the field for 2 s). Sent to Instagram as a voice clip (`audio/mp4`, no waveform). The first tap or hold
+  asks for the microphone; when it's off, an alert explains and opens Settings. VoiceOver: activate to start, then Send,
+  or the "Cancel recording" action.
 - Photos, videos and voice notes aren't offered while editing or in requests (`AppModel.sendMedia` refuses them
   there too).
 - **Signed-out account:** the composer is replaced by "X is signed out" + "Log in again".

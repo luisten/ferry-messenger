@@ -378,7 +378,11 @@ final class MediaKindTests: XCTestCase {
 
         let item = AVPlayerItem(asset: asset)
         let player = AVPlayer(playerItem: item)
-        for _ in 0..<50 where item.status == .unknown { try await Task.sleep(for: .milliseconds(100)) }
+        // Ready within a second here and usually on CI, but GitHub's Xcode 27 runner twice left it loading past 5 s with
+        // no error (2026-10-21, the test at 10 s and 43 s). With no audio output it never leaves `.unknown` (CLAUDE.md,
+        // simulator audio), which says nothing about the file: the checks above decoded it. A real failure is `.failed`.
+        for _ in 0..<200 where item.status == .unknown { try await Task.sleep(for: .milliseconds(100)) }
+        if item.status == .unknown { throw XCTSkip("AVPlayerItem still loading after 20 s: the host's audio output may not have started") }
         XCTAssertEqual(item.status, .readyToPlay, item.error.map { "\($0)" } ?? "")
         await player.seek(to: CMTime(seconds: 3, preferredTimescale: 600))
         XCTAssertEqual(player.currentTime().seconds, 3, accuracy: 0.1)

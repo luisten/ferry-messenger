@@ -880,11 +880,29 @@ func TestSharesBecomeTheBridgesShapes(t *testing.T) {
 }
 
 // A delete for a reaction this window never saw added (one from before this launch) re-reads the thread.
+// A removal names the reaction only by its log entry, which a thread read doesn't give: one loaded with the thread
+// (`<message>~react<sender>`) is the message's only one, or the thread is read again (Android's A4 check, 2026-10-21:
+// a removed ❤ stayed on screen).
 func TestUnknownReactionDeleteRereadsTheThread(t *testing.T) {
 	c := New(tamo)
 	c.Thread(thread(t))
 	unknown := with(t, firstDelta(t, "SlideUQPPDeleteReaction"), func(m map[string]any) { obj(m["reaction"])["log_message_id"] = "mid.unknown" })
-	if _, reread := c.Delta(unknown); reread != "1700000000000301" {
+	out, reread := c.Delta(unknown)
+	var d delta
+	if err := json.Unmarshal(unknown, &d); err != nil || len(historyReactions(c.rooms[RoomID(tamo, "1700000000000301")].events, d.MessageID)) != 0 {
+		t.Fatalf("%v, or the reaction is still on", err)
+	}
+	if reread != "" || len(updates(out)) != 1 {
+		t.Fatalf("the message's one reaction: %v, re-read %q", out, reread)
+	}
+	if e := updates(out)[0].Timeline.Events[0]; e.Type != "m.room.redaction" || !strings.HasPrefix(e.Content["redacts"].(string), d.MessageID+"~react") {
+		t.Errorf("redaction %+v", e)
+	}
+	if _, reread := c.Delta(unknown); reread != "1700000000000301" { // gone now: nothing left to tell it by
+		t.Error("no re-read once it's gone")
+	}
+	none := with(t, unknown, func(m map[string]any) { m["message_id"] = "mid.noreactions" })
+	if _, reread := c.Delta(none); reread != "1700000000000301" {
 		t.Error("no re-read")
 	}
 	if _, reread := c.Delta(with(t, unknown, func(m map[string]any) { m["__typename"] = "SlideUQPPParticipantJoin" })); reread != "1700000000000301" {
