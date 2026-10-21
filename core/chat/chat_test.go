@@ -333,6 +333,30 @@ func TestUnreadIsAnIncomingMessagePastOurWatermark(t *testing.T) {
 	}
 }
 
+// A mailbox page has a chat's last message or two. When they're all newer than our watermark (the chat is unread), our
+// receipt still says how far we'd read, so the app's "New messages" line has its place: an unread live chat opened
+// without it (QA 2026-10-20, kivostudio's side of the dummies' DM after the GIPHY sticker and GIF).
+func TestOurWatermarkComesEvenWhenEveryLoadedMessageIsNewer(t *testing.T) {
+	th := thread(t)
+	th.SlideMessages.Edges = th.SlideMessages.Edges[:1] // the newest only (newest first), as the mailbox has it
+	var mine int64
+	for _, r := range th.ReadReceipts {
+		if r.FBID == kivo {
+			mine = parseMS(r.WatermarkMS)
+		}
+	}
+	newest := th.SlideMessages.Edges[0].Node
+	env := New(kivo).Thread(th)
+	if mine == 0 || newest.ms() <= mine || env.Update.UnreadNotifications.NotificationCount != 1 || env.Update.Ephemeral == nil {
+		t.Fatalf("not the unread case: watermark %d, newest %d, %+v", mine, newest.ms(), env.Update)
+	}
+	ours := obj(obj(obj(env.Update.Ephemeral.Events[0].Content[newest.ID])["m.read"])[Me])
+	if ours["ts"] != mine {
+		t.Errorf("our receipt %v, want ts %d on %s", env.Update.Ephemeral.Events[0].Content, mine, newest.ID)
+	}
+	golden(t, "unread_window_kivo", env)
+}
+
 func TestTheThreadReducesToItsMessages(t *testing.T) {
 	env := New(tamo).Thread(thread(t))
 	golden(t, "thread_tamo", map[string]Envelope{"tamo": env, "kivo": New(kivo).Thread(thread(t))})
@@ -463,6 +487,47 @@ func TestAGIFIsAnAnimatedImage(t *testing.T) {
 		t.Errorf("bare GIF %v", mailbox[0].Content)
 	}
 	golden(t, "event_gif_kivo", map[string][]Event{"live": live, "mailbox": mailbox})
+}
+
+// A sticker, then a GIF, from Instagram's GIPHY picker (live 2026-10-20, `ig_animated_images_tamo`: the thread's copies
+// and both sides' mailbox copies): `INSTAGRAM_MESSAGING_ANIMATED_IMAGE`, the GIF's `animated_media` with `is_sticker`.
+// Ferry said it couldn't show them. The mailbox's copies have no media, and only their snippet says "sticker".
+func TestGIPHYStickersAndGIFsAreAnimatedImages(t *testing.T) {
+	var copies struct {
+		Thread          []Message `json:"thread"`
+		MailboxSender   []Message `json:"mailbox_sender"`
+		MailboxReceiver []Message `json:"mailbox_receiver"`
+	}
+	fixture(t, "ig_animated_images_tamo", &copies)
+	events := func(messages []Message, account string) (out []Event) {
+		for _, m := range messages {
+			out = append(out, messageEvents(m, account)...)
+		}
+		if len(out) != 2 {
+			t.Fatalf("%d events for two messages", len(out))
+		}
+		return out
+	}
+	thread := events(copies.Thread, tamo)
+	for i, want := range []struct {
+		body, url string
+		sticker   bool
+	}{{"Sticker", "https://scontent.example.invalid/v/a001.webp", true}, {"GIF", "https://scontent.example.invalid/v/a003.webp", false}} {
+		c := thread[i].Content
+		info := obj(c["info"])
+		if c["msgtype"] != "m.image" || c["body"] != want.body || c["url"] != want.url || info["fi.mau.gif"] != true ||
+			info["mimetype"] != "image/webp" || has(c, stickerKey) != want.sticker || has(c, unsupportedKey) {
+			t.Errorf("%s: %v", want.body, c)
+		}
+	}
+	sender, receiver := events(copies.MailboxSender, tamo), events(copies.MailboxReceiver, kivo)
+	for _, mailbox := range [][]Event{sender, receiver} {
+		if mailbox[0].Content[stickerKey] != true || mailbox[1].Content["body"] != "GIF" || has(mailbox[1].Content, stickerKey) ||
+			has(mailbox[0].Content, "url") || obj(mailbox[1].Content["info"])["fi.mau.gif"] != true {
+			t.Errorf("mailbox %v", mailbox)
+		}
+	}
+	golden(t, "animated_images_tamo", map[string][]Event{"thread": thread, "mailbox_sender": sender, "mailbox_receiver": receiver})
 }
 
 // Three photos sent at once from the Instagram app (live 2026-10-18): one message with every photo, in order, so it

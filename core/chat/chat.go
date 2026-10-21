@@ -29,6 +29,7 @@ const (
 	eventKey       = "fi.ferry.event"                // MessageKind.eventKey
 	unsupportedKey = "fi.ferry.unsupported"          // MessageKind.unsupportedKey
 	shareTextKey   = "fi.ferry.share_text"           // MessageKind.shareTextKey
+	stickerKey     = "fi.ferry.sticker"              // MessageKind.stickerKey
 	albumKey       = "fi.ferry.album"                // MediaInfo.albumKey
 )
 
@@ -493,12 +494,21 @@ func content(m Message) map[string]any {
 		return album(arr(c["attachments"]), new(false))
 	case has(c, "ordered_photo_video_attachments"): // photos and videos in one message (upstream's shape)
 		return album(arr(c["ordered_photo_video_attachments"]), nil)
-	case m.ContentType == "GIFS": // a GIF (Instagram's picker, or one we uploaded); the mailbox's copy has no media (`null`)
+	case has(c, "animated_media"):
+		// A GIF or a sticker: `GIFS` (one we uploaded), `INSTAGRAM_MESSAGING_ANIMATED_IMAGE` (Instagram's GIPHY picker,
+		// live 2026-10-20, `ig_animated_images_tamo`). The mailbox's copy has no media (`null`).
 		gif := first(c["animated_media"])
-		return media("m.image", "GIF", gif["attachment_webp_url"], map[string]any{
+		// ponytail: there only the snippet ("You sent a sticker.") says it's a sticker, in English; else it's a GIF
+		// until the thread is read.
+		sticker := gif["is_sticker"] == true || strings.HasSuffix(m.IGDSnippet, " sent a sticker.")
+		content := media("m.image", "GIF", gif["attachment_webp_url"], map[string]any{
 			"mimetype": "image/webp", "w": gif["preview_width"], "h": gif["preview_height"],
 			"thumbnail_url": gif["preview_cdn_url"], "fi.mau.gif": true,
 		}, nil)
+		if sticker {
+			content["body"], content[stickerKey] = "Sticker", true
+		}
+		return content
 	case has(c, "text_fragments"): // Instagram's own line: "… named the group …", "… left the group"
 		line := ""
 		for _, f := range arr(c["text_fragments"]) {
@@ -529,7 +539,7 @@ func content(m Message) map[string]any {
 	}
 }
 
-// unsupported is what the app can't show (a poll, a sticker…), as a line that sends you to Instagram. A thread
+// unsupported is what the app can't show (a poll…), as a line that sends you to Instagram. A thread
 // read's copy has no `igd_snippet` (the mailbox's and live deltas' do), so the content type is all that names it on
 // every path.
 func unsupported(m Message) map[string]any {
@@ -702,11 +712,19 @@ func readReceipts(receipts []ReadReceipt, account string, messages []Message) *E
 		if r.FBID == "" {
 			continue
 		}
+		found := false
 		for _, m := range slices.Backward(messages) {
 			if m.ms() <= ms {
 				reads = append(reads, read{senderID(r.FBID, account), m.ID, ms})
+				found = true
 				break
 			}
+		}
+		// Ours, older than every message loaded (an unread chat's mailbox copy is its last message or two): still how
+		// far we'd read, on the oldest, or the app's "New messages" line has no place (QA 2026-10-20). The app reads
+		// only our receipt's time; others' that predate them all say nothing, as they've seen none of these.
+		if !found && r.FBID == account && ms > 0 && len(messages) > 0 {
+			reads = append(reads, read{Me, messages[0].ID, ms})
 		}
 	}
 	if len(reads) == 0 {

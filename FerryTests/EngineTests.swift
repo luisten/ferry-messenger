@@ -140,6 +140,28 @@ final class EngineTests: XCTestCase {
         XCTAssertNil(MediaInfo(content: bare.content).url)
     }
 
+    /// A sticker, then a GIF, from Instagram's GIPHY picker (live 2026-10-20, `ig_animated_images_tamo`): both play
+    /// like a GIF; the sticker is named so and drawn as one. Ferry said it couldn't show either.
+    func testGIPHYStickersAndGIFsAreAnimatedImages() throws {
+        let thread = Timeline.reduce(try events("animated_images_tamo", "thread"), me: me)
+        XCTAssertEqual(thread.map(\.kind), [.sticker, .gif])
+        XCTAssertEqual(thread.map { MediaInfo(content: $0.content).isAnimated }, [true, true])
+        XCTAssertEqual(MediaInfo(content: thread[0].content).url, "https://scontent.example.invalid/v/a001.webp")
+        XCTAssertEqual(MessageKind.sticker.media?.label, "Sticker")
+
+        // The mailbox's copies: no media, named from Instagram's snippet until the thread is read.
+        func preview(_ event: Event) -> String? {
+            let room = Room(id: "!ig-test")
+            room.apply(JoinedRoom(timeline: .init(events: [event], limited: false)))
+            return Inbox.preview(of: room, me: me)?.text
+        }
+        let receiver = try events("animated_images_tamo", "mailbox_receiver")
+        XCTAssertEqual(receiver.map { MessageKind(type: $0.type, content: $0.content) }, [.sticker, .gif])
+        XCTAssertEqual(receiver.map { MediaInfo(content: $0.content).url }, [nil, nil])
+        XCTAssertEqual(receiver.map(preview), ["Sticker", "GIF"])
+        XCTAssertEqual(try events("animated_images_tamo", "mailbox_sender").map(preview), ["You: Sticker", "You: GIF"])
+    }
+
     /// Three photos sent at once from the Instagram app (live 2026-10-18): one message with every photo, in order,
     /// so it keeps one menu, one row of reactions and one unsend. Ferry showed only the first.
     func testPhotosSentTogetherAreOneMessageWithAll() throws {
@@ -234,6 +256,19 @@ final class EngineTests: XCTestCase {
         // After our watermark and after our own last message (kivostudio's edited reply), so on "back".
         let rows = Timeline.layout(messages, unreadAfter: room.receipts[me]?.ts)
         XCTAssertEqual(rows.filter(\.startsUnread).map(\.id), [try XCTUnwrap(messages.last).id])
+    }
+
+    /// The same chat as its mailbox copy has it, only the newest message, which is past our watermark: our m.read
+    /// still comes (on the only message, with our watermark's time), so the line has its place. Without it an unread
+    /// live chat opened with no "New messages" line (QA 2026-10-20).
+    func testOurWatermarkComesWithAnUnreadMailboxCopy() throws {
+        let room = room([try Fixture.engine(IG.Update.self, "unread_window_kivo")])
+        XCTAssertTrue(room.isUnread)
+        XCTAssertEqual(room.receipts[me]?.ts, 1_792_115_019_051)
+        let messages = Timeline.reduce(room, me: me)
+        XCTAssertEqual(messages.count, 1)
+        let rows = Timeline.layout(messages, unreadAfter: room.receipts[me]?.ts)
+        XCTAssertEqual(rows.filter(\.startsUnread).map(\.id), [try XCTUnwrap(messages.first).id])
     }
 
     /// A reply and an emoji reaction to tamoveska's story, sent by kivostudio from the Instagram app (live 2026-10-19,

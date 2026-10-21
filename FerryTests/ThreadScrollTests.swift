@@ -68,4 +68,49 @@ final class ThreadRevealTests: XCTestCase {
     func testShortThreadRestsAtTheEnd() {
         XCTAssertTrue(edge(offset: -116, content: 300, container: 666, insets: bars).restsAtEnd)
     }
+
+    /// A chat that opens unread holds its "New messages" line at the top only when what's new overflows by more than a
+    /// quarter of the screen; otherwise it opens at the end, the newest message whole (2026-10-20: the user saw it cut
+    /// off by the composer). Geometry logged with the line held (`FERRY_DEBUG_GROUP_EXTRA=7`: 207 pt below).
+    func testHeldLineGivesWayWhenLittleIsBelow() {
+        XCTAssertFalse(edge(offset: 564.67, content: 1554, container: 666, insets: bars).endIsNear(above: 0))  // 207 pt: holds
+        XCTAssertTrue(edge(offset: 607, content: 1554, container: 666, insets: bars).endIsNear(above: 0))  // 165 pt: the end
+        XCTAssertTrue(edge(offset: 757, content: 1554, container: 666, insets: bars).endIsNear(above: 0))  // 15 pt: the end
+        XCTAssertTrue(edge(offset: -116, content: 300, container: 666, insets: bars).endIsNear(above: 0))  // it all fits
+        // Held under the last message read (70 pt) for context: 207 pt below, of which 137 is new, opens at the end.
+        XCTAssertTrue(edge(offset: 564.67, content: 1554, container: 666, insets: bars).endIsNear(above: 70))
+    }
+}
+
+/// Only a send from this device takes the thread to its end (`Message.isLocalEcho`): our own message sent from
+/// Instagram's app arrives as an event (with its offline threading ID, like any of ours) and leaves the scroll alone.
+final class LocalEchoTests: XCTestCase {
+    func testOnlyWhatWeSendFromHereIsALocalEcho() {
+        let elsewhere = Event(type: "m.room.message", content: ["msgtype": "m.text", "body": "from the Instagram app"],
+                              eventID: "$own", sender: "@me", originServerTS: 1, unsigned: Event.Unsigned(transactionID: "751"))
+        let messages = Timeline.reduce([elsewhere], me: "@me", pending: [
+            PendingMessage(txnID: "t1", content: ["msgtype": "m.text", "body": "sending"], ts: 2, state: .sending),
+            PendingMessage(txnID: "t2", content: ["msgtype": "m.text", "body": "sent, not back yet"], ts: 3, state: .sent("$t2")),
+        ])
+        XCTAssertEqual(messages.map(\.isOwn), [true, true, true])
+        XCTAssertEqual(messages.map(\.isLocalEcho), [false, true, true])
+    }
+}
+
+/// The jump-to-newest button's count (`Timeline.newCount`): what others sent after it appeared, never our own,
+/// Instagram's lines about the chat or an unsent message.
+final class JumpCountTests: XCTestCase {
+    private func message(_ id: String, ts: Int64, own: Bool = false, kind: MessageKind = .text) -> Message {
+        Message(id: id, sender: own ? "@me" : "@ig_1", ts: ts, kind: kind, body: id, content: [:], isOwn: own)
+    }
+
+    func testCountsOnlyWhatOthersSentSince() {
+        let messages = [
+            message("before", ts: 100), message("since", ts: 200), message("mine", ts: 300, own: true),
+            message("left the group", ts: 400, kind: .event), message("poll", ts: 500, kind: .unsupported("a poll")),
+            message("unsent", ts: 600, kind: .unsent), message("photo", ts: 700, kind: .image),
+        ]
+        XCTAssertEqual(Timeline.newCount(messages, after: 100), 2)  // "since" and the photo
+        XCTAssertEqual(Timeline.newCount(messages, after: 700), 0)
+    }
 }

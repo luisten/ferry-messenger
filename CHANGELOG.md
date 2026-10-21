@@ -7,6 +7,24 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 
 ## [Unreleased]
 
+## [1.5] - 2026-10-21
+
+### Added
+
+- A button to jump to the newest message, when you've scrolled up or a chat opened at "New messages". It shows how
+  many new messages have arrived since.
+
+### Fixed
+
+- A chat with a few new messages could open with the newest one partly hidden behind the message field. It now opens
+  at the bottom unless there's a lot that's new. Then it opens at "New messages", with the last message you'd read
+  above it, and the new button takes you down.
+- A chat with new messages could open without the "New messages" line.
+- A message you sent from Instagram's own app pulled the open chat down to the newest message, even while you were
+  reading further up. Only what you send from Ferry Messenger does that now.
+- GIFs and stickers sent from Instagram's GIF picker said the app couldn't show them. They now play in the chat:
+  GIFs like other GIFs, stickers on a loop as in Instagram. The chat list says "GIF" or "Sticker".
+
 ## [1.4] - 2026-10-19
 
 ### Changed
@@ -66,7 +84,8 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 - First public release: your Instagram direct messages, from all your accounts in one inbox, talking to Instagram
   straight from your iPhone.
 
-[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.4...HEAD
+[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.5...HEAD
+[1.5]: https://github.com/luisten/ferry-messenger/compare/v1.4...v1.5
 [1.4]: https://github.com/luisten/ferry-messenger/compare/v1.3...v1.4
 [1.3]: https://github.com/luisten/ferry-messenger/compare/v1.2...v1.3
 [1.2]: https://github.com/luisten/ferry-messenger/compare/v1.1...v1.2

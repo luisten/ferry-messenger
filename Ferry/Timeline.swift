@@ -26,6 +26,8 @@ nonisolated enum MessageKind: Equatable, Sendable {
     static let unsupportedKey = "fi.ferry.unsupported"
     /// The text sent with a share (`IGAdapter.share`): a story reply, or a story reaction's emoji.
     static let shareTextKey = "fi.ferry.share_text"
+    /// A sticker from Instagram's GIPHY picker: an animated image (`MediaInfo.isAnimated`) shown as a sticker.
+    static let stickerKey = "fi.ferry.sticker"
 
     /// `other`: anything shared that isn't a reel, post or story (a profile, music…); the bridge can't fetch it.
     enum ShareType: String, Sendable { case reel, post, story, other }
@@ -47,6 +49,7 @@ nonisolated enum MessageKind: Equatable, Sendable {
         }
         let body = content["body"]?.string ?? ""
         switch content["msgtype"]?.string {
+        case "m.image" where content[Self.stickerKey] != nil: self = .sticker
         case "m.image": self = share.map { .share($0, .ready) } ?? (content["info"]?["fi.mau.gif"]?.bool == true ? .gif : .image)
         case "m.video": self = share.map { .share($0, .ready) } ?? .video
         case "m.audio": self = content["org.matrix.msc3245.voice"] != nil ? .voice : .audio
@@ -132,6 +135,8 @@ nonisolated struct MediaInfo: Equatable, Sendable {
     var externalURL: URL?
     /// Photos and videos sent together, each its own content (`IGAdapter.album`); empty for one.
     var album: [JSON]
+    /// A GIF, or a sticker from Instagram's GIPHY picker: plays like one (`info.fi.mau.gif`).
+    var isAnimated: Bool
 
     static let albumKey = "fi.ferry.album"
 
@@ -147,6 +152,7 @@ nonisolated struct MediaInfo: Equatable, Sendable {
         thumbnailURL = info?["thumbnail_url"]?.string
         externalURL = content["external_url"]?.string.flatMap(URL.init(string:))
         album = content[Self.albumKey]?.array ?? []
+        isAnimated = info?["fi.mau.gif"]?.bool == true
     }
 
     var isVideo: Bool { msgtype == "m.video" }
@@ -293,6 +299,10 @@ nonisolated struct Message: Identifiable, Equatable, Sendable {
 
     /// What was sent with a shared story (a reply, a reaction's emoji), shown under its card.
     var shareText: String? { content[MessageKind.shareTextKey]?.string }
+
+    /// Ours, sent from this device and not back from Instagram yet. Our own message from Instagram's app or website
+    /// arrives as an event, like theirs.
+    var isLocalEcho: Bool { id.hasPrefix("txn:") }
 
     enum Status: Equatable, Sendable {
         /// Local echo, request in flight.
@@ -453,6 +463,12 @@ nonisolated enum Timeline {
                 .sorted { ($0.value.ts, $0.key) < ($1.value.ts, $1.key) }.map(\.key)
         }
         return messages
+    }
+
+    /// The jump-to-newest button's count: messages from others (no chat events or tombstones) newer than `ms`, the
+    /// newest message's time when the button appeared.
+    static func newCount(_ messages: [Message], after ms: Int64) -> Int {
+        messages.count { !$0.isOwn && !$0.kind.isChatEvent && $0.kind != .unsent && $0.ts > ms }
     }
 
     /// "Seen by Maya", "Seen by Maya and Sam", "Seen by Maya, Sam + 2", or "Seen by everyone" once all of three or

@@ -35,6 +35,10 @@ struct ThreadView: View {
     @State private var pin = BottomPin()
     /// The thread is invisible until the bottom pin has landed after the push (`revealWhenSettled`).
     @State private var revealed = false
+    /// The jump-to-newest button (`updateJump`), and the newest message's time when it appeared: what's newer is its
+    /// count.
+    @State private var jumpShown = false
+    @State private var jumpSince: Int64?
     /// How far we'd read when the chat opened unread (our `m.read`, ms), taken once before our "Seen" moves it: the
     /// "New messages" line goes after it (`Timeline.layout`).
     @State private var unreadAfter: Int64?
@@ -66,7 +70,11 @@ struct ThreadView: View {
         }
         let actions = actions(room)
         let rows = Timeline.layout(messages, isGroup: isGroup, unreadAfter: unreadAfter)
-        let unreadLine = rows.first(where: \.startsUnread)?.id
+        // Held at the top: the last message read, then the "New messages" line, for context (the user's call, 2026-10-21).
+        let lineIndex = rows.firstIndex(where: \.startsUnread)
+        let unreadLine = lineIndex.map { rows[max($0 - 1, 0)].id }
+        let context = lineIndex.flatMap { $0 > 0 ? rows[$0 - 1].id : nil }
+        let newBelow = jumpSince.map { Timeline.newCount(messages, after: $0) } ?? 0
         let seen = isGroup ? messages.first { !$0.seenBy.isEmpty } : nil
         // Everyone but us and its sender: "Seen by everyone".
         let seenLine = seen.flatMap { seen in
@@ -84,15 +92,17 @@ struct ThreadView: View {
                             .padding(.top, row.spacing)
                             .background(highlighted == row.id ? Color.secondary.opacity(0.15) : .clear)
                             .id(row.id)
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { pin.heights[row.id] = $0 }
                             // New messages rise into place; under Reduce Motion they fade in (DESIGN §9).
                             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                     }
                     if typing { TypingBubble().padding(.top, 10).padding(.leading, isGroup ? MessageRow.groupIndent : 0) }
-                    Color.clear.frame(height: 1).id(Self.bottom)
+                    // The list's bottom margin, so a scroll to the end shows it: as a 1 pt marker above an 8 pt padding,
+                    // the newest message sat flush on the composer after every open (QA 2026-10-20).
+                    Color.clear.frame(height: 9).id(Self.bottom)
                 }
                 .environment(\.autoplaysGIFs, !Inbox.isRequest(room))
                 .padding(.horizontal, 12)
-                .padding(.bottom, 8)
                 // Only the newest message animates. An older page (loaded on every open while the top spinner shows)
                 // bounced the whole thread when it arrived just after the push.
                 .animation(reduceMotion ? .easeInOut(duration: 0.2) : .bouncy(duration: 0.45, extraBounce: 0.05), value: messages.last?.id)
@@ -114,32 +124,75 @@ struct ThreadView: View {
                     pin.holdsLine = false
                 }
                 pin.followsEnd = phase == .idle && ScrollEdge(context.geometry).distanceFromEnd < 60
+                if phase == .idle { updateJump(ScrollEdge(context.geometry), atRest: true) }
             }
             .onScrollGeometryChange(for: ScrollEdge.self) { ScrollEdge($0) } action: { old, new in
                 // A chat that opened unread holds its "New messages" line at the top instead, until the user scrolls;
                 // when what's new fits, the line can't reach the top and this lands on the end anyway.
+                pin.edge = new
                 let line = pin.holdsLine ? unreadLine : nil
-                if !revealed { revealWhenSettled(new, onLine: line != nil) }
+                if !revealed {
+                    revealWhenSettled(new, onLine: line != nil, context: context.flatMap { pin.heights[$0] } ?? 0, proxy: proxy)
+                }
+                updateJump(new, atRest: false)
                 guard line != nil || pin.followsEnd, new.container != old.container || new.content != old.content else { return }
                 let (target, anchor) = line.map { ($0, UnitPoint.top) } ?? (Self.bottom, .bottom)
                 proxy.scrollTo(target, anchor: anchor)
                 // Mid-push the scroll view can drop a scroll made in the same update (#17): repeat it after.
                 Task { proxy.scrollTo(target, anchor: anchor) }
             }
+            .overlay(alignment: .bottomTrailing) {  // above the composer (its inset) and the keyboard
+                VStack {
+                    if jumpShown {
+                        Button {
+                            pin.holdsLine = false
+                            pin.followsEnd = true  // a scroll made here goes through no phase change that would say so
+                            jumpShown = false
+                            jumpSince = nil
+                            withAnimation(reduceMotion ? nil : .smooth) { proxy.scrollTo(Self.bottom, anchor: .bottom) }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.down").font(.body.weight(.semibold))
+                                if newBelow > 0 {
+                                    Text(newBelow > 99 ? "99+" : "\(newBelow)").font(.subheadline.weight(.semibold)).monospacedDigit()
+                                }
+                            }
+                            .foregroundStyle(Color.primary)  // chrome: never the account's colour, no red badge
+                            .padding(.horizontal, newBelow > 0 ? 14 : 0)
+                            .frame(minWidth: 44, minHeight: 44).contentShape(.capsule)
+                        }
+                        .buttonStyle(.plain)
+                        .glassEffect(.regular.interactive(), in: .capsule)  // a circle until there's a count
+                        .accessibilityLabel("Jump to newest message")
+                        .accessibilityValue(newBelow > 0 ? "\(newBelow) new message\(newBelow == 1 ? "" : "s")" : "")
+                        .accessibilityIdentifier("thread.jump")
+                        .transition(reduceMotion ? .opacity : .scale(scale: 0.8).combined(with: .opacity))
+                    }
+                }
+                .padding(.trailing, 12)
+                .padding(.bottom, 8)
+                .animation(.easeOut(duration: 0.2), value: jumpShown)
+            }
             .opacity(revealed ? 1 : 0)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: revealed)
             .task {  // never left hidden
                 try? await Task.sleep(for: .seconds(1))
                 revealed = true
+                if let edge = pin.edge { updateJump(edge, atRest: false) }
             }
             .onChange(of: messages.last?.id) { _, _ in
-                guard messages.last?.isOwn == true else { return }
+                // A send from here goes to the end. Ours from Instagram's app or website doesn't pull the user out of
+                // what they're reading, as theirs doesn't.
+                guard messages.last?.isLocalEcho == true else { return }
                 pin.holdsLine = false
+                pin.followsEnd = true
                 withAnimation { proxy.scrollTo(Self.bottom, anchor: .bottom) }
             }
             .onChange(of: attachment != nil) { _, shown in
                 // The bar grows the bottom inset (M7b). Added when the re-pin above never ran; not re-checked since.
                 guard shown else { return }
+                pin.holdsLine = false  // as a send does, or the next size change snaps back to the line
+                pin.followsEnd = true
                 Task {
                     try? await Task.sleep(for: .milliseconds(50))
                     withAnimation { proxy.scrollTo(Self.bottom, anchor: .bottom) }
@@ -483,9 +536,14 @@ struct ThreadView: View {
 
     private final class BottomPin {
         var followsEnd = true
-        /// Opened unread: the "New messages" line stays at the top until the user scrolls (or it turns out to fit).
+        /// Opened unread: the "New messages" line stays near the top, under the last message read, until the user
+        /// scrolls (or it turns out that what's new overflows by little, `ScrollEdge.endIsNear`).
         var holdsLine = false
+        /// Rows' heights as laid out: the last message read, held above the line for context, isn't part of what's new.
+        var heights: [String: CGFloat] = [:]
         var reveal: Task<Void, Never>?
+        /// The latest geometry, for the 1 s reveal.
+        var edge: ScrollEdge?
     }
 
     private enum ThreadSheet: Identifiable {
@@ -505,17 +563,34 @@ struct ThreadView: View {
     /// after, above the end, and the offset trails it for a few frames. The user saw both as a jump. So the thread
     /// appears only once it has stayed at its end, under the bars, for 100 ms (rows re-measure for a few frames after
     /// a scroll) with no page on its way, and at the latest after 1 s or when the user touches it. Held on the "New
-    /// messages" line, anywhere settled will do; if that's the end, what's new fit, and the thread follows its end.
-    private func revealWhenSettled(_ edge: ScrollEdge, onLine: Bool) {
+    /// messages" line, anywhere settled will do, unless what's new overflows by little (`endIsNear`): then the end
+    /// instead, so the newest message is never cut off by the composer, and the thread follows its end.
+    private func revealWhenSettled(_ edge: ScrollEdge, onLine: Bool, context: CGFloat, proxy: ScrollViewProxy) {
         pin.reveal?.cancel()
         guard onLine ? edge.topInset > 0 : edge.restsAtEnd else { return }
         pin.reveal = Task {
             try? await Task.sleep(for: .milliseconds(100))
             // A page still loading changes the geometry when it lands, which schedules this again.
             guard !Task.isCancelled, !model.paginating.contains(roomID) else { return }
+            if onLine, edge.endIsNear(above: context) {
+                pin.holdsLine = false
+                proxy.scrollTo(Self.bottom, anchor: .bottom)
+                if !edge.restsAtEnd { return }  // the scroll's geometry schedules this again, at the end
+            }
             revealed = true
-            if edge.restsAtEnd { pin.holdsLine = false }
+            updateJump(edge, atRest: false)
         }
+    }
+
+    /// DESIGN §5 T1's scroll-to-bottom button. It shows once the thread has appeared away from its end: held on the
+    /// "New messages" line, or where the user's scroll came to rest. Never mid-scroll or while the pin catches up (the
+    /// keyboard, a row growing), and it hides as soon as the end is close. It counts what others send meanwhile
+    /// (`Timeline.newCount`): nothing scrolls when they do, so the count is the only sign below the fold.
+    private func updateJump(_ edge: ScrollEdge, atRest: Bool) {
+        let shown = revealed && edge.distanceFromEnd > 60 && (jumpShown || pin.holdsLine || atRest)
+        guard shown != jumpShown else { return }
+        jumpShown = shown
+        jumpSince = shown ? model.room(roomID)?.lastActivity : nil
     }
 
     /// What the bottom pin reads from the scroll geometry. The offset and top inset are part of the value, so the
@@ -539,9 +614,14 @@ struct ThreadView: View {
         /// 26.4, so its re-pin never ran (ThreadScrollTests).
         var distanceFromEnd: CGFloat { content - container - topInset - offset }
 
-        /// At the end (give or take the list's 8 pt bottom padding) with the navigation bar's inset in place: mid-push,
-        /// before the insets arrive, the thread is also at its end, and then jumps.
+        /// At the end (give or take a few points while rows re-measure) with the navigation bar's inset in place:
+        /// mid-push, before the insets arrive, the thread is also at its end, and then jumps.
         var restsAtEnd: Bool { topInset > 0 && distanceFromEnd < 20 }
+
+        /// Held on the "New messages" line, how far below the end is, less the `context` message held above the line,
+        /// i.e. how much that's new doesn't fit: up to a quarter of the screen opens at the end instead (the line and a
+        /// bubble or two go under the header; the user saw the newest message cut off by the composer, 2026-10-20).
+        func endIsNear(above context: CGFloat) -> Bool { distanceFromEnd - context <= container / 4 }
     }
 
     /// "Kivo" for the ghost named "Kivo Studio". Without a member event: their ghost profile, the room name in a DM

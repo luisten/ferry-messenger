@@ -123,8 +123,16 @@ recipient, no groups.
   semibold), "@handle" in a DM (when known) or "N members" in a group, the AccountTag, 22 pt above and 20 pt below;
   "You're messaging from X." only while the chat has no messages (otherwise the composer says it). Opens on the newest
   message (also the first open after launch) and stays on it as rows, the keyboard or the typing bubble change its size,
-  until you scroll up. When what's new doesn't fit, it opens with the "New messages" line at the top instead and holds
-  it there the same way until you scroll, reply or tap a quote. The bubbles appear (a 0.15 s fade, none under Reduce
+  until you scroll up. When what's new overflows the screen by more than a quarter of it, it opens with the "New
+  messages" line near the top instead, under the last message you'd read, and holds it there the same way until you scroll, reply, attach or tap a quote; by
+  less, it opens at the end (the line goes under the header), so the newest message is never cut off by the composer.
+  A **jump-to-newest button** (44 pt glass circle, `chevron.down`, never the account's colour; "Jump to newest
+  message") sits bottom-right above the composer and keyboard while the thread rests away from its end: held on the
+  line, or after a scroll that stopped more than 60 pt up. It hides near the end; a tap goes there (animated, not
+  under Reduce Motion), as does a send from this device (our own message sent from Instagram's app or website doesn't
+  move the thread). Nothing scrolls when a message arrives while you're up the thread: the button counts what
+  others have sent since it appeared (not chat events; a capsule with the number, monospaced, "99+" at most, no red
+  badge; VoiceOver "3 new messages"); a chat that opens on the line starts with no count. The bubbles appear (a 0.15 s fade, none under Reduce
   Motion) only once the thread rests there under the bars with no older page loading, so the push never shows it
   jumping; at the latest after 1 s or on touch. Only a new last message animates; older pages land without animation.
 - **Groups:** the sender's display name (`.caption`, grey: never an account
@@ -202,13 +210,14 @@ Footer: "To add or remove people, use Instagram." No other actions on members.
 | Post / other share | Author, image, two caption lines | Open in Instagram |
 | Photo | Up to 240×320 | M2 |
 | Photos sent together (one message; videos mixed in alike) | A pile: the first on top at a photo's size, up to four more tilted behind it (±3°, ±6°), "3 photos" on it; only those previews load. One menu and one row of reactions for the set | Unfolds in place into a card each, stacked like a run, each opening on its own (M2 / M1), and "Show less" under them folds it back. While "Share All" downloads, the pile shows the ring and a tap cancels |
-| GIF (Instagram's `GIFS`) | Up to 240×320 (its WebP, downloaded as it appears, like a photo; Instagram's still preview first when it sends one). Plays three times the first time it's on screen in a launch, then rests on its first frame with a play button (the video card's) that plays it once more. In a request, or under Reduce Motion, only the button. In the inbox, "GIF" | M2 (first frame) |
+| GIF (Instagram's `GIFS`, and `INSTAGRAM_MESSAGING_ANIMATED_IMAGE` from its GIPHY picker) | Up to 240×320 (its WebP, downloaded as it appears, like a photo; Instagram's still preview first when it sends one). Plays three times the first time it's on screen in a launch, then rests on its first frame with a play button (the video card's) that plays it once more. In a request, or under Reduce Motion, only the button. In the inbox, "GIF" | M2 (first frame) |
+| Sticker (the GIPHY picker's, `is_sticker`) | Like a GIF, up to 140×140 with no grey behind it, but plays on a loop each time it's on screen, as in Instagram (in a request or under Reduce Motion, the button only, once). In the inbox, "Sticker" | M2 (first frame) |
 | Voice (`m.audio` + voice flag) | Play/pause, static bars (drag to seek), 1×/1.5×/2×, duration; our own while sending: the upload ring in the play circle; after a failed play "Can't play" and a retry arrow in the circle (a tap retries) | Plays in the bubble (AVPlayer on Instagram's `.mp4`, or our own `.m4a`) |
 | Video (not a share) | Like a reel without author: Instagram's preview image, duration pill; ours while sending: the upload ring | Download (ring, tap cancels) → M1 |
 | Link preview | Text with a preview card | Opens the link |
 
 View-once photos show a "View-once photo · Open Instagram to view it" card; other kinds the app doesn't show
-(view-once videos, stickers, polls and the like) are chat events (Thread): "Sam sent a message Ferry can't show. Open
+(view-once videos, polls and the like) are chat events (Thread): "Sam sent a message Ferry can't show. Open
 Instagram to see it."
 
 - **M1 player:** full screen, one video, loops; swipe down or up (or ✕) returns to the chat. Mute, scrubber (only once

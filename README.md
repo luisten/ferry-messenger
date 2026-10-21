@@ -42,6 +42,9 @@ server and no account to create: nothing sits between you and Instagram.
 - **Instagram's end-to-end encrypted chats** can't be shown; open those in Instagram.
 - **It's unofficial.** Instagram can change how its website works, and it may ask you to confirm a new login in the
   Instagram app. Do your first logins on your home Wi-Fi.
+- **A very small risk to your account.** Instagram doesn't approve of unofficial apps, and it can restrict or ban
+  accounts it thinks are automated. Ferry Messenger uses Instagram the way its website does, from your own phone and
+  only while the app is open, so the risk is very small, but it isn't zero.
 
 Ferry Messenger is not affiliated with Instagram or Meta.
 

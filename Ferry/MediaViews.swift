@@ -306,7 +306,8 @@ private struct PostCard: View {
 }
 
 /// DESIGN §6.5: a photo, aspect-fit up to 240×320; tap → M2. A GIF plays three times, then rests on its first frame
-/// with a play button that plays it once more (no autoplay in requests or under Reduce Motion: the button only).
+/// with a play button that plays it once more; a sticker plays on a loop (no autoplay in requests or under Reduce
+/// Motion: the button only).
 private struct PhotoCard: View {
     @Environment(AppModel.self) private var model
     let message: Message
@@ -322,7 +323,12 @@ private struct PhotoCard: View {
         let uploading = message.txnID.flatMap { model.uploads[$0] }
         Button { actions.openMedia(message) } label: {
             Group {
-                if message.kind == .gif { AnimatedThumbnail(info: info, pixels: Int(max(size.width, size.height) * 3), clip: $gif, play: $gifPlay) }
+                if info.isAnimated {
+                    // A sticker's mailbox copy has no media yet: grey, not an empty gap, until the thread is read.
+                    AnimatedThumbnail(info: info, pixels: Int(max(size.width, size.height) * 3),
+                                      placeholder: sticker && info.url != nil ? .clear : Color(.systemGray5), loops: sticker,
+                                      clip: $gif, play: $gifPlay)
+                }
                 else { MXCThumbnail(mxc: info.url, pixels: Int(max(size.width, size.height) * 3), placeholder: sticker ? .clear : Color(.systemGray5)) }
             }
                 .frame(width: size.width, height: size.height)
@@ -342,7 +348,7 @@ private struct PhotoCard: View {
                         .mediaGlass(in: .circle)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Play GIF")
+                .accessibilityLabel(sticker ? "Play sticker" : "Play GIF")
                 .accessibilityIdentifier("media.gifPlay")
             }
         }
@@ -352,31 +358,41 @@ private struct PhotoCard: View {
     }
 
     static func fit(_ info: MediaInfo, max box: CGSize) -> CGSize {
-        guard let width = info.width, let height = info.height, width > 0, height > 0 else { return CGSize(width: 200, height: 200) }
+        guard let width = info.width, let height = info.height, width > 0, height > 0 else {
+            return CGSize(width: min(200, box.width), height: min(200, box.height))
+        }
         let scale = min(box.width / width, box.height / height)
         return CGSize(width: width * scale, height: height * scale)
     }
 }
 
 /// A GIF: its still preview when Instagram sent one, then the GIF itself, downloaded as it appears (like a photo) and
-/// played from `play`. Our own GIF on its way up shows its seeded preview.
+/// played from `play`, in the preview's place (a sticker's clear parts would show it). Our own GIF on its way up shows
+/// its seeded preview.
 private struct AnimatedThumbnail: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.autoplaysGIFs) private var autoplays
     let info: MediaInfo
     let pixels: Int
+    var placeholder = Color(.systemGray5)
+    /// Plays on and on instead of three times, each time it's on screen: stickers, as in Instagram (the user's call,
+    /// 2026-10-21).
+    var loops = false
     @Binding var clip: AnimatedFrames.Clip?
     @Binding var play: GIFPlay?
 
     var body: some View {
-        MXCThumbnail(mxc: info.thumbnailURL ?? (PhotoMessage.isLocal(info.url) ? info.url : nil), pixels: pixels)
+        Color.clear  // the card's size; what fills it overflows (scaledToFill)
             .overlay {
                 if let clip {
                     TimelineView(.animation(paused: play == nil)) { context in
                         let index = play.flatMap { clip.frame(at: context.date.timeIntervalSince($0.start), loops: $0.loops) } ?? 0
                         Image(uiImage: clip.frames[index]).resizable().scaledToFill()
                     }
+                } else {
+                    MXCThumbnail(mxc: info.thumbnailURL ?? (PhotoMessage.isLocal(info.url) ? info.url : nil), pixels: pixels,
+                                 placeholder: placeholder)
                 }
             }
             .clipped()
@@ -386,12 +402,12 @@ private struct AnimatedThumbnail: View {
                       let loaded = await AnimatedFrames.clip(file) else { return }
                 clip = loaded
                 // Three plays the first time it's on screen this launch, so scrolling back doesn't start it again.
-                if autoplays, !reduceMotion, loaded.frames.count > 1, model.media.playedGIFs.insert(url).inserted {
-                    play = GIFPlay(start: .now, loops: GIFPlay.autoplayLoops)
+                if autoplays, !reduceMotion, loaded.frames.count > 1, loops || model.media.playedGIFs.insert(url).inserted {
+                    play = GIFPlay(start: .now, loops: loops ? GIFPlay.forever : GIFPlay.autoplayLoops)
                 }
             }
             .task(id: play) {  // then it rests on its first frame
-                guard let play, let clip else { return }
+                guard let play, let clip, play.loops != GIFPlay.forever else { return }
                 try? await Task.sleep(for: .seconds(clip.duration * Double(play.loops)))
                 if !Task.isCancelled { self.play = nil }
             }
@@ -401,6 +417,8 @@ private struct AnimatedThumbnail: View {
 /// A GIF playing: since when, and how many times in a row.
 struct GIFPlay: Equatable {
     static let autoplayLoops = 3
+    /// A sticker's: it never rests (`Clip.frame(at:loops:)` reads it as a duration only in `Double`).
+    static let forever = Int.max
     var start: Date
     var loops: Int
 }

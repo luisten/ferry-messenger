@@ -1,0 +1,109 @@
+{
+ "mailbox_receiver": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Sticker",
+    "fi.ferry.sticker": true,
+    "info": {
+     "fi.mau.gif": true,
+     "mimetype": "image/webp"
+    },
+    "msgtype": "m.image"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyni0CFVmhWfs7XoMUS",
+   "sender": "@ig_17841400000000301",
+   "origin_server_ts": 1792510999894
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "GIF",
+    "info": {
+     "fi.mau.gif": true,
+     "mimetype": "image/webp"
+    },
+    "msgtype": "m.image"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyni0ChdGhWftXqTXlZ",
+   "sender": "@ig_17841400000000301",
+   "origin_server_ts": 1792511007092
+  }
+ ],
+ "mailbox_sender": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Sticker",
+    "fi.ferry.sticker": true,
+    "info": {
+     "fi.mau.gif": true,
+     "mimetype": "image/webp"
+    },
+    "msgtype": "m.image"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyni0CFVmhWfs7XoMUS",
+   "sender": "@me",
+   "origin_server_ts": 1792510999894
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "GIF",
+    "info": {
+     "fi.mau.gif": true,
+     "mimetype": "image/webp"
+    },
+    "msgtype": "m.image"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyni0ChdGhWftXqTXlZ",
+   "sender": "@me",
+   "origin_server_ts": 1792511007092
+  }
+ ],
+ "thread": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Sticker",
+    "fi.ferry.sticker": true,
+    "info": {
+     "fi.mau.gif": true,
+     "h": 200,
+     "mimetype": "image/webp",
+     "thumbnail_url": "https://scontent.example.invalid/v/a001.webp",
+     "w": 233
+    },
+    "msgtype": "m.image",
+    "url": "https://scontent.example.invalid/v/a001.webp"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyni0CFVmhWfs7XoMUS",
+   "sender": "@me",
+   "origin_server_ts": 1792510999894,
+   "unsigned": {
+    "transaction_id": "7518336054787622162"
+   }
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "GIF",
+    "info": {
+     "fi.mau.gif": true,
+     "h": 200,
+     "mimetype": "image/webp",
+     "thumbnail_url": "https://scontent.example.invalid/v/a003.webp",
+     "w": 200
+    },
+    "msgtype": "m.image",
+    "url": "https://scontent.example.invalid/v/a003.webp"
+   },
+   "event_id": "mid.$cAAAy8NQIKzyni0ChdGhWftXqTXlZ",
+   "sender": "@me",
+   "origin_server_ts": 1792511007092,
+   "unsigned": {
+    "transaction_id": "7518336085165701465"
+   }
+  }
+ ]
+}

@@ -95,7 +95,8 @@ xcrun simctl spawn $SIM log show --last 2m --predicate "subsystem == \"$APP\" AN
 
 Most run on `FERRY_DEBUG_DEMO`'s made-up accounts and chats, which never connect: nothing reaches Instagram, and the
 simulator's own accounts are left alone. They cover the inbox, an account's chip, a chat and Chat Info; Requests and a
-request thread; a group (senders named to VoiceOver, Chat Info's members); the welcome screen; New Message; the mic.
+request thread; a group (senders named to VoiceOver, Chat Info's members); where an unread chat opens and its
+jump-to-newest button; the welcome screen; New Message; the mic.
 
 These skip unless you opt in:
 
@@ -159,6 +160,8 @@ to the launch line above. They live in `Ferry/DebugFixtures.swift` and `Ferry/Ap
 | `FERRY_DEBUG_DEMO=1` | Made-up data only, for screenshots and the UI tests: two made-up accounts ("Tamo Veska", "Kivo Studio") stand in for the Keychain's and never connect, so nothing reaches Instagram; four made-up chats, a group and three requests. Identities are defaults kept in memory. With `FERRY_DEBUG_ONBOARDING=welcome` it gives a welcome screen with those accounts |
 | `FERRY_DEBUG_REQUESTS=1` | Three made-up message requests (they have no Instagram thread, and the app refuses sends to them). The Requests card shows only for requests newer than the last time Requests was opened (`requests.seen` in the app's `UserDefaults`); to see it again, run the snippet below first |
 | `FERRY_DEBUG_GROUP=1` | One made-up group, "Saturday Climbs", on the first account: four senders (one who left), a reply, a reaction. Nothing about it leaves the app |
+| `FERRY_DEBUG_GROUP_EXTRA=<n>` | n more unread messages in that group (with `FERRY_DEBUG_GROUP` or `FERRY_DEBUG_DEMO`), so what's new overflows the screen: where the thread opens and its jump-to-newest button. On an iPhone 17, 7 overflow by a little (139 pt: it opens at the end), 14 by a lot (807 pt: on the "New messages" line, with the button) |
+| `FERRY_DEBUG_GROUP_INCOMING=<seconds>` | One more made-up message arrives in that group that often while the app runs: the jump-to-newest button's count, and that nothing scrolls while you're up the thread |
 | `FERRY_DEBUG_LOGIN_STATE=<account id>=<STATE>[,…]` | Shows that account in another state (`BAD_CREDENTIALS`, `TRANSIENT_DISCONNECT`, `UNKNOWN_ERROR`); the real session is untouched |
 | `FERRY_DEBUG_ENDED_SESSION=<account id>[,…]` | Connects that account with a broken `sessionid` for this launch, so Instagram answers as it does for a session it ended (the real signed-out banner and re-login). The Keychain keeps the real cookies; a launch without it brings the account back. One rejected inbox load per launch |
 | `FERRY_DEBUG_AS_REQUEST=<room id>` | The engine treats one real chat as a request, to check with the request log that opening it sends nothing; sends to it are blocked |

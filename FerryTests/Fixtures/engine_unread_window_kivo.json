@@ -1,0 +1,85 @@
+{
+ "kind": "Room",
+ "room": "!ig-17841400000000302-1700000000000301",
+ "update": {
+  "state": {
+   "events": [
+    {
+     "type": "m.bridge",
+     "content": {
+      "channel": {
+       "displayname": "Kivo Studio",
+       "fi.mau.receiver": "17841400000000302",
+       "id": "17841400000000302"
+      },
+      "com.beeper.room_type": "dm",
+      "protocol": {
+       "displayname": "Instagram",
+       "id": "instagramgo"
+      }
+     },
+     "event_id": "$ig-m.bridge-instagram",
+     "sender": "@me",
+     "state_key": "instagram"
+    },
+    {
+     "type": "m.room.name",
+     "content": {
+      "name": "Kivo Studio"
+     },
+     "event_id": "$ig-m.room.name-",
+     "sender": "@me",
+     "state_key": ""
+    },
+    {
+     "type": "m.room.member",
+     "content": {
+      "membership": "join"
+     },
+     "event_id": "$ig-member-@me",
+     "sender": "@me",
+     "state_key": "@me"
+    }
+   ]
+  },
+  "timeline": {
+   "events": [
+    {
+     "type": "m.room.message",
+     "content": {
+      "body": "P0 capture: back",
+      "msgtype": "m.text"
+     },
+     "event_id": "mid.$cAAAy8NQIKzyndxiw-GhRdNmpwFAq",
+     "sender": "@ig_17841400000000301",
+     "origin_server_ts": 1792172845304
+    }
+   ],
+   "limited": true,
+   "prev_batch": "AQHT2CN9EA8VJcjwT1Fst1JqgbSd6lxceyPUcoOk9rp-Z0O6V0H4LHq8UJxzNMFh22n9eiEu9ioZNhWmgonW1bqyWAqkIaraSKMuSoWPUprcx7kyAqj0VAtYheesO0uDxgvC"
+  },
+  "ephemeral": {
+   "events": [
+    {
+     "type": "m.receipt",
+     "content": {
+      "mid.$cAAAy8NQIKzyndxiw-GhRdNmpwFAq": {
+       "m.read": {
+        "@ig_17841400000000301": {
+         "ts": 1792172845304
+        },
+        "@me": {
+         "ts": 1792115019051
+        }
+       }
+      }
+     }
+    }
+   ]
+  },
+  "unread_notifications": {
+   "notification_count": 1,
+   "highlight_count": 0
+  }
+ }
+}
