@@ -169,13 +169,13 @@ recipient, no groups.
   the link back, ≤ 20 MB) and goes as that GIF; anything that doesn't load as an animated image goes as the link.
   Links to GIFs that others send stay links (the user's call: no fetching what someone else linked). No GIF search
   (no outside service).
-- **Voice notes:** touch and hold the mic: after 0.3 s it records (AAC `.m4a`, mono, 44.1 kHz) with a red dot, the
-  time and a level meter; lift to send (a reply when replying); slide left 120 pt to cancel at once ("Cancelled",
-  medium haptic); at 5 min it sends by itself. A quick tap only turns the field's placeholder into "Hold to record" for
-  2 s (no microphone prompt, nothing over the thread); under 1 s it's dropped with the same hint. Sent to Instagram as a voice clip
-  (`audio/mp4`, no waveform). The first hold asks for the microphone;
-  when it's off, an alert explains and opens Settings. VoiceOver: activate to start, again to send, or the "Cancel
-  recording" action.
+- **Voice notes:** touch and hold the mic: after 0.3 s it records (AAC `.m4a`, mono, 44.1 kHz; the microphone gets ready
+  from the touch, unless another app is playing audio) with a red dot, the time and a level meter; lift to send (a reply
+  when replying); slide left 120 pt to cancel at once ("Cancelled", medium haptic); at 5 min it sends by itself. A quick
+  tap only turns the field's placeholder into "Hold to record" for 2 s (no microphone prompt, nothing over the thread);
+  under 1 s it's dropped with the same hint. Sent to Instagram as a voice clip (`audio/mp4`, no waveform). The first
+  hold asks for the microphone; when it's off, an alert explains and opens Settings. VoiceOver: activate to start, again
+  to send, or the "Cancel recording" action.
 - Photos, videos and voice notes aren't offered while editing or in requests (`AppModel.sendMedia` refuses them
   there too).
 - **Signed-out account:** the composer is replaced by "X is signed out" + "Log in again".

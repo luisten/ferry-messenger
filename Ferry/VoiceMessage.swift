@@ -149,6 +149,7 @@ final class VoiceRecorder {
         pressedAt = .now
         slide = 0
         startTicker()
+        prepare(warmUp: true)
     }
 
     func drag(_ translation: Double) {
@@ -237,7 +238,27 @@ final class VoiceRecorder {
             permissionDenied = true
             return
         }
+        prepare(warmUp: false)
+        guard let recorder, recorder.record() else {
+            discardRecording()
+            endHold()
+            return showHint("Couldn't start recording")
+        }
+        recording()
+    }
+
+    /// The audio session and a recorder ready to go: on touch-down (`warmUp`), so they're set up while `Hold` waits to
+    /// tell a hold from a tap, and the hold only has to start it (a hold took 690 ms to record here, 366 ms of it this
+    /// setup, the user found it slow on the phone, 2026-10-21). Not for a tap's sake: never without the microphone
+    /// granted (no prompt on a tap), and not while another app plays audio, which activating the session would pause.
+    /// A tap's recorder never records; `discardRecording` drops it.
+    private func prepare(warmUp: Bool) {
+        guard recorder == nil, AVAudioApplication.shared.recordPermission == .granted else { return }
+        #if DEBUG
+        if DebugFixtures.voiceFile != nil { return }
+        #endif
         let session = AVAudioSession.sharedInstance()
+        if warmUp && session.isOtherAudioPlaying { return }
         savedSession = (session.category, session.mode, session.categoryOptions)
         do {
             try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
@@ -245,13 +266,10 @@ final class VoiceRecorder {
             let file = URL.temporaryDirectory.appending(path: "voice-\(UUID().uuidString).m4a")
             let recorder = try AVAudioRecorder(url: file, settings: Self.settings)
             recorder.isMeteringEnabled = true
-            guard recorder.record() else { throw CocoaError(.fileWriteUnknown) }
+            guard recorder.prepareToRecord() else { throw CocoaError(.fileWriteUnknown) }
             self.recorder = recorder
-            recording()
         } catch {
             restoreSession()
-            endHold()
-            showHint("Couldn't start recording")
         }
     }
 

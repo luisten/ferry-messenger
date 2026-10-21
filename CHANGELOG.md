@@ -19,6 +19,8 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 - A chat with a few new messages could open with the newest one partly hidden behind the message field. It now opens
   at the bottom unless there's a lot that's new. Then it opens at "New messages", with the last message you'd read
   above it, and the new button takes you down.
+- Holding the mic took a noticeable moment before it started recording a voice message. It now gets ready as soon as
+  you touch it, so recording starts sooner.
 - A chat with new messages could open without the "New messages" line.
 - A message you sent from Instagram's own app pulled the open chat down to the newest message, even while you were
   reading further up. Only what you send from Ferry Messenger does that now.
