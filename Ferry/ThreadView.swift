@@ -70,7 +70,10 @@ struct ThreadView: View {
         }
         let actions = actions(room)
         let rows = Timeline.layout(messages, isGroup: isGroup, unreadAfter: unreadAfter)
-        let unreadLine = rows.first(where: \.startsUnread)?.id
+        // Held at the top: the last message read, then the "New messages" line, for context (the user's call, 2026-10-21).
+        let lineIndex = rows.firstIndex(where: \.startsUnread)
+        let unreadLine = lineIndex.map { rows[max($0 - 1, 0)].id }
+        let context = lineIndex.flatMap { $0 > 0 ? rows[$0 - 1].id : nil }
         let newBelow = jumpSince.map { Timeline.newCount(messages, after: $0) } ?? 0
         let seen = isGroup ? messages.first { !$0.seenBy.isEmpty } : nil
         // Everyone but us and its sender: "Seen by everyone".
@@ -89,6 +92,7 @@ struct ThreadView: View {
                             .padding(.top, row.spacing)
                             .background(highlighted == row.id ? Color.secondary.opacity(0.15) : .clear)
                             .id(row.id)
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { pin.heights[row.id] = $0 }
                             // New messages rise into place; under Reduce Motion they fade in (DESIGN §9).
                             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                     }
@@ -127,7 +131,9 @@ struct ThreadView: View {
                 // when what's new fits, the line can't reach the top and this lands on the end anyway.
                 pin.edge = new
                 let line = pin.holdsLine ? unreadLine : nil
-                if !revealed { revealWhenSettled(new, onLine: line != nil, proxy: proxy) }
+                if !revealed {
+                    revealWhenSettled(new, onLine: line != nil, context: context.flatMap { pin.heights[$0] } ?? 0, proxy: proxy)
+                }
                 updateJump(new, atRest: false)
                 guard line != nil || pin.followsEnd, new.container != old.container || new.content != old.content else { return }
                 let (target, anchor) = line.map { ($0, UnitPoint.top) } ?? (Self.bottom, .bottom)
@@ -530,9 +536,11 @@ struct ThreadView: View {
 
     private final class BottomPin {
         var followsEnd = true
-        /// Opened unread: the "New messages" line stays at the top until the user scrolls (or it turns out that what's
-        /// new overflows by little, `ScrollEdge.endIsNear`).
+        /// Opened unread: the "New messages" line stays near the top, under the last message read, until the user
+        /// scrolls (or it turns out that what's new overflows by little, `ScrollEdge.endIsNear`).
         var holdsLine = false
+        /// Rows' heights as laid out: the last message read, held above the line for context, isn't part of what's new.
+        var heights: [String: CGFloat] = [:]
         var reveal: Task<Void, Never>?
         /// The latest geometry, for the 1 s reveal.
         var edge: ScrollEdge?
@@ -557,14 +565,14 @@ struct ThreadView: View {
     /// a scroll) with no page on its way, and at the latest after 1 s or when the user touches it. Held on the "New
     /// messages" line, anywhere settled will do, unless what's new overflows by little (`endIsNear`): then the end
     /// instead, so the newest message is never cut off by the composer, and the thread follows its end.
-    private func revealWhenSettled(_ edge: ScrollEdge, onLine: Bool, proxy: ScrollViewProxy) {
+    private func revealWhenSettled(_ edge: ScrollEdge, onLine: Bool, context: CGFloat, proxy: ScrollViewProxy) {
         pin.reveal?.cancel()
         guard onLine ? edge.topInset > 0 : edge.restsAtEnd else { return }
         pin.reveal = Task {
             try? await Task.sleep(for: .milliseconds(100))
             // A page still loading changes the geometry when it lands, which schedules this again.
             guard !Task.isCancelled, !model.paginating.contains(roomID) else { return }
-            if onLine, edge.endIsNear {
+            if onLine, edge.endIsNear(above: context) {
                 pin.holdsLine = false
                 proxy.scrollTo(Self.bottom, anchor: .bottom)
                 if !edge.restsAtEnd { return }  // the scroll's geometry schedules this again, at the end
@@ -610,10 +618,10 @@ struct ThreadView: View {
         /// mid-push, before the insets arrive, the thread is also at its end, and then jumps.
         var restsAtEnd: Bool { topInset > 0 && distanceFromEnd < 20 }
 
-        /// Held on the "New messages" line, how far below the end is, i.e. how much that's new doesn't fit: up to a
-        /// quarter of the screen opens at the end instead (the line and a bubble or two go under the header; the user
-        /// saw the newest message cut off by the composer, 2026-10-20).
-        var endIsNear: Bool { distanceFromEnd <= container / 4 }
+        /// Held on the "New messages" line, how far below the end is, less the `context` message held above the line,
+        /// i.e. how much that's new doesn't fit: up to a quarter of the screen opens at the end instead (the line and a
+        /// bubble or two go under the header; the user saw the newest message cut off by the composer, 2026-10-20).
+        func endIsNear(above context: CGFloat) -> Bool { distanceFromEnd - context <= container / 4 }
     }
 
     /// "Kivo" for the ghost named "Kivo Studio". Without a member event: their ghost profile, the room name in a DM

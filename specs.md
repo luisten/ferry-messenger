@@ -124,7 +124,7 @@ recipient, no groups.
   "You're messaging from X." only while the chat has no messages (otherwise the composer says it). Opens on the newest
   message (also the first open after launch) and stays on it as rows, the keyboard or the typing bubble change its size,
   until you scroll up. When what's new overflows the screen by more than a quarter of it, it opens with the "New
-  messages" line at the top instead and holds it there the same way until you scroll, reply, attach or tap a quote; by
+  messages" line near the top instead, under the last message you'd read, and holds it there the same way until you scroll, reply, attach or tap a quote; by
   less, it opens at the end (the line goes under the header), so the newest message is never cut off by the composer.
   A **jump-to-newest button** (44 pt glass circle, `chevron.down`, never the account's colour; "Jump to newest
   message") sits bottom-right above the composer and keyboard while the thread rests away from its end: held on the

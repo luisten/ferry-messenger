@@ -73,10 +73,12 @@ final class ThreadRevealTests: XCTestCase {
     /// quarter of the screen; otherwise it opens at the end, the newest message whole (2026-10-20: the user saw it cut
     /// off by the composer). Geometry logged with the line held (`FERRY_DEBUG_GROUP_EXTRA=7`: 207 pt below).
     func testHeldLineGivesWayWhenLittleIsBelow() {
-        XCTAssertFalse(edge(offset: 564.67, content: 1554, container: 666, insets: bars).endIsNear)  // 207 pt: holds
-        XCTAssertTrue(edge(offset: 607, content: 1554, container: 666, insets: bars).endIsNear)  // 165 pt: the end
-        XCTAssertTrue(edge(offset: 757, content: 1554, container: 666, insets: bars).endIsNear)  // 15 pt: the end
-        XCTAssertTrue(edge(offset: -116, content: 300, container: 666, insets: bars).endIsNear)  // it all fits
+        XCTAssertFalse(edge(offset: 564.67, content: 1554, container: 666, insets: bars).endIsNear(above: 0))  // 207 pt: holds
+        XCTAssertTrue(edge(offset: 607, content: 1554, container: 666, insets: bars).endIsNear(above: 0))  // 165 pt: the end
+        XCTAssertTrue(edge(offset: 757, content: 1554, container: 666, insets: bars).endIsNear(above: 0))  // 15 pt: the end
+        XCTAssertTrue(edge(offset: -116, content: 300, container: 666, insets: bars).endIsNear(above: 0))  // it all fits
+        // Held under the last message read (70 pt) for context: 207 pt below, of which 137 is new, opens at the end.
+        XCTAssertTrue(edge(offset: 564.67, content: 1554, container: 666, insets: bars).endIsNear(above: 70))
     }
 }
 

@@ -15,7 +15,8 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 ### Fixed
 
 - A chat with a few new messages could open with the newest one partly hidden behind the message field. It now opens
-  at the bottom unless there's a lot that's new, and then the new button takes you down.
+  at the bottom unless there's a lot that's new. Then it opens at "New messages", with the last message you'd read
+  above it, and the new button takes you down.
 - A chat with new messages could open without the "New messages" line.
 - A message you sent from Instagram's own app pulled the open chat down to the newest message, even while you were
   reading further up. Only what you send from Ferry Messenger does that now.
