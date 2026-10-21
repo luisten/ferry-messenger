@@ -25,7 +25,7 @@ SIM=$(xcrun simctl list devices booted | grep -oE '[0-9A-F-]{36}' | head -1)
 t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
-t test -only-testing:FerryTests              # 286 unit tests, ~3 s
+t test -only-testing:FerryTests              # 290 unit tests, ~3 s
 (cd core && go test ./...)                    # core/chat on P0's captures; -update in ./chat rewrites the golden files
 t test -only-testing:FerryUITests            # UI tests on made-up data (live ones opt-in: docs/DEVELOPMENT.md)
 t build-for-testing                           # all 3 targets
@@ -315,7 +315,10 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
 - **The thread header's toolbar caps Dynamic Type near XXL** (AX sizes grow the bubbles, not the header), so the
   AccountTag's fallback (first word, then mark) only shows for long names.
 - A `Picker(.palette)` in a `.contextMenu` keeps the menu open after a pick; add `.menuActionDismissBehavior(.enabled)`.
-  It does render as a horizontal emoji row (DESIGN §16 Q7).
+  It does render as a horizontal emoji row (DESIGN §16 Q7), drawn small: the message menu was one until 2026-10-21,
+  now it's `MessageSheet`.
+- **A `String` search never finds U+FE0F inside "❤️"** (one `Character`): compare reaction keys by scalar
+  (`Message.Reaction.same`). Instagram echoes "❤" for our "❤️".
 - **`.glassProminent` / `.borderedProminent` draw their label white whatever the tint**: with `.tint(.primary)` (white
   in dark mode) or an account ink (light in dark mode) that's white on white. Add `.labelOnTint()` after either style.
 - The app-wide `.tint(.primary)` greys out `role: .destructive` buttons with `.bordered`/`.glass` styles: add

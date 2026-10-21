@@ -556,7 +556,8 @@ final class AppModel {
     /// request (the engine refuses).
     func react(_ key: String, to message: Message, in room: Room) {
         guard let target = message.eventID else { return }
-        let remove = message.reactions.contains { $0.key == key && $0.senders.contains(me) }
+        let remove = message.reacted(key, by: me)
+        if !remove { RecentReactions.use(key) }
         perform(room) { try await IGCore.react(room.id, message: target, emoji: key, remove: remove) }
     }
 

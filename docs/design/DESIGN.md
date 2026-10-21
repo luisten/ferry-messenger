@@ -723,8 +723,9 @@ horizontally within the gallery only. Toolbar: close, Share, Save, Reply.
 - **Replies:** above the reply bubble, a caption "You replied to Maya" and a faded mini-bubble (or media thumbnail
   32×44) of the original, connected by a hairline. Tap jumps to the original and flashes it (0.6 s highlight).
 - **Swipe right on a bubble to reply [$$]**, with `.impact(.medium)` at the 60 pt threshold.
-- **Context menu (long-press):**
-  - Top: a reaction palette (❤️ 😂 😮 😢 🔥 👍 and "+"), your current reaction highlighted.
+- **Long-press sheet** (2026-10-21, was a context menu whose palette iOS draws small; the user's call):
+  - Top: one line naming the message, then a big row of the six most recent reactions and "+" (any emoji, from the
+    system emoji keyboard), your current reaction circled.
   - Reply, Copy, Edit (own text, < 15 min, < 5 edits), Unsend (own, confirmation: "Unsend message? It will be removed
     for everyone in this chat."), Save (media), Open in Instagram (shares), Report a Problem (failed sends).
   - No "Delete for me": the bridge does not support it.
@@ -1126,7 +1127,7 @@ State copy for connection problems is in §7.3.
 | Thread header | `ToolbarItem(.principal)` with one `.glassEffect(in: .capsule)`; `.scrollEdgeEffectStyle(.hard, for: .top)` | custom content | v3 |
 | Message bubble | `UnevenRoundedRectangle` background | **custom (core)** | |
 | Reactions, reply quote | overlays | **custom (small)** | |
-| Message context menu | `.contextMenu` + `Picker(.palette)` for reactions | stock | verify palette rendering in context menus on iOS 26 |
+| Message long-press sheet | `.sheet` fitted to content + an emoji-keyboard `UITextField` for "+" | stock | was `.contextMenu` + `Picker(.palette)`, drawn too small (2026-10-21) |
 | Reel / video card | `ZStack` with `AsyncImage`-like thumbnail loader, `AVPlayerLayer` view for inline | **custom (core)** [$$] | |
 | Photo / gallery | `Image`, `Grid` | custom (small) | |
 | Share cards (post/story) | `VStack` card | **custom (small)** | |
@@ -1153,7 +1154,7 @@ State copy for connection problems is in §7.3.
 |---|---|---|
 | Inline video in chat cells | Player lifecycle in a lazy stack, one-at-a-time rule, offscreen pause | Tap opens M1 directly. Keep the card identical; add inline later. |
 | Swipe-to-reply on bubbles | Conflicts with the back-swipe and scroll gestures | Reply in the context menu + double-tap configurable later. |
-| Custom tapback overlay | A floating reaction bar above a lifted bubble is a custom presentation | Stock context menu with a palette `Picker` row. |
+| Custom tapback overlay | A floating reaction bar above a lifted bubble is a custom presentation | A stock sheet with a big reaction row (was a context menu with a palette `Picker` row). |
 | Thread list performance | SwiftUI lazy stacks can stutter with long, mixed-height histories | Start with `LazyVStack`. If it stutters, wrap a `UICollectionView` with compositional layout behind the same row views. |
 | Player custom controls | Scrubber, overlay, gestures | `VideoPlayer(player:)` with the stock controls, plus a top-aligned overlay for author/caption and the close button. Zoom transition still gives swipe-down dismiss. |
 | Swipe up to dismiss the player | Must coexist with the zoom transition's own gesture | Ship swipe-down only. Add swipe-up later if it's clean. |

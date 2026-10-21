@@ -26,6 +26,9 @@ struct ThreadView: View {
     /// Haptic triggers (DESIGN §10): a message sent, a reaction sent.
     @State private var sent = 0
     @State private var reacted = 0
+    @State private var menuOpened = 0
+    /// What a `MessageSheet` row does once the sheet is gone (Reply focuses the composer, Unsend confirms).
+    @State private var afterSheet: (() -> Void)?
     /// The composer's `+`: what the picker returned, then the photo or video being prepared or ready to send.
     @State private var photoItem: PhotosPickerItem?
     @State private var attachment: Attachment?
@@ -234,6 +237,7 @@ struct ThreadView: View {
         .sensoryFeedback(.success, trigger: accepted)
         .sensoryFeedback(.impact(weight: .light), trigger: sent)
         .sensoryFeedback(.impact(weight: .light), trigger: reacted)
+        .sensoryFeedback(.impact(weight: .medium), trigger: menuOpened)
         .sensoryFeedback(trigger: messages.count { if case .failed = $0.status { true } else { false } }) { old, new in
             new > old ? .error : nil  // a send just failed (DESIGN §10)
         }
@@ -292,8 +296,15 @@ struct ThreadView: View {
             Text(RequestCopy.deleteMessage(handle: login?.profile?.username))
         }
         .sheet(item: $relogin) { ReloginSheet(loginID: $0.id) }
-        .sheet(item: $sheet) { sheet in
+        .sheet(item: $sheet, onDismiss: { afterSheet?(); afterSheet = nil }) { sheet in
             switch sheet {
+            case .message(let id):
+                if let message = messages.first(where: { $0.id == id }) {
+                    MessageSheet(message: message, sender: name(message.sender), actions: actions) { then in
+                        afterSheet = then
+                        self.sheet = nil
+                    }
+                }
             case .reactions(let id):
                 if let message = messages.first(where: { $0.id == id }) { ReactionList(message: message, me: me, member: member) }
             case .person(let user):
@@ -368,6 +379,8 @@ struct ThreadView: View {
             resolveMedia: { model.resolveMedia($0, in: room) },
             shareAll: { shareAll($0, in: room) },
             showReactions: { sheet = .reactions($0.id) },
+            showMenu: { menuOpened += 1; sheet = .message($0.id) },
+            me: model.me,
             showPerson: { sheet = .person($0) },
             readOnly: !Inbox.allowsReceipts(room))
     }
@@ -547,11 +560,13 @@ struct ThreadView: View {
     }
 
     private enum ThreadSheet: Identifiable {
+        case message(String)
         case reactions(String)
         case person(String)
 
         var id: String {
             switch self {
+            case .message(let id): "message:\(id)"
             case .reactions(let id): "reactions:\(id)"
             case .person(let user): "person:\(user)"
             }

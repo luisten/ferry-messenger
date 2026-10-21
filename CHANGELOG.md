@@ -13,12 +13,16 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 
 - A button to jump to the newest message, when you've scrolled up or a chat opened at "New messages". It shows how
   many new messages have arrived since.
+- React with any emoji. Touch and hold a message for big buttons with the reactions you used last, and "+" for every
+  emoji. Reply, Copy, Edit and Unsend are there too.
 
 ### Fixed
 
 - A chat with a few new messages could open with the newest one partly hidden behind the message field. It now opens
   at the bottom unless there's a lot that's new. Then it opens at "New messages", with the last message you'd read
   above it, and the new button takes you down.
+- Choosing ❤️ again on a message you'd hearted reacted again instead of removing it, and a reaction removed after
+  restarting the app could stay on screen.
 - Holding the mic took a noticeable moment before it started recording a voice message. It now gets ready as soon as
   you touch it, so recording starts sooner.
 - A chat with new messages could open without the "New messages" line.

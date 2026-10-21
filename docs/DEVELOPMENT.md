@@ -63,7 +63,7 @@ t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
 
-t test -only-testing:FerryTests           # unit tests (286), on real captured Instagram data
+t test -only-testing:FerryTests           # unit tests (290), on real captured Instagram data
 t test -only-testing:FerryUITests         # UI tests on made-up data (below)
 ```
 

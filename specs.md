@@ -148,10 +148,15 @@ recipient, no groups.
   it replaces "Seen".
   VoiceOver reads every incoming group bubble as "From Theo Park, …" and skips the visible name and avatar. Names
   come from the thread (Instagram always names its participants). DMs look exactly as before.
-- **Context menu:** reaction palette ❤️ 😂 😮 😢 🔥 👍 (same emoji again removes ours; double-tap = ❤️), Reply, Copy,
-  Edit (own text, within 15 min, at most 5 edits), Share All ("3 photos": photos sent together; downloads them all,
+- **Long press** (a sheet fitted to its content; VoiceOver: "React or reply" on any bubble): one line naming the
+  message ("Jonas: These are amazing…"), a big row of the last six reactions used on this device (any account; a new one
+  goes first and the oldest drops off, so nothing moves under the thumb; ❤️ 😂 😮 😢 🔥 👍 until then; ours circled,
+  and in the last place when it isn't one of them) and "+" (the system emoji keyboard, search and skin tones: the first
+  emoji picked reacts; hidden without that keyboard). Instagram takes any emoji, one per person: the same again
+  removes ours, and "❤" counts as "❤️" (Instagram drops the variation selector). No reactions in a request or on ours
+  still sending. Then the actions: Reply, Copy, Edit (own text, within 15 min, at most 5 edits), Share All ("3 photos": photos sent together; downloads them all,
   then the share sheet, whose "Save 3 Images" asks for Photos access once), Open in Instagram (shares), Unsend (own;
-  confirmation, removed for everyone), Delete (a failed send that never reached Instagram).
+  confirmation, removed for everyone), Delete (a failed send that never reached Instagram). Double-tap = ❤️.
 - **Composer:** account avatar (tap: "This chat belongs to X. Replies always come from this account."), "Message as
   X", counter from 900 characters, Send off past 1000. Reply and edit modes show a bar with ✕. With the field empty
   the mic sits where Send is.
