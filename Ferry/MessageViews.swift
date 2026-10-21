@@ -115,13 +115,7 @@ struct MessageRow: View {
                 }
                 bubble
                     .modifier(SpokenSender(name: row.groupSender != nil && message.kind != .unsent ? member(message.sender).name : nil))
-                    .overlay(alignment: own ? .bottomLeading : .bottomTrailing) {
-                        if !message.reactions.isEmpty {
-                            ReactionPills(reactions: message.reactions, me: me, face: isGroup ? member : nil,
-                                          show: { actions.showReactions(message) })
-                                .offset(x: own ? -8 : 8, y: 14)
-                        }
-                    }
+                    .overlay(alignment: own ? .bottomLeading : .bottomTrailing) { if message.shareText == nil { pills } }
                     .padding(.bottom, reactionsInset)
                     .frame(maxWidth: .infinity, alignment: alignment)
                     .containerRelativeFrame(.horizontal, alignment: alignment) { width, _ in width * 0.75 }
@@ -159,15 +153,24 @@ struct MessageRow: View {
 
     // MARK: Bubble
 
-    /// A story reply or reaction is the story with what was sent under it, as Instagram shows them.
+    /// A story reply or reaction is the story with what was sent under it, as Instagram shows them. Its reactions sit
+    /// on what was sent, not by the card's far edge (Android's live check, 2026-10-21).
     @ViewBuilder private var bubble: some View {
         if let text = message.shareText {
             VStack(alignment: own ? .trailing : .leading, spacing: 4) {
                 content
-                textBubble(text)
+                textBubble(text).overlay(alignment: own ? .bottomLeading : .bottomTrailing) { pills }
             }
         } else {
             content
+        }
+    }
+
+    /// DESIGN §6.2: the reactions on the bubble's bottom edge.
+    @ViewBuilder private var pills: some View {
+        if !message.reactions.isEmpty {
+            ReactionPills(reactions: message.reactions, me: me, face: isGroup ? member : nil, show: { actions.showReactions(message) })
+                .offset(x: own ? -8 : 8, y: 14)
         }
     }
 

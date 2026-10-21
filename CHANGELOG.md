@@ -24,6 +24,7 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
   above it, and the new button takes you down.
 - Choosing ❤️ again on a message you'd hearted reacted again instead of removing it, and a reaction removed after
   restarting the app could stay on screen.
+- On a reply to a story, a reaction sat by the story's far edge instead of on the reply.
 - Holding the mic took a noticeable moment before it started recording a voice message. It now gets ready as soon as
   you touch it, so recording starts sooner.
 - A chat with new messages could open without the "New messages" line.
