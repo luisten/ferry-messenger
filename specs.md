@@ -177,11 +177,13 @@ recipient, no groups.
 - **Voice notes** (AAC `.m4a`, mono, 44.1 kHz; the microphone gets ready from the touch, unless another app is playing
   audio), recorded with a red dot, the time and a level meter: **tap the mic** to record hands-free (the user's call,
   2026-10-21: a tap used to be only a "Hold to record" hint): the mic becomes Send (the account's fill) and the strip
-  starts with a red trash, which cancels ("Cancelled", medium haptic). Or **touch and hold**: after 0.3 s it records;
-  lift to send; slide left 120 pt to cancel at once; let go under 1 s and it carries on hands-free. Either way it's sent
-  as a reply when replying, at 5 min by itself, and Send under 1 s drops it ("Too short to send" in the field for 2 s).
-  Sent to Instagram as a voice clip (`audio/mp4`, no waveform). The first tap or hold asks for the microphone; when it's
-  off, an alert explains and opens Settings. VoiceOver: activate to start, then Send, or the "Cancel recording" action.
+  starts with a red trash, which cancels ("Cancelled", medium haptic), and ends with Stop: the recording then waits to
+  be listened back to (play/pause, the voice notes' bars to seek, its length) before Send or the trash. Or **touch and
+  hold**: after 0.3 s it records; lift to send; slide left 120 pt to cancel at once; let go under 1 s and it carries on
+  hands-free. Either way it's sent as a reply when replying, at 5 min by itself, and Send under 1 s drops it ("Too short
+  to send" in the field for 2 s). Sent to Instagram as a voice clip (`audio/mp4`, no waveform). The first tap or hold
+  asks for the microphone; when it's off, an alert explains and opens Settings. VoiceOver: activate to start, then Send,
+  or the "Cancel recording" action.
 - Photos, videos and voice notes aren't offered while editing or in requests (`AppModel.sendMedia` refuses them
   there too).
 - **Signed-out account:** the composer is replaced by "X is signed out" + "Log in again".

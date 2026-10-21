@@ -35,6 +35,27 @@ final class VoiceMessageTests: XCTestCase {
         XCTAssertNil(pressing.cancel(), "nothing to cancel before it records")
     }
 
+    /// Stop, hands-free: listen back, then Send (or the trash); nothing else records or sends meanwhile.
+    func testStopToListenBackThenSendOrBin() {
+        var hold = Hold()
+        _ = hold.release(recorded: 0)
+        XCTAssertEqual(hold.stop(), .stop)
+        XCTAssertTrue(hold.isHandsFree, "Send and the trash stay")
+        XCTAssertNil(hold.stop())
+        XCTAssertNil(hold.tick(held: 400, recorded: Hold.maxDuration), "stopped: nothing sends by itself")
+        XCTAssertEqual(hold.finish(recorded: 4), .send)
+        var binned = Hold()
+        _ = binned.release(recorded: 0)
+        _ = binned.stop()
+        XCTAssertEqual(binned.cancel(), .cancel)
+        var short = Hold()
+        _ = short.release(recorded: 0)
+        _ = short.stop()
+        XCTAssertEqual(short.finish(recorded: 0.5), .discard)
+        var held = Hold(recording: true)
+        XCTAssertNil(held.stop(), "a hold has no Stop")
+    }
+
     func testHandsFreeSendsByItselfAtTheMaximum() {
         var hold = Hold()
         _ = hold.release(recorded: 0)

@@ -749,6 +749,7 @@ private struct Composer: View {
         .padding(.bottom, 6)
         .onChange(of: draft) { _, text in typing(!text.isEmpty) }
         .onChange(of: recorder.started) { stopPlayback() }
+        .onChange(of: recorder.state) { old, _ in if old == .reviewing { stopPlayback() } }  // sent or binned while listening back
         .onChange(of: scenePhase) { _, phase in if phase != .active { recorder.abandon() } }
         .onDisappear { recorder.abandon() }
         // DESIGN §10: rigid on start and stop, medium when the slide cancels.

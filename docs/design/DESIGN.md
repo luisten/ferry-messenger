@@ -817,8 +817,8 @@ states.
   - Videos: ≤ 25 MB. Compress with `AVAssetExportSession` medium preset; if still too big, "Videos must be under 25 MB.
     Trim it or choose a shorter clip."
 - **Attachment menu (`+`):** Photos & Videos (`PhotosPicker`), Camera, (later) GIF.
-- **Voice recording [$$]:** hold mic to record, slide left to cancel; or tap it to record hands-free, then Send or the
-  trash (2026-10-21, in place of "slide up to lock"). `.impact(.rigid)` on start.
+- **Voice recording [$$]:** hold mic to record, slide left to cancel; or tap it to record hands-free, then Send, the
+  trash, or Stop to listen back first (2026-10-21, in place of "slide up to lock"). `.impact(.rigid)` on start.
 - **Replying:** a glass bar above the field: "Replying to Maya" + quoted snippet + xmark.
 - **Editing:** a glass bar "Editing message" + xmark; Send becomes a checkmark.
 - **Variants:** Request (T2), Signed out (§7.2), Offline (messages queue with a clock glyph, sent on reconnect).

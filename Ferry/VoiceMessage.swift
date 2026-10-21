@@ -36,7 +36,8 @@ nonisolated enum VoiceMessage {
     }
 
     /// The mic's rules (DESIGN §6.9), fed by `VoiceRecorder`. A tap records hands-free until Send (from a second on;
-    /// sooner, it's dropped) or the trash (the user's call, 2026-10-21: a tap used to be only a "Hold to record" hint).
+    /// sooner, it's dropped), Stop (to listen back first, then Send) or the trash (the user's calls, 2026-10-21: a tap
+    /// used to be only a "Hold to record" hint).
     /// Holding records; sliding left past `cancelDistance` cancels at once; lifting sends from a second on, and sooner
     /// carries on hands-free. At the maximum it sends by itself. Each recording ends in one of cancel, discard or send.
     struct Hold: Equatable {
@@ -49,9 +50,9 @@ nonisolated enum VoiceMessage {
         /// Points left of where the finger went down.
         static let cancelDistance = 120.0
 
-        enum Action: Equatable { case start, cancel, discard, send }
+        enum Action: Equatable { case start, cancel, discard, send, stop }
 
-        private enum Phase { case pressing, recording, handsFree, done }
+        private enum Phase { case pressing, recording, handsFree, review, done }
         private var phase: Phase
 
         /// `recording`: the finger is down and the recorder already runs.
@@ -59,8 +60,8 @@ nonisolated enum VoiceMessage {
             phase = recording ? .recording : .pressing
         }
 
-        /// Recording with the finger up: the composer shows Send and the trash.
-        var isHandsFree: Bool { phase == .handsFree }
+        /// The finger is up, recording or listening back: the composer shows Send and the trash.
+        var isHandsFree: Bool { phase == .handsFree || phase == .review }
 
         /// On a timer while the finger is down: `held` since it went down, `recorded` the recorder's time.
         mutating func tick(held: TimeInterval, recorded: TimeInterval) -> Action? {
@@ -94,21 +95,28 @@ nonisolated enum VoiceMessage {
             case .recording:
                 phase = .done
                 return .send
-            case .handsFree, .done:
+            case .handsFree, .review, .done:
                 return nil
             }
         }
 
-        /// Send, hands-free.
-        mutating func finish(recorded: TimeInterval) -> Action? {
+        /// Stop, hands-free: the recording waits to be listened back to and sent.
+        mutating func stop() -> Action? {
             guard phase == .handsFree else { return nil }
+            phase = .review
+            return .stop
+        }
+
+        /// Send, hands-free or after listening back.
+        mutating func finish(recorded: TimeInterval) -> Action? {
+            guard phase == .handsFree || phase == .review else { return nil }
             phase = .done
             return recorded < Self.minDuration ? .discard : .send
         }
 
         /// The trash, or VoiceOver's Cancel.
         mutating func cancel() -> Action? {
-            guard phase == .recording || phase == .handsFree else { return nil }
+            guard phase == .recording || phase == .handsFree || phase == .review else { return nil }
             phase = .done
             return .cancel
         }
@@ -124,7 +132,7 @@ nonisolated enum VoiceMessage {
 /// held, then puts the audio session back as it was. `VoiceMessage.Hold` decides what each touch means.
 @Observable
 final class VoiceRecorder {
-    enum State: Equatable { case idle, recording, cancelled }
+    enum State: Equatable { case idle, recording, reviewing, cancelled }
 
     private(set) var state = State.idle
     /// Seconds recorded so far.
@@ -135,8 +143,10 @@ final class VoiceRecorder {
     private(set) var slide: Double = 0
     /// "Too short to send" (or why it couldn't start) for 2 s: the composer field's placeholder meanwhile.
     private(set) var hint: String?
-    /// Recording with the finger up (`Hold.isHandsFree`): the mic is Send, and the strip has the trash.
+    /// Recording with the finger up, or listening back (`Hold.isHandsFree`): the mic is Send, the strip has the trash.
     private(set) var handsFree = false
+    /// Stopped to listen back (`reviewing`): the note Send sends.
+    private(set) var review: VoiceMessage.Recorded?
     /// The microphone is off for this app: the composer says why it's needed and links to Settings.
     var permissionDenied = false
     /// Haptic triggers (DESIGN §10).
@@ -211,6 +221,11 @@ final class VoiceRecorder {
         perform(hold?.cancel())
     }
 
+    /// Stop, hands-free: listen back before sending.
+    func stop() {
+        perform(hold?.stop())
+    }
+
     /// The touch was taken away (a call, an alert) or the thread went away: whatever was recorded is dropped.
     func abandon() {
         fingerDown = false
@@ -235,11 +250,22 @@ final class VoiceRecorder {
             endHold()
             showHint("Too short to send")
         case .send:
-            let note = finishRecording()
+            let listenedBack = review != nil
+            let note = review ?? finishRecording()
+            review = nil
             let send = send
             endHold()
-            stopped += 1
+            if !listenedBack { stopped += 1 }
             if let note { send?(note) }
+        case .stop:
+            stopped += 1
+            ticker?.cancel()
+            guard let note = finishRecording() else {
+                endHold()
+                return showHint("Couldn't keep the recording")
+            }
+            review = note
+            state = .reviewing
         case nil:
             break
         }
@@ -348,7 +374,10 @@ final class VoiceRecorder {
         return VoiceMessage.Recorded(file: recorder.url, duration: Int(duration * 1000), size: size)
     }
 
+    /// Drops what was recorded: the recorder's file, or the one waiting to be listened back to.
     private func discardRecording() {
+        if let review { try? FileManager.default.removeItem(at: review.file) }
+        review = nil
         #if DEBUG
         fakeSince = nil
         #endif
@@ -365,7 +394,7 @@ final class VoiceRecorder {
         ticker?.cancel()
         ticker = nil
         slide = 0
-        if state == .recording { state = .idle }
+        if state == .recording || state == .reviewing { state = .idle }
     }
 
     /// Back to the category the app had (playback sets `.playback` for voice notes and videos).
@@ -485,8 +514,9 @@ struct MicButton: View {
     }
 }
 
-/// What the field shows while recording: hands-free, the trash first; a red dot, the time, the level, and while held
-/// "Slide to cancel" fading as the finger nears the threshold; then "Cancelled" for a moment.
+/// What the field shows while recording: hands-free, the trash first and Stop last; a red dot, the time, the level, and
+/// while held "Slide to cancel" fading as the finger nears the threshold. Stopped, the recording to listen back to.
+/// Then "Cancelled" for a moment.
 struct RecordingStrip: View {
     let recorder: VoiceRecorder
 
@@ -502,29 +532,20 @@ struct RecordingStrip: View {
                 .accessibilityLabel("Delete recording")
                 .accessibilityIdentifier("composer.voiceTrash")
             }
-            HStack(spacing: 8) {
-                if recorder.state == .cancelled {
-                    Image(systemName: "trash")
-                    Text("Cancelled")
-                } else {
-                    Image(systemName: "circle.fill").font(.system(size: 9)).foregroundStyle(.statusError)
-                        .symbolEffect(.pulse, options: .repeating)
-                    Text(clockText(recorder.elapsed)).monospacedDigit()
-                    LevelMeter(levels: recorder.levels).frame(width: 64, height: 20)
-                    Spacer(minLength: 4)
-                    if !recorder.handsFree {
-                        ViewThatFits(in: .horizontal) {
-                            Label("Slide to cancel", systemImage: "chevron.left")
-                            Image(systemName: "chevron.left")
-                        }
-                        .foregroundStyle(.inkSecondary)
-                        .opacity(1 - VoiceMessage.Hold.cancelProgress(recorder.slide))
-                        .padding(.trailing, 4)
+            if recorder.state == .reviewing, let note = recorder.review {
+                ReviewPlayer(note: note)
+            } else {
+                info
+                if recorder.handsFree && recorder.state == .recording {
+                    Button { recorder.stop() } label: {
+                        Image(systemName: "stop.fill").frame(width: 44, height: 44).contentShape(.rect)
                     }
+                    .buttonStyle(.plain)
+                    .padding(.vertical, -12)
+                    .accessibilityLabel("Stop and listen back")
+                    .accessibilityIdentifier("composer.voiceStop")
                 }
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(recorder.state == .cancelled ? "Recording cancelled" : "Recording, \(clockText(recorder.elapsed))")
         }
         .font(.subheadline)
         .foregroundStyle(recorder.state == .cancelled ? Color.statusError : Color.primary)
@@ -532,6 +553,63 @@ struct RecordingStrip: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(recorder.state == .cancelled ? "composer.recordingCancelled" : "composer.recording")
+    }
+
+    private var info: some View {
+        HStack(spacing: 8) {
+            if recorder.state == .cancelled {
+                Image(systemName: "trash")
+                Text("Cancelled")
+            } else {
+                Image(systemName: "circle.fill").font(.system(size: 9)).foregroundStyle(.statusError)
+                    .symbolEffect(.pulse, options: .repeating)
+                Text(clockText(recorder.elapsed)).monospacedDigit()
+                LevelMeter(levels: recorder.levels).frame(width: 64, height: 20)
+                Spacer(minLength: 4)
+                if !recorder.handsFree {
+                    ViewThatFits(in: .horizontal) {
+                        Label("Slide to cancel", systemImage: "chevron.left")
+                        Image(systemName: "chevron.left")
+                    }
+                    .foregroundStyle(.inkSecondary)
+                    .opacity(1 - VoiceMessage.Hold.cancelProgress(recorder.slide))
+                    .padding(.trailing, 4)
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(recorder.state == .cancelled ? "Recording cancelled" : "Recording, \(clockText(recorder.elapsed))")
+    }
+}
+
+/// The stopped recording, listened back to on the voice notes' player (DESIGN §6.8: its bars, drag to seek); Send or
+/// the trash next to it.
+private struct ReviewPlayer: View {
+    @Environment(AppModel.self) private var model
+    let note: VoiceMessage.Recorded
+    private static let id = "composer.review"
+
+    var body: some View {
+        let voice = model.voice
+        let current = voice.current == Self.id
+        let duration = Double(note.duration) / 1000
+        HStack(spacing: 8) {
+            Button { voice.toggle(Self.id, file: note.file, duration: duration) } label: {
+                Image(systemName: current && voice.isPlaying ? "pause.fill" : "play.fill").frame(width: 44, height: 44).contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .padding(.vertical, -12)
+            .accessibilityLabel(current && voice.isPlaying ? "Pause recording" : "Play recording")
+            .accessibilityValue(clockText(duration))
+            .accessibilityIdentifier("composer.voicePlay")
+            VoiceBars(seed: note.file.lastPathComponent, progress: current ? voice.progress : 0) { fraction in
+                voice.seek(Self.id, file: note.file, to: fraction, duration: duration)
+            }
+            .frame(height: 20)
+            .accessibilityHidden(true)
+            Text(clockText(current && voice.elapsed > 0 ? voice.elapsed : duration)).monospacedDigit()
+                .accessibilityHidden(true)
+        }
     }
 }
 
