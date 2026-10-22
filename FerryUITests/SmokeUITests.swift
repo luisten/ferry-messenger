@@ -49,6 +49,20 @@ final class SmokeUITests: XCTestCase {
         XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 5))
     }
 
+    /// Holding a photo someone sent opens its sheet, reactions first (2026-10-22: the card's Button took the touch, so
+    /// only text had one). Elena's photo is a demo fixture without a URL: nothing loads.
+    @MainActor
+    func testHoldingAPhotoOpensItsSheet() throws {
+        let app = launch()
+        try openReadChat(app, named: "Elena Rossi,")
+        let photo = app.descendants(matching: .any).matching(NSPredicate(format: "identifier == 'thread.media' AND label BEGINSWITH 'Photo'")).firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 5))
+        photo.press(forDuration: 0.5)  // the hold is 0.3 s
+        XCTAssertTrue(app.staticTexts["Elena: Photo"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.descendants(matching: .any)["sheet.reactions"].exists)
+        XCTAssertTrue(app.buttons["sheet.Reply"].exists)
+    }
+
     /// #17/#34: right after a cold launch (and again on reopening), the first two chats with nothing unread open with
     /// their newest message fully above the composer; on the dummies those are the two accounts' DMs with each other,
     /// full of tall reel and post cards, so it's a live test. Nothing here scrolls the thread up: a query after that can hang the app

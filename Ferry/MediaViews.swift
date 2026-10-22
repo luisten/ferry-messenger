@@ -104,7 +104,7 @@ private struct AlbumStack: View {
             .padding(.horizontal, 16).padding(.vertical, 14)  // room for the tilted cards inside the bubble's clip
             .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tapOrHold)
         .accessibilityLabel(progress.map { "\(info.albumLabel), downloading, \(Int($0 * 100)) percent. Double-tap to cancel." }
             ?? "\(info.albumLabel). Double-tap to show all.")
         .accessibilityIdentifier("media.pile")
@@ -203,7 +203,7 @@ private struct VideoCard: View {
             .frame(width: size.width, height: size.height)
             .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tapOrHold)
         .animation(.easeInOut(duration: 0.25), value: message.kind)  // the resolve edit swaps it in place (DESIGN §6.3)
         .accessibilityLabel(accessibilityText(share: share, caption: caption, unresolved: unresolved, resolve: resolve, progress: progress,
                                               uploading: message.txnID.flatMap { model.uploads[$0] } != nil))
@@ -287,7 +287,7 @@ private struct PostCard: View {
                         .frame(width: 240, height: 240 * min(max(info.aspect ?? 1, 0.5625), 1.25))
                         .overlay { if let progress = info.url.flatMap({ model.media.progress[$0] }) { DownloadRing(progress: progress) } }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.tapOrHold)
                 .accessibilityLabel(isPost ? "Post image. Double-tap to open." : "Shared image. Double-tap to open.")
             }
             if !text.isEmpty { Text(text).font(.footnote).lineLimit(2).padding(.horizontal, 12).padding(.top, 8) }
@@ -340,14 +340,14 @@ private struct PhotoCard: View {
                     }
                 }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tapOrHold)
         .overlay {  // over the card, not in it: its own tap target
             if let gif, gif.frames.count > 1, gifPlay == nil, uploading == nil {
                 Button { gifPlay = GIFPlay(start: .now, loops: 1) } label: {
                     Image(systemName: "play.fill").font(.system(size: 24)).frame(width: 56, height: 56)  // the video card's
                         .mediaGlass(in: .circle)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.tapOrHold)
                 .accessibilityLabel(sticker ? "Play sticker" : "Play GIF")
                 .accessibilityIdentifier("media.gifPlay")
             }
@@ -489,6 +489,7 @@ struct LinkBubble: View {
                     }
                     .background(.black.opacity(0.06))
                 }
+                .buttonStyle(.tapOrHold)
                 .accessibilityIdentifier("media.link")
             }
         }
