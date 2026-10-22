@@ -343,7 +343,7 @@ private struct MessageMenu: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .environment(\.messageHold) { actions.showMenu(message) }  // a card's Buttons (`.tapOrHold`)
+            .environment(\.messageHold, MessageHold(messageID: message.id) { actions.showMenu(message) })  // `.tapOrHold`
             // Double-tap hearts it, like Instagram (DESIGN §6.2). Not on media: its taps play, load or cancel.
             .gesture(TapGesture(count: 2).onEnded { if canSend && !message.reacted("❤️", by: actions.me) { actions.react("❤️", message) } },
                      including: message.kind.media == nil ? .all : .subviews)
@@ -355,8 +355,17 @@ private struct MessageMenu: ViewModifier {
 }
 
 extension EnvironmentValues {
-    /// The bubble's long press: `MessageSheet`.
-    @Entry var messageHold: (() -> Void)?
+    /// The bubble's long press, for a card's Buttons.
+    @Entry var messageHold: MessageHold?
+}
+
+/// The bubble's long press: `MessageSheet`. Equal by message, so the new closure each update doesn't redraw every card
+/// (ThreadView's `showMenu` takes only the message's ID).
+nonisolated struct MessageHold: Equatable {
+    let messageID: String
+    let open: @MainActor () -> Void
+
+    static func == (a: Self, b: Self) -> Bool { a.messageID == b.messageID }
 }
 
 /// A media card's Button: a tap is its own, a hold the bubble's (`MessageMenu`). A Button's own press took the touch
@@ -370,7 +379,7 @@ struct TapOrHoldButtonStyle: PrimitiveButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.gesture(LongPressGesture(minimumDuration: Self.hold).exclusively(before: TapGesture()).onEnded { gesture in
-            if case .first = gesture { messageHold?() } else { configuration.trigger() }
+            if case .first = gesture { messageHold?.open() } else { configuration.trigger() }
         })
     }
 }
