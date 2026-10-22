@@ -343,14 +343,49 @@ private struct MessageMenu: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            .environment(\.messageHold, MessageHold(messageID: message.id) { actions.showMenu(message) })  // `.tapOrHold`
             // Double-tap hearts it, like Instagram (DESIGN §6.2). Not on media: its taps play, load or cancel.
             .gesture(TapGesture(count: 2).onEnded { if canSend && !message.reacted("❤️", by: actions.me) { actions.react("❤️", message) } },
                      including: message.kind.media == nil ? .all : .subviews)
-            .onLongPressGesture(minimumDuration: 0.4) { actions.showMenu(message) }
+            .onLongPressGesture(minimumDuration: TapOrHoldButtonStyle.hold) { actions.showMenu(message) }
             .accessibilityAction(named: "React or reply") { actions.showMenu(message) }
     }
 
     private var canSend: Bool { !actions.readOnly && message.eventID != nil }
+}
+
+extension EnvironmentValues {
+    /// The bubble's long press, for a card's Buttons.
+    @Entry var messageHold: MessageHold?
+}
+
+/// The bubble's long press: `MessageSheet`. Equal by message, so the new closure each update doesn't redraw every card
+/// (ThreadView's `showMenu` takes only the message's ID).
+nonisolated struct MessageHold: Equatable {
+    let messageID: String
+    let open: @MainActor () -> Void
+
+    static func == (a: Self, b: Self) -> Bool { a.messageID == b.messageID }
+}
+
+/// A media card's Button: a tap is its own, a hold the bubble's (`MessageMenu`). A Button's own press took the touch
+/// from the bubble, so holding a photo, a video or a post's image did nothing (2026-10-22). A plain tap gesture made the
+/// bubble's hold wait ~0.8 s for it to give up, and a hold with priority over it stopped the tap: both live here. Not
+/// for small controls (voice notes, "Open in Instagram").
+struct TapOrHoldButtonStyle: PrimitiveButtonStyle {
+    /// 0.3 s, as the mic's hold (0.4 felt slow, 2026-10-22): a slow tap on a photo still opens it.
+    static let hold = 0.3
+    @Environment(\.messageHold) private var messageHold
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.gesture(LongPressGesture(minimumDuration: Self.hold).exclusively(before: TapGesture()).onEnded { gesture in
+            if case .first = gesture { messageHold?.open() } else { configuration.trigger() }
+        })
+    }
+}
+
+extension PrimitiveButtonStyle where Self == TapOrHoldButtonStyle {
+    static var tapOrHold: Self { Self() }
 }
 
 /// The long press (2026-10-21, the user's call over the stock context menu, whose palette iOS draws small): one line

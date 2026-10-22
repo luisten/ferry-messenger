@@ -309,6 +309,11 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   it), which breaks "color means account". A `Label` as a toolbar `Menu`'s label is flattened to a bar-button image,
   so overlays on its icon vanish; a custom label view keeps them but is clipped to the glass circle. The Folders badge
   is an overlay on a fixed 32 pt `Image` label, kept inside that circle (`FoldersMenu.badge`).
+- **A `Button` inside a view with `onLongPressGesture` takes the touch: the hold never fires on it** (media cards,
+  2026-10-22). A child `onTapGesture` instead makes the parent's hold wait ~0.8 s for the tap to give up, and the
+  parent's `highPriorityGesture` stops the child's taps altogether. One view owning both works:
+  `LongPressGesture().exclusively(before: TapGesture())` (`TapOrHoldButtonStyle`). `onPressingChanged` stays `true`
+  through a scroll that starts on the view, so it can't drive press feedback in the thread.
 - **Menu item subtitles:** a `Button` label of `Label(…)` followed by a `Text` shows the `Text` as the subtitle;
   `Label { Text; Text } icon:` doesn't.
 - A plain `List`'s first row shows a top separator under the scope bar; the inbox hides it on the first chat row.

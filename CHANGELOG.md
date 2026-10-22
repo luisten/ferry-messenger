@@ -2,10 +2,18 @@
 
 All notable changes to Ferry Messenger are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions are `X.Y`, and each release
-is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions are `X.Y` (`X.Y.Z` for fixes
+only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 
 ## [Unreleased]
+
+## [1.5.1] - 2026-10-22
+
+### Fixed
+
+- Touching and holding a photo, video, GIF, shared post or link preview did nothing (on a shared post, only its thin
+  top line worked). It now brings up the reactions, like holding a text message, and a quick tap still opens it.
+- Touching and holding a message brings up the reactions sooner.
 
 ## [1.5] - 2026-10-21
 
@@ -94,7 +102,8 @@ is a signed tag `vX.Y` ([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releases)).
 - First public release: your Instagram direct messages, from all your accounts in one inbox, talking to Instagram
   straight from your iPhone.
 
-[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.5...HEAD
+[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/luisten/ferry-messenger/compare/v1.5...v1.5.1
 [1.5]: https://github.com/luisten/ferry-messenger/compare/v1.4...v1.5
 [1.4]: https://github.com/luisten/ferry-messenger/compare/v1.3...v1.4
 [1.3]: https://github.com/luisten/ferry-messenger/compare/v1.2...v1.3

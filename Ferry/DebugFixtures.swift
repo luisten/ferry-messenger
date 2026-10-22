@@ -282,8 +282,8 @@ nonisolated enum DebugFixtures {
         ("@instagram_\($0.fbid):igm.home.arpa", UserProfile(name: $0.name, handle: $0.handle))
     })
 
-    /// Four text-only DMs (no media, so no requests for files), the first and third on `logins[0]`, the others on
-    /// `logins[1]`. Fixture rooms like the requests: nothing about them leaves the app.
+    /// Four DMs, the first and third on `logins[0]`, the others on `logins[1]`: text, and Elena's photo without a URL
+    /// (no requests for files). Fixture rooms like the requests: nothing about them leaves the app.
     static func demoRooms(logins: [String], me: String, now: Date = .now) -> [Room] {
         guard !logins.isEmpty else { return [] }
         let ms = Int64(now.timeIntervalSince1970 * 1000)
@@ -300,6 +300,11 @@ nonisolated enum DebugFixtures {
                 Event(type: "m.room.member", content: ["membership": "join", "displayname": .string(chat.name)],
                       eventID: "$debug-demo-member-\(i)", sender: ghost, stateKey: ghost, originServerTS: start),
             ]
+            if chat.handle == "elena.rossi" {  // a photo from them, for the long-press test: no URL, so nothing loads
+                events.append(Event(type: "m.room.message", content: ["msgtype": "m.image", "body": "print.jpg",
+                                                                      "info": ["w": 1080, "h": 1350, "mimetype": "image/jpeg"]],
+                                    eventID: "$debug-demo-photo", sender: ghost, originServerTS: start + 500))
+            }
             for (j, line) in chat.lines.enumerated() {
                 events.append(Event(type: "m.room.message", content: ["msgtype": "m.text", "body": .string(line.text)],
                                     eventID: "$debug-demo-msg-\(i)-\(j)", sender: line.fromMe ? me : ghost,

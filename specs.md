@@ -148,7 +148,8 @@ recipient, no groups.
   it replaces "Seen".
   VoiceOver reads every incoming group bubble as "From Theo Park, …" and skips the visible name and avatar. Names
   come from the thread (Instagram always names its participants). DMs look exactly as before.
-- **Long press** (a sheet fitted to its content; VoiceOver: "React or reply" on any bubble): one line naming the
+- **Long press** (0.3 s on any bubble or card, where a shorter touch is still the card's tap; a sheet fitted to its
+  content; VoiceOver: "React or reply" on any bubble): one line naming the
   message ("Jonas: These are amazing…"), a big row of the last six reactions used on this device (any account; a new one
   goes first and the oldest drops off, so nothing moves under the thumb; ❤️ 😂 😮 😢 🔥 👍 until then; ours circled,
   and in the last place when it isn't one of them) and "+" (the system emoji keyboard, search and skin tones: the first
