@@ -1,7 +1,8 @@
 # Ferry Messenger: catch-up notifications on the iPhone (plan)
 
 > Draft, 2026-10-24, rewritten the same day: everything runs on the phone, no server (the user's call; the relay
-> design is in this file's history). Decisions W1–W4 wait for the user; nothing is built. Account names are the
+> design is in this file's history). W1 decided (Mozilla, 2026-10-24), W2–W4 wait for the user. Step 1 done the same
+> day: Mozilla keeps Instagram's pushes for a phone that isn't connected (§3). Account names are the
 > fictional stand-ins (`tamoveska` personal, `kivostudio` professional). Builds on the on-device spike's web push runs
 > ([spikes/2026-10-16-on-device.md](spikes/2026-10-16-on-device.md) "Web push").
 
@@ -39,8 +40,8 @@ Each has a recommendation. W1 is needed before step 1; the rest can wait until s
 
 | # | Question | Recommendation |
 |---|---|---|
-| W1 | **Mozilla's push service from an app that isn't Firefox.** It publishes no terms for other clients (searched 2026-10-24; its docs describe it as Firefox's service). The README's "The app talks only to Instagram" becomes "Instagram, and Mozilla's push service for notifications". | **Go ahead with step 1**, using it lightly (a connection of a few seconds per wake, one channel per account). Asking Mozilla first (the autopush team's #push channel) is yours to do if you want certainty. |
-| W2 | **Which pushes become notifications** | **Messages only**, of whatever web push carries (step 1 shows): texts, media, shares, voice notes, and reactions to your messages as their own line ("@sam reacted ❤️"). Never likes, follows or comments. Requests: notify too until step 1 shows whether a push says it's a request; then your call. |
+| W1 | **Decided 2026-10-24: go ahead.** **Mozilla's push service from an app that isn't Firefox.** It publishes no terms for other clients (searched 2026-10-24; its docs describe it as Firefox's service). The README's "The app talks only to Instagram" becomes "Instagram, and Mozilla's push service for notifications". | **Go ahead with step 1**, using it lightly (a connection of a few seconds per wake, one channel per account). Asking Mozilla first (the autopush team's #push channel) is yours to do if you want certainty. |
+| W2 | **Which pushes become notifications** | **Every message web push carries**, which step 1 found is texts, photos and videos from the camera roll, and voice notes, one push each. Reactions, likes and anything taken with Instagram's in-chat camera send no push, so they can't notify; shares weren't tried. Requests: notify too until step 1 shows whether a push says it's a request; then your call. |
 | W3 | **What a notification shows** | The sender (`@handle`, or the group's name) as the title, the text as the body, the account's name as the subtitle when there are two or more accounts; iOS's "Show Previews" hides the text as usual. Grouped per chat. No icon badge and no sender photo at first. |
 | W4 | **When the app asks for permission** | Once, right after the first account connects (the end of onboarding), plus a row in Accounts to turn it on later, which also says when Background App Refresh is off for the app. Never at first launch. A "no" costs nothing: the app works as today. |
 
@@ -50,7 +51,7 @@ Each has a recommendation. W1 is needed before step 1; the rest can wait until s
 
 - `core/push`: a small Mozilla client grown from `core/cmd/autopush` (`hello` with the phone's UAID and channels,
   `register`, `unregister`, `ack`; `github.com/coder/websocket`, already pinned in `core/go.mod`) and the push's
-  meaning: decrypt (`pushcrypto`, already in the pinned mautrix), then kind (a message, a reaction, something else),
+  meaning: decrypt (`pushcrypto`, already in the pinned mautrix), then kind (`direct_v2_text`, `direct_v2_media`, `direct_v2_voice_message`, else unknown),
   sender, text, message ID, time and the chat's IDs (`params.u` in a DM, `params.f` in a group). Pure apart from the
   socket, tested on step 1's captured pushes and against a fake Mozilla server (`httptest`).
 - Three exports, each with its JNI function in `jni_android.c` in the same commit (Android pins a commit of `core/`):
@@ -104,14 +105,39 @@ counts are reported (CLAUDE.md "Safety").
 
 About 3–4 days of work plus the week; a guess, and step 1 decides whether it's worth it.
 
+**Step 1 done 2026-10-24** (the simulator; the user sent as `kivostudio` from Instagram's app on their phone). Tools:
+`core/cmd/autopush setup|drain|drop`, `FERRY_DEBUG_WEB_PUSH`. Instagram took the registration
+(`POST /api/v1/web/push/register/`, `ok`).
+
+- **Mozilla keeps pushes for a client that isn't connected, one per message, and gives them back until they're
+  acked.** Three texts sent a minute apart with the app closed were all there 10 minutes later and still there at
+  2 h 2 min (the pushes say `time_to_live` 21600; past 2 h untested). They share `collapse_key: direct_v2_message`
+  but weren't merged. A collection that doesn't ack gets the same pushes again on the next connection, so a wake cut
+  short loses nothing.
+- **Instagram pushes even while the session is connected:** a text sent with the app open on the inbox showed in the
+  app live and was held by Mozilla too. So an open takes the queue without notifying (`IGPushDrain`'s `since`).
+- **What pushes:** a text (`direct_v2_text`, with the text), a photo or video from the camera roll (`direct_v2_media`,
+  "Sent a photo" / "Sent a video", with links to the image or a preview, `a_url` / `p_url`), a voice note
+  (`direct_v2_voice_message`, "Sent a voice message"). **What doesn't:** a reaction, a like on a post, and anything
+  taken with Instagram's in-chat camera, photo or video, view-once or kept in chat. A push is about 1.5 KB encrypted
+  and reached Mozilla within a minute.
+- **Counts:** Ferry's one launch, 10 requests: `tamoveska` 5 (inbox page, mailbox query, a folder page, socket, the
+  registration), `kivostudio` 5 (inbox page, mailbox query, two folder pages, socket); no "Seen", no typing.
+  `kivostudio` from Instagram's app: 4 texts, 3 photos, 2 videos, a voice note, a reaction, a like.
+- **Left behind:** one web push registration for `tamoveska` pointing at the dropped Mozilla channel. The captures
+  (raw and decrypted, with their throwaway keys) are in the gitignored `docs/local/push-captures-2026-10-24/`. Step 2
+  scrubs its fixtures from the decrypted ones; a ciphertext can't be scrubbed, so the decryption test encrypts a
+  scrubbed payload itself.
+- **Not covered:** requests (no third account, D11), groups, shares, a hold past 2 h, a real phone.
+
 ## 4. Risks
 
 - **Late by design.** iOS wakes an app more often the more it's used, perhaps between one wake an hour and a few a
   day (Apple publishes no numbers; step 4 measures); never after it's swiped away in the app switcher (until it's opened again), and not in Low Power Mode or with
   Background App Refresh off. A push older than 6 h is gone from Mozilla: no notification, though the message is in
   the chat as usual.
-- **Mozilla doesn't hold pushes, or holds only the newest per topic** (step 1). If only the newest, a wake shows the
-  newest message and "and N more" can't be counted: still useful, less so.
+- **Messages Instagram doesn't push** never notify: reactions, and photos and videos taken with Instagram's in-chat
+  camera, view-once or kept (step 1). They're in the chat on the next open, as now.
 - **Mozilla limits or blocks a client that isn't Firefox** (W1), or **Instagram stops web push to Mozilla**: the app
   works as today, without notifications.
 - **A notification for a message already read elsewhere** (on instagram.com or Instagram's app): a wake doesn't ask
