@@ -267,7 +267,9 @@ web push channel, registered with Instagram (on a new channel, a new login, or w
 a Background App Refresh wake collects and decrypts them, and the app posts a local notification per message newer
 than the app's last close. Not instant: iOS decides when to wake the app.
 
-- **Permission:** asked once, the first time the inbox shows with an account; never at first launch, never in the demo.
+- **Permission:** a one-time inbox card (O7: "Get notified about new messages?", it says they aren't instant; Turn On
+  / Not now) once the inbox shows with an account, while iOS hasn't asked; only Turn On brings iOS's question, and
+  either answer hides the card for good. Never at first launch, never in the demo.
   A1's Notifications row: "Turn On Notifications"; "Notifications are off", then Settings; "Notifications are on";
   "Notifications can't arrive" (⚠ Background App Refresh is off for the app, then Settings); "Notifications are
   paused" (Low Power Mode). Its footer says they can be hours late, skipped when too old, and stop after a swipe-away.

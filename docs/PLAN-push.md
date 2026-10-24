@@ -43,7 +43,7 @@ Each has a recommendation. W1 is needed before step 1; the rest can wait until s
 | W1 | **Decided 2026-10-24: go ahead.** **Mozilla's push service from an app that isn't Firefox.** It publishes no terms for other clients (searched 2026-10-24; its docs describe it as Firefox's service). The README's "The app talks only to Instagram" becomes "Instagram, and Mozilla's push service for notifications". | **Go ahead with step 1**, using it lightly (a connection of a few seconds per wake, one channel per account). Asking Mozilla first (the autopush team's #push channel) is yours to do if you want certainty. |
 | W2 | **Decided 2026-10-24: the recommendation.** **Which pushes become notifications** | **Every message web push carries**, which step 1 found is texts, photos and videos from the camera roll, and voice notes, one push each. Reactions, likes and anything taken with Instagram's in-chat camera send no push, so they can't notify; shares weren't tried. Requests: notify too until step 1 shows whether a push says it's a request; then your call. |
 | W3 | **Decided 2026-10-24: the recommendation.** **What a notification shows** | The sender (`@handle`, or the group's name) as the title, the text as the body, the account's name as the subtitle when there are two or more accounts; iOS's "Show Previews" hides the text as usual. Grouped per chat. No icon badge and no sender photo at first. |
-| W4 | **Decided 2026-10-24: the recommendation.** **When the app asks for permission** | Once, right after the first account connects (the end of onboarding), plus a row in Accounts to turn it on later, which also says when Background App Refresh is off for the app. Never at first launch. A "no" costs nothing: the app works as today. |
+| W4 | **Decided 2026-10-24: the recommendation, then changed the same day (QA round): a one-time inbox card (DESIGN O7) says what notifications are and that they're late, and only its Turn On brings iOS's question.** **When the app asks for permission** | Once, right after the first account connects (the end of onboarding), plus a row in Accounts to turn it on later, which also says when Background App Refresh is off for the app. Never at first launch. A "no" costs nothing: the app works as today. |
 
 ## 2. What gets built
 
@@ -179,9 +179,9 @@ tests pass on made-up data (the demo never asks or registers).
     wakes; a kept camera message without its attachment is still media.
 - **From the UX review:** "To <account>" as the subtitle (DESIGN §3.3), "Sent 14:05" on a notification over 10
   minutes late, one sound per wake, honest footer copy, and states that say what's wrong with a glyph (off; can't
-  arrive with Background App Refresh off; paused in Low Power Mode). Waiting on the owner: an explanation card before
-  the system prompt (it changes W4), display names instead of `@handle` (names stored on the phone), and requests
-  (DESIGN §4.5 has them off; a push can't tell one apart yet).
+  arrive with Background App Refresh off; paused in Low Power Mode). The owner's calls: the explanation card before the
+  system prompt, yes (W4 changed); `@handle` stays the title (no contacts' names stored on the phone); requests
+  (DESIGN §4.5 has them off; a push can't tell one apart yet) explained, open.
 - **Left for step 4 (the phone):** the tap; how often iOS wakes the app; that a wake makes no Instagram request or
   socket connect (log one); whether Low Power Mode reports Background App Refresh as off. Known and left: a re-login's
   registration is remembered in memory only, so an app killed before it registers waits for the weekly renewal.

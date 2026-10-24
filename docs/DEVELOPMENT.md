@@ -171,6 +171,7 @@ to the launch line above. They live in `Ferry/DebugFixtures.swift` and `Ferry/Ap
 | `FERRY_DEBUG_VOICE_FILE=<host path to an .m4a>` | Holding the mic "records" without the microphone and sends this file (`say -o v.aiff "…"; afconvert -f m4af -d aac v.aiff v.m4a`). The simulator reads host paths |
 | `FERRY_DEBUG_STACK_EXTRA=<STATE>[,…]` | One stand-in account per state ("Extra 1", …) after the real ones, in the inbox's account stack only |
 | `FERRY_DEBUG_PLAYER_FAILS=1` | Every video in the player and every voice note fails to play; they still download |
+| `FERRY_DEBUG_NOTIFICATIONS_CARD=1` | The inbox's one-time notifications card, whatever was answered before ([PLAN-push.md](PLAN-push.md) W4). With made-up data its buttons only hide it: iOS's question never comes |
 | `FERRY_DEBUG_REFRESH_AFTER_HOME=<seconds>` | That long after HOME, the same wake Background App Refresh makes (catch-up notifications from Mozilla, [PLAN-push.md](PLAN-push.md)), which the simulator can't be relied on to run. It shows everything Mozilla held, what came while the app was open too, so a message sent before HOME can be checked. Keep it under about 30 s, iOS's background time. Mozilla only: no Instagram request |
 | `FERRY_DEBUG_CAPTURE=<host dir>` | Writes Instagram's answers (as `core/chat` reads them) and every live event to that folder, per account (cookies never), for fixtures. Scrub before committing ([CLAUDE.md](../CLAUDE.md) "Invariants") |
 

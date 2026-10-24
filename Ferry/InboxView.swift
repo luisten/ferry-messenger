@@ -57,6 +57,11 @@ struct InboxView: View {
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 10, trailing: 16))
             }
+            if !searching && model.initialSyncDone && model.offersNotifications {
+                NotificationsCard()
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 10, trailing: 16))
+            }
             if model.initialSyncDone {
                 ForEach(rooms) { room in
                     NavigationLink(value: InboxRoute.thread(room.id)) {
@@ -122,8 +127,8 @@ struct InboxView: View {
             try? await Task.sleep(for: .seconds(5))
             launchSettled = true
         }
-        // W4 (docs/PLAN-push.md): the system's question once, when the inbox first shows its chats.
-        .onChange(of: model.initialSyncDone, initial: true) { _, done in if done { model.askForNotificationsOnce() } }
+        // W4 (docs/PLAN-push.md): the notifications card, once the inbox first shows its chats.
+        .task(id: model.initialSyncDone) { if model.initialSyncDone { await model.checkNotificationOffer() } }
         .navigationDestination(for: InboxRoute.self) { route in
             switch route {
             case .thread(let id): ThreadView(roomID: id, path: $path)
@@ -392,6 +397,51 @@ private struct RequestsCard: View {
             }
             if shown < requests.count { Text("+\(requests.count - shown)").monospacedDigit() }
         }
+    }
+}
+
+/// O7 as a card (W4, changed 2026-10-24): what notifications are, and that they're late, before iOS's own question,
+/// which only "Turn On" brings. Either answer hides it for good; Accounts keeps the switch. Two buttons with their own
+/// styles, so the row doesn't merge their taps; primary, never an account's colour (colour means account).
+private struct NotificationsCard: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "bell")
+                    .font(.title3)
+                    .foregroundStyle(Color.primary)
+                    .frame(width: 36, height: 36)
+                    .background(Color(.systemBackground), in: .circle)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Get notified about new messages?").font(.subheadline.weight(.semibold)).foregroundStyle(Color.primary)
+                    Text("They aren't instant. iOS lets Ferry Messenger check now and then, sometimes hours apart.")
+                        .font(.footnote)
+                        .foregroundStyle(.inkSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            HStack(spacing: 16) {
+                Button("Turn On") { model.answerNotificationOffer(turnOn: true) }
+                    .buttonStyle(.glassProminent)
+                    .labelOnTint()
+                    .accessibilityIdentifier("inbox.notificationsCard.turnOn")
+                Button("Not now") { model.answerNotificationOffer(turnOn: false) }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(Color.primary)
+                    .accessibilityIdentifier("inbox.notificationsCard.notNow")
+            }
+            .padding(.leading, 48)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.tertiarySystemFill), in: .rect(cornerRadius: 16))
+        .tint(Color.primary)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("inbox.notificationsCard")
     }
 }
 

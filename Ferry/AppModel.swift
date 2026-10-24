@@ -46,6 +46,8 @@ final class AppModel {
     var focusComposer: String?
     /// A tapped notification's chat: the inbox opens it once (RootView).
     var openRoom: String?
+    /// The inbox's one-time card about notifications, before iOS's own question (`checkNotificationOffer`).
+    private(set) var offersNotifications = false
     /// A tapped notification waiting for its account's chats to load (`openPendingPush`).
     @ObservationIgnored private var pendingPush: IG.Push?
     /// The app has been active since it last went to the background: false at a launch straight into the background
@@ -351,17 +353,31 @@ final class AppModel {
         Task { if let room = try? await IGCore.pushRoom(push.account, push: push) { openRoom = room } }
     }
 
-    /// Once, the first time the inbox shows with an account (W4: the end of onboarding, or the first launch after the
-    /// update); after that, only from Accounts.
-    func askForNotificationsOnce() {
+    /// W4 (changed 2026-10-24, DESIGN O7): the inbox explains notifications in a card, once, before iOS asks, since
+    /// iOS asks only once, its question can't say they're late, and popping up as the chats appear it caught taps
+    /// meant for a chat. Shown with an account until it's answered, while iOS hasn't asked yet.
+    func checkNotificationOffer() async {
+        #if DEBUG
+        if DebugFixtures.offersNotifications { offersNotifications = true; return }  // made-up data: answering does nothing
+        #endif
         guard pushes, !sessions.isEmpty, !UserDefaults.standard.bool(forKey: "push.asked") else { return }
+        offersNotifications = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .notDetermined
+    }
+
+    /// The card's answer, either one for good (Accounts still turns them on): "Turn On" brings iOS's question.
+    func answerNotificationOffer(turnOn: Bool) {
+        offersNotifications = false
+        guard pushes else { return }
         UserDefaults.standard.set(true, forKey: "push.asked")
-        Task { await turnOnNotifications() }
+        if turnOn { Task { await turnOnNotifications() } }
     }
 
     /// The system's question; a yes gives every account a channel and registers the connected ones.
     @discardableResult func turnOnNotifications() async -> Bool {
-        guard pushes, (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) == true else { return false }
+        guard pushes else { return false }
+        offersNotifications = false  // answered from Accounts: the card has nothing left to offer
+        UserDefaults.standard.set(true, forKey: "push.asked")
+        guard (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) == true else { return false }
         PushNotifications.shared.opened(accounts: Array(sessions.keys))
         for id in loaded where running.contains(id) { PushNotifications.shared.connected(id) }
         return true
