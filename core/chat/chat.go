@@ -531,9 +531,20 @@ func content(m Message) map[string]any {
 			return text(sent)
 		}
 		return share(xma, m.IGDSnippet, sent)
-	case m.ContentType == "RAVEN_IMAGE":
-		// The bridge's own wording is how `MessageKind` knows view-once media.
-		return map[string]any{"msgtype": "m.notice", "body": "This photo can only be viewed once. Use the Instagram app to view."}
+	case m.ContentType == "RAVEN_IMAGE" || m.ContentType == "RAVEN_VIDEO":
+		// Instagram's in-chat camera (live 2026-10-24, `ig_camera_media_tamo`): `view_mode` 0 view once, 1 allow replay,
+		// 2 keep in chat. Kept, it carries the same attachment as a photo or video from the camera roll, so it's the
+		// same card; the others carry none and stay a line (never shown as a lasting photo, D13). The bridge's own
+		// wording is how `MessageKind` knows view-once media.
+		video := m.ContentType == "RAVEN_VIDEO"
+		if mode, _ := c["view_mode"].(float64); mode == 2 && obj(c["attachment"]) != nil {
+			return album([]any{c["attachment"]}, &video)
+		}
+		what := "photo"
+		if video {
+			what = "video"
+		}
+		return map[string]any{"msgtype": "m.notice", "body": "This " + what + " can only be viewed once. Use the Instagram app to view."}
 	default:
 		return unsupported(m)
 	}

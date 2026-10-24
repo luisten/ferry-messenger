@@ -189,6 +189,11 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   then rests on frame 0 with a play button for one more; none of that by itself in a request (`autoplaysGIFs`) or under
   Reduce Motion. Links to GIFs that others send stay links. No GIF search: no outside service (the user's calls,
   2026-10-17).
+- **Instagram's in-chat camera** sends `RAVEN_IMAGE` / `RAVEN_VIDEO` with `view_mode` 0 (view once), 1 (allow replay)
+  or 2 (keep in chat) (live 2026-10-24, `ig_camera_media_tamo`). Kept, it carries the camera roll's attachment shape
+  and is the same card; otherwise it has no attachment and is the view-once line. Arriving live it's
+  `SlideUQPPNewRavenMessage`, a new message like `SlideUQPPNewMessage` (Meta AI's `…NewGenieMessage` too). Web push
+  sends nothing for any of them (PLAN-push step 1), and a push's sender is `s` (`u` is the account it's for).
 - **Several photos sent at once** are one `IMAGES` message with every attachment (live 2026-10-18,
   `ig_message_photos_tamo`); `core/chat`'s `album` keeps the first as the content and all of them under `fi.ferry.album`
   (`MediaInfo.album`), which `AlbumStack` shows as a pile that unfolds in place: one message, so one menu, reaction

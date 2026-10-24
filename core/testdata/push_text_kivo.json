@@ -27,13 +27,13 @@
     "mtr_id": "sample-mtr_id",
     "pi": "sample-pi",
     "push_infra_collapse_id": "sample-push_infra_collapse_id",
-    "s": "4200000301",
+    "s": "4200000302",
     "si": "407",
     "sound": "default",
     "t_id": "340282366841710300000000000000000000301",
     "time_to_live": "21600",
     "tp": "0",
     "ts": "1792824092373",
-    "u": "4200000302"
+    "u": "4200000301"
   }
 }

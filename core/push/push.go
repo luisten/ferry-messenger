@@ -167,7 +167,7 @@ func Read(d *pushcrypto.DecryptedPushData, account string, since int64) Push {
 		ms = d.Time.UnixMilli()
 	}
 	out := Push{Account: account, Kind: d.Type, Sender: cmp.Or(p["it"], d.ThreadName), Group: p["aud_gn"],
-		Text: cmp.Or(d.Message, p["im"]), Thread: p["t_id"], User: p["u"], Message: cmp.Or(p["mid"], d.MessageID), Time: ms}
+		Text: cmp.Or(d.Message, p["im"]), Thread: p["t_id"], User: p["s"], Message: cmp.Or(p["mid"], d.MessageID), Time: ms}
 	out.Notify = slices.Contains(messageKinds, out.Kind) && ms > since
 	return out
 }

@@ -53,7 +53,8 @@ Each has a recommendation. W1 is needed before step 1; the rest can wait until s
   `register`, `unregister`, `ack`; `github.com/coder/websocket`, already pinned in `core/go.mod`) and the push's
   meaning: decrypt (`pushcrypto`, already in the pinned mautrix), then kind (`direct_v2_text`, `direct_v2_media`,
   `direct_v2_voice_message`, else not a message), sender (`it`), text, message ID (`mid`), time (`ts`) and the chat
-  (`t_id`, the thread's long ID; `u`, the sender's Instagram user ID). Pure apart from the socket, tested on step 1's
+  (`t_id`, the thread's long ID; `s`, the sender's Instagram user ID; `u` is the receiving account's, which step 2 first
+  took for the sender: the camera capture of 2026-10-24 showed it). Pure apart from the socket, tested on step 1's
   captured pushes and against a fake Mozilla server (`httptest`).
 - Four exports, each with its JNI function in `jni_android.c` in the same commit (Android pins a commit of `core/`):
   - `IGPushSetup(state, accounts)`: one connection to Mozilla; a channel and keys for each listed account that has

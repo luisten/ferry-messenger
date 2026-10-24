@@ -162,6 +162,16 @@ final class EngineTests: XCTestCase {
         XCTAssertEqual(try events("animated_images_tamo", "mailbox_sender").map(preview), ["You: Sticker", "You: GIF"])
     }
 
+    /// Photos and videos from Instagram's in-chat camera (live 2026-10-24, `ig_camera_media_tamo`): kept in chat, the
+    /// same cards as camera-roll media; view once and allow replay stay a view-once line. Ferry showed the kept photo as
+    /// view-once and the video as a message it couldn't show.
+    func testCameraPhotosAndVideos() throws {
+        let thread = Timeline.reduce(try events("camera_media_tamo", "thread"), me: me)
+        XCTAssertEqual(thread.map(\.kind), [.viewOnce, .viewOnce, .image, .video])
+        XCTAssertEqual(MediaInfo(content: thread[2].content).url, "https://scontent.example.invalid/v/c004.jpg")
+        XCTAssertEqual(MediaInfo(content: thread[3].content).url, "https://scontent.example.invalid/v/c010.mp4")
+    }
+
     /// Three photos sent at once from the Instagram app (live 2026-10-18): one message with every photo, in order,
     /// so it keeps one menu, one row of reactions and one unsend. Ferry showed only the first.
     func testPhotosSentTogetherAreOneMessageWithAll() throws {

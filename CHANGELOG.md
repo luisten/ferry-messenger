@@ -13,6 +13,11 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
   hour, not instantly. Ferry asks once; Accounts shows whether they're on and turns them on later. Reactions, and
   photos and videos taken with Instagram's camera, don't send any.
 
+### Fixed
+
+- Photos and videos taken with Instagram's camera and kept in the chat now show in the chat. Videos said Ferry
+  couldn't show them, and photos showed as view-once. Ones that arrive while Ferry is open show right away.
+
 ## [1.5.1] - 2026-10-22
 
 ### Fixed

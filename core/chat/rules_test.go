@@ -202,22 +202,22 @@ func TestFoldersAfterTheFirstPage(t *testing.T) {
 	}
 }
 
-// A push names its chat by the thread's long ID (`t_id`), else its sender's Instagram user ID (`u`): the captured
-// push (push_text_kivo, scrubbed to this thread) opens the dummies' DM.
+// A push names its chat by the thread's long ID (`t_id`), else its sender's Instagram user ID (`s`; `u` is the account
+// it's for, 2026-10-24's capture): the captured push (push_text_kivo, scrubbed to this thread) opens the dummies' DM.
 func TestAPushOpensItsChat(t *testing.T) {
 	var p struct {
 		Params map[string]string `json:"params"`
 	}
 	fixture(t, "push_text_kivo", &p)
 	c := New(tamo)
-	if c.PushRoom(p.Params["t_id"], p.Params["u"]) != "" {
+	if c.PushRoom(p.Params["t_id"], p.Params["s"]) != "" {
 		t.Error("a room before the chat loaded")
 	}
 	id := c.Thread(thread(t)).Room
-	if got := c.PushRoom(p.Params["t_id"], p.Params["u"]); got != id {
+	if got := c.PushRoom(p.Params["t_id"], p.Params["s"]); got != id {
 		t.Errorf("by its push: %q", got)
 	}
-	if got := c.PushRoom("", p.Params["u"]); got != id {
+	if got := c.PushRoom("", p.Params["s"]); got != id {
 		t.Errorf("by its sender: %q", got)
 	}
 	if got := c.PushRoom("340282366841710300000000000000000000999", "4200000999"); got != "" {

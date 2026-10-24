@@ -1,0 +1,60 @@
+{
+ "thread": [
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "This photo can only be viewed once. Use the Instagram app to view.",
+    "msgtype": "m.notice"
+   },
+   "event_id": "mid.$camera0001",
+   "sender": "@me",
+   "origin_server_ts": 1792679274586,
+   "unsigned": {
+    "transaction_id": "7518336054787623001"
+   }
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "This photo can only be viewed once. Use the Instagram app to view.",
+    "msgtype": "m.notice"
+   },
+   "event_id": "mid.$camera0002",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 1792824243394
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Photo",
+    "info": {
+     "h": 960,
+     "mimetype": "image/jpeg",
+     "w": 540
+    },
+    "msgtype": "m.image",
+    "url": "https://scontent.example.invalid/v/c004.jpg"
+   },
+   "event_id": "mid.$camera0003",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 1792824256986
+  },
+  {
+   "type": "m.room.message",
+   "content": {
+    "body": "Video",
+    "info": {
+     "h": 960,
+     "mimetype": "video/mp4",
+     "thumbnail_url": "https://scontent.example.invalid/v/c012.jpg",
+     "w": 540
+    },
+    "msgtype": "m.video",
+    "url": "https://scontent.example.invalid/v/c010.mp4"
+   },
+   "event_id": "mid.$camera0004",
+   "sender": "@ig_17841400000000302",
+   "origin_server_ts": 1792826859369
+  }
+ ]
+}
