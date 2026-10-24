@@ -5,7 +5,8 @@ Instagram library (Go, `core/`). It grew out of Ferry, the same SwiftUI app on a
 Its history starts fresh at 1.0 (2026-10-17); the earlier history (Ferry's, and this app's first steps) is a private
 bundle outside the repo.
 
-**Status:** the app runs on `core/` at parity with Ferry except notifications (P0–P7 of
+**Status:** the app runs on `core/` at parity with Ferry except notifications (planned, decisions open:
+[docs/PLAN-push.md](docs/PLAN-push.md)) (P0–P7 of
 [docs/PLAN-core.md](docs/PLAN-core.md), each checked live with the two dummies; its "Done" blocks hold the results and
 request counts). Instagram's data becomes the Matrix-shaped rooms the views always showed (decision C2), in the engine
 since stage 1 of [docs/PLAN-android.md](docs/PLAN-android.md) (`core/chat`, so an Android app can share it), so
