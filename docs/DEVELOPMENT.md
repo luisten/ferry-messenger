@@ -171,6 +171,7 @@ to the launch line above. They live in `Ferry/DebugFixtures.swift` and `Ferry/Ap
 | `FERRY_DEBUG_VOICE_FILE=<host path to an .m4a>` | Holding the mic "records" without the microphone and sends this file (`say -o v.aiff "…"; afconvert -f m4af -d aac v.aiff v.m4a`). The simulator reads host paths |
 | `FERRY_DEBUG_STACK_EXTRA=<STATE>[,…]` | One stand-in account per state ("Extra 1", …) after the real ones, in the inbox's account stack only |
 | `FERRY_DEBUG_PLAYER_FAILS=1` | Every video in the player and every voice note fails to play; they still download |
+| `FERRY_DEBUG_WEB_PUSH=<host path to a JSON file>` | `{account, endpoint, p256dh, auth}` from `core/cmd/pushtool gen` and `core/cmd/autopush setup` ([PLAN-push.md](PLAN-push.md) step 1): once that account connects, the app registers the web push subscription with Instagram, once a launch (one request), and logs how it went (category `push`). Push keys only, never cookies; `autopush drain` on the Mac takes and decrypts what Mozilla held |
 | `FERRY_DEBUG_CAPTURE=<host dir>` | Writes Instagram's answers (as `core/chat` reads them) and every live event to that folder, per account (cookies never), for fixtures. Scrub before committing ([CLAUDE.md](../CLAUDE.md) "Invariants") |
 
 To clear the Requests card's "seen" markers, stop the simulator's cfprefsd first, or it serves the cached value. That

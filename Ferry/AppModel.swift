@@ -68,6 +68,10 @@ final class AppModel {
     @ObservationIgnored private var eventTask: Task<Void, Never>?
     /// Accounts a re-login turned out to be (refused): the engine's last updates for them are dropped.
     @ObservationIgnored private var strangers: Set<String> = []
+    #if DEBUG
+    /// `FERRY_DEBUG_WEB_PUSH`'s registration ran this launch.
+    @ObservationIgnored private var registeredWebPush = false
+    #endif
     /// The engine's updates applied so far (`IG.Update.seq`), and callers waiting for one (`applied(through:)`).
     @ObservationIgnored private var appliedSeq = 0
     @ObservationIgnored private var seqWaiters: [(seq: Int, done: CheckedContinuation<Void, Never>)] = []
@@ -208,6 +212,20 @@ final class AppModel {
         syncFailures = 0
         updateAccounts()
         updateInitialSync()
+        #if DEBUG
+        if let push = DebugFixtures.webPush, push.account == id, !registeredWebPush {
+            registeredWebPush = true
+            Task {
+                let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ferry", category: "push")
+                do {
+                    try await IGCore.registerPush(id, subscription: push.subscription)
+                    log.notice("web push registered")
+                } catch {
+                    log.error("web push registration failed: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+        }
+        #endif
     }
 
     /// One of the engine's updates for a chat. A room starts with its first fresh window (an update for a room this

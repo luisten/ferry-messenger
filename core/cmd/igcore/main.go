@@ -1086,6 +1086,28 @@ func IGSession(acct *C.char) *C.char {
 	return C.CString(string(b))
 }
 
+// Registers a web push subscription for the account with Instagram (`device_type: web_vapid`, what instagram.com sends
+// when a browser allows notifications; docs/PLAN-push.md): `{"endpoint", "p256dh", "auth"}`, the keys base64url. Only
+// the public half crosses; the private key stays with whoever decrypts. One request. `{}`.
+// ponytail: no rule yet, DEBUG's step 1 calls it once a launch; rules.go decides when to register in step 2.
+//
+//export IGRegisterPush
+func IGRegisterPush(acct, subJSON *C.char) *C.char {
+	return call(acct, func(a *account) (any, error) {
+		var sub struct {
+			Endpoint string `json:"endpoint"`
+			instameow.PushKeys
+		}
+		if err := json.Unmarshal([]byte(C.GoString(subJSON)), &sub); err != nil {
+			return nil, err
+		}
+		if sub.Endpoint == "" || len(sub.P256DH) == 0 || len(sub.Auth) == 0 {
+			return nil, errors.New("A push subscription needs an endpoint and both keys.")
+		}
+		return struct{}{}, a.cli.RegisterPushNotifications(a.ctx, sub.Endpoint, sub.PushKeys)
+	})
+}
+
 // Disconnects the account and forgets its client and chats (Remove Account). Instagram isn't told.
 //
 //export IGStop

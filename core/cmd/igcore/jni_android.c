@@ -64,6 +64,7 @@ TWO(resolveMedia, IGResolveMedia)
 TWO(unsend, IGUnsend)
 ONE(markRead, IGMarkRead)
 ONE(session, IGSession)
+TWO(registerPush, IGRegisterPush)
 
 JNIEXPORT void FN(setCapture)(JNIEnv *env, jclass c, jbyteArray dir) {
   char *a = in(env, dir);

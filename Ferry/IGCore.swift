@@ -129,6 +129,12 @@ nonisolated enum IGCore {
         _ = try result(call([room]) { IGMarkRead($0[0]) })
     }
 
+    /// Registers a web push subscription (`{endpoint, p256dh, auth}`) for the account with Instagram
+    /// (docs/PLAN-push.md). One request.
+    @concurrent static func registerPush(_ account: String, subscription: String) async throws {
+        _ = try result(call([account, subscription]) { IGRegisterPush($0[0], $0[1]) })
+    }
+
     /// Disconnects the account and forgets its client and chats (Remove Account). Instagram isn't told.
     @concurrent static func stop(_ account: String) async {
         _ = call([account]) { IGStop($0[0]); return nil }

@@ -106,7 +106,8 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   accounts stand in for the Keychain's and never connect, identities in memory only; screenshots and the UI tests),
   every send and upload blocked (`FERRY_DEBUG_BLOCK_SENDS`), a voice file standing in for the microphone
   (`FERRY_DEBUG_VOICE_FILE`), stand-in accounts in the toolbar stack only (`FERRY_DEBUG_STACK_EXTRA`), failing
-  playback (`FERRY_DEBUG_PLAYER_FAILS`), the fixture capture (`FERRY_DEBUG_CAPTURE`) and a session Instagram ends for
+  playback (`FERRY_DEBUG_PLAYER_FAILS`), the fixture capture (`FERRY_DEBUG_CAPTURE`), one web push registration made
+  on the Mac (`FERRY_DEBUG_WEB_PUSH`, PLAN-push step 1: push keys, never cookies) and a session Instagram ends for
   one launch (`FERRY_DEBUG_ENDED_SESSION`: a broken `sessionid`, never saved; Instagram wouldn't let the dummies' new
   web sessions be removed from "Where you're logged in").
   **Fixture rooms (`!debug-…`) never reach Instagram:** the engine refuses a room it didn't make (E4),
