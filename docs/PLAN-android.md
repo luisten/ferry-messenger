@@ -255,4 +255,4 @@ count before each run; the baseline costs the same actions once more.
 - An Instagram-native chat model instead of the Matrix-style one, if the Matrix vocabulary ever gets in the way
   (changes the contract for both apps).
 - `core/` in a repo of its own: about an afternoon (the module path changes), if a third consumer ever appears.
-- Notifications on iOS: still need a relay (2026-10-16 spike); separate decision.
+- Notifications on iOS: catch-up ones on the phone, with no relay ([PLAN-push.md](PLAN-push.md), draft 2026-10-24).

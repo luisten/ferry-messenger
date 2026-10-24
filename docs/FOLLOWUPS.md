@@ -64,7 +64,7 @@ days, **L** more. Live items the user has to do are in [manual-verification.md](
 |---|---|---|---|---|
 | 38 | Request rooms keep their unread count (we never send `m.read` there) | A request looks unread forever | `m.read.private` is never forwarded by the bridge (M6); send it in requests if the user opts in | S |
 | 18 | Hidden requests vs Requests | The bridge maps PENDING and SPAM to the same `message_request` flag | Carry `system_folder` in `m.bridge` the way M8 carries the tab (`FillPortalBridgeInfo`) | M |
-| 19 | Push notifications, app-icon badge (D6) | Messages only show when the app is open | Web push through a relay to APNs: [PLAN-push.md](PLAN-push.md) (draft, 2026-10-24) | L |
+| 19 | Push notifications, app-icon badge (D6) | Messages only show when the app is open | Catch-up notifications on the phone from Mozilla's push queue, no server: [PLAN-push.md](PLAN-push.md) (draft, 2026-10-24) | L |
 | 20 | Always-on host (D3) | Mac asleep = bridge offline, phone can't reach the server | Small always-on box with a residential IP; move `server/data`; revisit Tuwunel (D2) | L |
 | 21 | Use on the iPhone | v1 is simulator-only | [DEVELOPMENT.md](DEVELOPMENT.md#install-on-your-iphone) (not yet run on a phone); #11 is done | M |
 | 22 | Account identity (name, colour, mark, order) is local `UserDefaults` | Lost on reinstall, not shared across devices | Matrix account data (DESIGN §14) | S |
