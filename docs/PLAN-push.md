@@ -77,7 +77,9 @@ Each has a recommendation. W1 is needed before step 1; the rest can wait until s
 
 - The push state as one Keychain item (service `ferry`, account `push`, `AfterFirstUnlockThisDeviceOnly`, so a locked
   phone still reads it). `Keychain.accounts()` already skips it (it lists `instagram:` items only).
-- After each account connects: `IGPushSetup` if the account has no channel, then `IGRegisterPush`.
+- Each time the app opens: `IGPushSetup` with every signed-in account (Mozilla only; nothing new when each has its
+  channel). After each account connects: `IGRegisterPush`, which the engine's rule usually turns into nothing. One
+  at a time, in order (`PushNotifications`), since each reads and writes the state.
 - Background App Refresh: `UIBackgroundModes` `fetch` and the task's ID in `Config/Info.plist`, SwiftUI's
   `.backgroundTask(.appRefresh(…))`, the next refresh booked each time the app goes to the background and at the end
   of each run (no earlier than 15 minutes; iOS decides the rest). A run only drains: it never connects an account

@@ -54,6 +54,11 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   only through `IGSession`, whose result Swift writes straight to the Keychain and doesn't keep (Instagram rotates
   some cookies mid-session; decision C3 in [docs/PLAN-core.md](docs/PLAN-core.md)). Never pass cookies through
   environment variables, DEBUG switches or test runners.
+- **Catch-up notifications talk to Mozilla, not Instagram** ([docs/PLAN-push.md](docs/PLAN-push.md)): a Background
+  App Refresh wake only drains the phone's web push channels (`IGPushDrain`); Instagram hears from them only through
+  `IGRegisterPush`, when `rules.go`'s `PushRegister` says so. The push state (Mozilla's ID, each account's channel and
+  private keys) is like the cookies: it leaves `core/` only for the Keychain (service `ferry`, account `push`), never
+  logged.
 - **Live tests use the two dummy accounts only**, never the user's real ones. Their names are in the gitignored
   `docs/local/test-accounts.md`; tracked files use the fictional stand-ins `tamoveska` (personal) and `kivostudio`
   (professional), `sample.*` for third parties. `git grep` for the real names must stay empty.
@@ -106,7 +111,8 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   accounts stand in for the Keychain's and never connect, identities in memory only; screenshots and the UI tests),
   every send and upload blocked (`FERRY_DEBUG_BLOCK_SENDS`), a voice file standing in for the microphone
   (`FERRY_DEBUG_VOICE_FILE`), stand-in accounts in the toolbar stack only (`FERRY_DEBUG_STACK_EXTRA`), failing
-  playback (`FERRY_DEBUG_PLAYER_FAILS`), the fixture capture (`FERRY_DEBUG_CAPTURE`) and a session Instagram ends for
+  playback (`FERRY_DEBUG_PLAYER_FAILS`), the fixture capture (`FERRY_DEBUG_CAPTURE`), a Background App Refresh wake
+  after HOME (`FERRY_DEBUG_REFRESH_AFTER_HOME`) and a session Instagram ends for
   one launch (`FERRY_DEBUG_ENDED_SESSION`: a broken `sessionid`, never saved; Instagram wouldn't let the dummies' new
   web sessions be removed from "Where you're logged in").
   **Fixture rooms (`!debug-…`) never reach Instagram:** the engine refuses a room it didn't make (E4),

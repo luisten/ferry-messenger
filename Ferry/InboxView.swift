@@ -122,6 +122,8 @@ struct InboxView: View {
             try? await Task.sleep(for: .seconds(5))
             launchSettled = true
         }
+        // W4 (docs/PLAN-push.md): the system's question once, when the inbox first shows its chats.
+        .onChange(of: model.initialSyncDone, initial: true) { _, done in if done { model.askForNotificationsOnce() } }
         .navigationDestination(for: InboxRoute.self) { route in
             switch route {
             case .thread(let id): ThreadView(roomID: id, path: $path)

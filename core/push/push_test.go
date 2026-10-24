@@ -11,6 +11,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"flag"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -166,6 +167,36 @@ func ts(t *testing.T, name string) int64 {
 }
 
 var ctx = context.Background()
+
+var update = flag.Bool("update", false, "rewrite FerryTests/Fixtures/engine_push.json")
+
+// What each capture reads as, for FerryTests' PushNoticeTests (`engine_push.json`, rewritten with -update and
+// reviewed like code, as core/chat's golden files).
+func TestTheCapturesRead(t *testing.T) {
+	var pushes []Push
+	for _, name := range []string{"text", "photo", "video", "voice"} {
+		var d pushcrypto.DecryptedPushData
+		if err := json.Unmarshal(capture(t, name), &d); err != nil {
+			t.Fatal(err)
+		}
+		pushes = append(pushes, Read(&d, tamo, ts(t, "text")))
+	}
+	var b bytes.Buffer
+	enc := json.NewEncoder(&b)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", " ")
+	enc.Encode(map[string]any{"state": map[string]string{"uaid": "sample"}, "pushes": pushes})
+	path := filepath.Join("..", "..", "FerryTests", "Fixtures", "engine_push.json")
+	if *update {
+		if err := os.WriteFile(path, b.Bytes(), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	if want, err := os.ReadFile(path); err != nil || !bytes.Equal(want, b.Bytes()) {
+		t.Errorf("%s isn't what the engine reads now: run `go test ./push -update` and review the diff", path)
+	}
+}
 
 func TestSetupMakesAndDropsChannels(t *testing.T) {
 	f := start(t)

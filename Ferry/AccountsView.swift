@@ -27,6 +27,13 @@ struct AccountsView: View {
                 Text(model.accounts.count > 1 ? "Each chat stays tied to the account it belongs to. Touch and hold an account, then drag to reorder the scope bar."
                      : "Each chat stays tied to the account it belongs to.")
             }
+            Section {
+                NotificationsRow()
+            } header: {
+                Text("Notifications")
+            } footer: {
+                Text("New messages arrive when iOS lets Ferry check, usually within the hour, not instantly. Reactions, and photos and videos taken with Instagram's camera, don't send any.")
+            }
             Section {} footer: {
                 Text(Self.appVersion ?? "").accessibilityIdentifier("accounts.footer")
             }
@@ -44,6 +51,46 @@ struct AccountsView: View {
 
     /// "Ferry Messenger 1.0" (DESIGN A1 footer; no server any more).
     private static let appVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String).map { "Ferry Messenger \($0)" }
+}
+
+/// Catch-up notifications (docs/PLAN-push.md W4): on, off with the way to turn them on, or on but unable to arrive
+/// because Background App Refresh is off for the app.
+private struct NotificationsRow: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.openURL) private var openURL
+    @State private var status: AppModel.NotificationStatus?
+
+    var body: some View {
+        Group {
+            switch status {
+            case .notAsked:
+                Button("Turn On Notifications", systemImage: "bell") { Task { await model.turnOnNotifications(); await check() } }
+            case .off:
+                Button("Turn On in Settings", systemImage: "bell.slash") { openSettings() }
+            case .noRefresh:
+                Button(action: openSettings) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Label("Notifications are on", systemImage: "bell")
+                        Text("Background App Refresh is off for Ferry, so none can arrive. Turn it on in Settings.")
+                            .font(.footnote).foregroundStyle(.statusWarn)
+                    }
+                }
+            case .on:
+                Label("Notifications are on", systemImage: "bell")
+            case nil:  // for the moment the check takes; an empty view would never appear, so it never ran
+                Label("Notifications", systemImage: "bell").foregroundStyle(.inkSecondary)
+            }
+        }
+        .accessibilityIdentifier("accounts.notifications")
+        .task { await check() }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in Task { await check() } }
+    }
+
+    private func check() async { status = await model.notificationStatus() }
+
+    private func openSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+    }
 }
 
 /// One account: avatar, name, @handle and a status line with its glyph (DESIGN §7.1). "Log in" sits inline when the

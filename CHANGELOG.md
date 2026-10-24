@@ -7,6 +7,12 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+### Added
+
+- Notifications for new messages while Ferry is closed. They arrive when iOS lets Ferry check, usually within the
+  hour, not instantly. Ferry asks once; Accounts shows whether they're on and turns them on later. Reactions, and
+  photos and videos taken with Instagram's camera, don't send any.
+
 ## [1.5.1] - 2026-10-22
 
 ### Fixed
