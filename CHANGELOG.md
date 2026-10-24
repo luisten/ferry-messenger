@@ -7,6 +7,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+## [1.6] - 2026-10-24
+
 ### Added
 
 - Notifications for new messages while Ferry is closed. They arrive when iOS lets Ferry check, usually within the
@@ -113,7 +115,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 - First public release: your Instagram direct messages, from all your accounts in one inbox, talking to Instagram
   straight from your iPhone.
 
-[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.5.1...HEAD
+[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.6...HEAD
+[1.6]: https://github.com/luisten/ferry-messenger/compare/v1.5.1...v1.6
 [1.5.1]: https://github.com/luisten/ferry-messenger/compare/v1.5...v1.5.1
 [1.5]: https://github.com/luisten/ferry-messenger/compare/v1.4...v1.5
 [1.4]: https://github.com/luisten/ferry-messenger/compare/v1.3...v1.4

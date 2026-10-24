@@ -13,7 +13,7 @@ DESIGN.md's. Why it differs from the design: PLAN §7 and [m7-design-diff.md](do
 | Which threads are chats | Every thread in each account's Instagram inbox (Primary, General, Requests), loaded page by page at launch. |
 | Requests send nothing | Opening a request sends no "Seen" and no typing. Only Accept, Delete or a reply send. |
 | Instagram credentials never touch the app | Login happens on instagram.com in a throwaway web view; the app keeps only the session's cookies, in the Keychain (one item per account). |
-| Live only while open | Each account's socket runs while the app is active; on return Instagram's client catches up. No push (D6). No local store beyond Keychain + `UserDefaults` (D8): every launch reloads the inboxes from Instagram. |
+| Live only while open | Each account's socket runs while the app is active; on return Instagram's client catches up. Closed, catch-up notifications only (below): a wake talks to Mozilla, never Instagram. No local store beyond Keychain + `UserDefaults` (D8): every launch reloads the inboxes from Instagram. |
 | Media on tap | Thumbnails load as rows appear; full media downloads only when tapped, to `Caches/media`, and plays from that file. The folder stays under 500 MB: past that, the least recently opened files go first, down to 400 MB. |
 | Order and unread | Newest **message** first (not newest event). A chat is unread while its newest message is incoming and newer than our "Seen", or it's marked unread on Instagram. Requests, archived and General chats don't count toward the main list's or chips' unread. |
 | Primary/General | Business and creator accounts (`is_professional_account`) have Instagram's two tabs: their main list is **Primary**, and chats in **General** on Instagram sit in General (Folders menu), from the start and as Instagram reports moves. Moving chats is done in Instagram. |
@@ -260,6 +260,24 @@ Instagram to see it."
   Navigation to Instagram logout is blocked. Instagram's refusals map to plain copy (checkpoint, consent, suspended,
   ended session).
 
+## Notifications
+
+Catch-up notifications, on the phone, no server ([docs/PLAN-push.md](docs/PLAN-push.md)): each account has a Mozilla
+web push channel, registered with Instagram (on a new channel, a new login, or weekly); Mozilla holds the pushes until
+a Background App Refresh wake collects and decrypts them, and the app posts a local notification per message newer
+than the app's last close. Not instant: iOS decides when to wake the app.
+
+- **Permission:** asked once, the first time the inbox shows with an account; never at first launch, never in the demo.
+  A1's Notifications row turns it on later ("Turn On Notifications", or "Turn On in Settings" after a no), says
+  "Notifications are on", and warns when Background App Refresh is off for the app (nothing can arrive).
+- **What notifies:** texts, photos and videos from the camera roll, voice notes. Reactions, likes and anything taken
+  with Instagram's in-chat camera send no push.
+- **What it shows:** the sender's `@handle` (a group's name, with "@sender: text"), the text or Instagram's line for
+  media ("Sent a photo"), and the account's name as the subtitle when there are two or more accounts; one stack per
+  chat, one notification per message. Opening the app clears them and collects what's waiting without notifying.
+- **Tap:** opens the chat once its account's chats have loaded, else the inbox.
+- **Remove Account** drops the account's channel at Mozilla; Instagram isn't told.
+
 ## DEBUG builds only
 
 Fixtures for states the live accounts can't produce (made-up accounts and chats that never connect, fake request
@@ -269,6 +287,6 @@ docs/DEVELOPMENT.md "DEBUG switches". None of it exists in Release builds.
 
 ## Not in v1
 
-Moving chats between Primary and General, account-type labels in Accounts, push and badge (D6), a GIF search, a camera in `+`, "slide up to lock" a recording, mute/pin/mark unread, message
+Moving chats between Primary and General, account-type labels in Accounts, real-time notifications and an icon badge, a GIF search, a camera in `+`, "slide up to lock" a recording, mute/pin/mark unread, message
 search, new groups and group management (members are read-only; no "Start a chat" from a member yet), inline reel autoplay, swipe to reply, real waveforms, a media size cap,
 identity sync across devices, a verified run on the iPhone, E2EE chats (the library can't show them).
