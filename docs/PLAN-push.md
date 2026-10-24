@@ -51,10 +51,11 @@ Each has a recommendation. W1 is needed before step 1; the rest can wait until s
 
 - `core/push`: a small Mozilla client grown from `core/cmd/autopush` (`hello` with the phone's UAID and channels,
   `register`, `unregister`, `ack`; `github.com/coder/websocket`, already pinned in `core/go.mod`) and the push's
-  meaning: decrypt (`pushcrypto`, already in the pinned mautrix), then kind (`direct_v2_text`, `direct_v2_media`, `direct_v2_voice_message`, else unknown),
-  sender, text, message ID, time and the chat's IDs (`params.u` in a DM, `params.f` in a group). Pure apart from the
-  socket, tested on step 1's captured pushes and against a fake Mozilla server (`httptest`).
-- Three exports, each with its JNI function in `jni_android.c` in the same commit (Android pins a commit of `core/`):
+  meaning: decrypt (`pushcrypto`, already in the pinned mautrix), then kind (`direct_v2_text`, `direct_v2_media`,
+  `direct_v2_voice_message`, else not a message), sender (`it`), text, message ID (`mid`), time (`ts`) and the chat
+  (`t_id`, the thread's long ID; `u`, the sender's Instagram user ID). Pure apart from the socket, tested on step 1's
+  captured pushes and against a fake Mozilla server (`httptest`).
+- Four exports, each with its JNI function in `jni_android.c` in the same commit (Android pins a commit of `core/`):
   - `IGPushSetup(state, accounts)`: one connection to Mozilla; a channel and keys for each listed account that has
     none, channels of unlisted accounts dropped (`unregister`). Answers the new state.
   - `IGPushDrain(state, since)`: connects, takes what's waiting for a few seconds (until 1.5 s pass with nothing new,
@@ -62,13 +63,15 @@ Each has a recommendation. W1 is needed before step 1; the rest can wait until s
     `since`, the last time the app was open, so nothing already seen comes back).
   - `IGRegisterPush(account, state)`: registers the account's channel with Instagram when `rules.go` says to: a new
     session (every login, A3's re-login included), a new endpoint, or 7 days since the last (one request per account
-    a week, tuned by step 4). C6 counts it like any request.
+    a week, tuned by step 4). C6 counts it like any request. `IGLogin` marks the new session.
+  - `IGPushRoom(account, push)`: the room a tap opens (below).
 - **The push state** (the phone's UAID, and per account the channel, endpoint, key pair and when it was last
   registered) leaves `core/` only for Swift to write straight to the Keychain, like the cookies (decision C3), never
   logged. A UAID Mozilla no longer knows (one idle for long) comes back as a new one: every channel is made again and
   re-registered at the next open.
-- `PushRoom(account, user, group)` in `core/chat`, with a test: the room a tap opens (a DM through `fbidByUserID` and
-  `ExistingDM`, a group by its thread ID), once the account's chats have loaded; else the inbox.
+- `PushRoom(long, user)` in `core/chat`, with a test: the room a tap opens (the push's long thread ID through the
+  engine's map of them, else its sender's DM through `fbidByUserID` and `ExistingDM`), once the account's chats have
+  loaded; else the inbox.
 
 **The app:**
 
@@ -111,9 +114,9 @@ About 3–4 days of work plus the week; a guess, and step 1 decides whether it's
 
 - **Mozilla keeps pushes for a client that isn't connected, one per message, and gives them back until they're
   acked.** Three texts sent a minute apart with the app closed were all there 10 minutes later and still there at
-  2 h 2 min (the pushes say `time_to_live` 21600; past 2 h untested). They share `collapse_key: direct_v2_message`
-  but weren't merged. A collection that doesn't ack gets the same pushes again on the next connection, so a wake cut
-  short loses nothing.
+  2 h 2 min (texts say `time_to_live` 21600, media 86400; past 2 h untested). They share
+  `collapse_key: direct_v2_message` but weren't merged. A collection that doesn't ack gets the same pushes again on
+  the next connection, so a wake cut short loses nothing.
 - **Instagram pushes even while the session is connected:** a text sent with the app open on the inbox showed in the
   app live and was held by Mozilla too. So an open takes the queue without notifying (`IGPushDrain`'s `since`).
 - **What pushes:** a text (`direct_v2_text`, with the text), a photo or video from the camera roll (`direct_v2_media`,
@@ -130,12 +133,20 @@ About 3–4 days of work plus the week; a guess, and step 1 decides whether it's
   scrubbed payload itself.
 - **Not covered:** requests (no third account, D11), groups, shares, a hold past 2 h, a real phone.
 
+**Step 2 done 2026-10-24** (Go only, no Instagram request). `core/push` (`Setup`, `Drain`, `Read`) and the four
+exports above with their JNI functions; `PushRoom` and `PushRegister` in `rules.go`. Step 1's `FERRY_DEBUG_WEB_PUSH`
+is gone: step 3 registers for real. Tests: a fake Mozilla holding the four scrubbed captures
+(`core/testdata/push_*_kivo.json`), encrypted to test keys. Channels are made, kept on a second setup and dropped for
+a removed account; one drain reads, acks and marks what notifies, leaving out what can't be read; a UAID Mozilla
+forgot starts over with new endpoints; with no channels nothing connects. Three deliberate bugs (no ack, `since`
+ignored, the wrong thread field) each failed them.
+
 ## 4. Risks
 
 - **Late by design.** iOS wakes an app more often the more it's used, perhaps between one wake an hour and a few a
-  day (Apple publishes no numbers; step 4 measures); never after it's swiped away in the app switcher (until it's opened again), and not in Low Power Mode or with
-  Background App Refresh off. A push older than 6 h is gone from Mozilla: no notification, though the message is in
-  the chat as usual.
+  day (Apple publishes no numbers; step 4 measures); never after it's swiped away in the app switcher (until it's
+  opened again), and not in Low Power Mode or with Background App Refresh off. A text older than 6 h (media: 24 h) is
+  gone from Mozilla: no notification, though the message is in the chat as usual.
 - **Messages Instagram doesn't push** never notify: reactions, and photos and videos taken with Instagram's in-chat
   camera, view-once or kept (step 1). They're in the chat on the next open, as now.
 - **Mozilla limits or blocks a client that isn't Firefox** (W1), or **Instagram stops web push to Mozilla**: the app

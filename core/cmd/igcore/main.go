@@ -50,6 +50,7 @@ import (
 	"go.mau.fi/mautrix-meta/pkg/messagix/types"
 
 	"github.com/luisten/ferry-messenger/core/chat"
+	webpush "github.com/luisten/ferry-messenger/core/push"
 )
 
 type account struct {
@@ -59,6 +60,9 @@ type account struct {
 	cancel context.CancelFunc
 	count  *counter
 	chats  *book
+	// When IGLogin last made a new web session for it (ms; 0 if only resumed this launch): a new session registers
+	// its web push channel again (rules.go's PushRegister).
+	loginAt int64
 }
 
 // book is an account's chats, kept across a re-login. Its lock is held while an update is queued, so the app gets
@@ -467,7 +471,7 @@ func login(cookiesJSON string) (map[string]any, error) {
 	mu.Lock()
 	old := accounts[id]
 	if old != nil {
-		a.chats = old.chats
+		a.chats, a.loginAt = old.chats, old.loginAt
 	} else {
 		a.chats = &book{Chats: chat.New(id)}
 	}
@@ -518,6 +522,11 @@ func IGLogin(cookiesJSON *C.char) *C.char {
 	if err != nil {
 		return fail(err)
 	}
+	mu.Lock()
+	if a := accounts[out["account"].(string)]; a != nil {
+		a.loginAt = now()
+	}
+	mu.Unlock()
 	return jsonOut(out)
 }
 
@@ -1086,26 +1095,98 @@ func IGSession(acct *C.char) *C.char {
 	return C.CString(string(b))
 }
 
-// Registers a web push subscription for the account with Instagram (`device_type: web_vapid`, what instagram.com sends
-// when a browser allows notifications; docs/PLAN-push.md): `{"endpoint", "p256dh", "auth"}`, the keys base64url. Only
-// the public half crosses; the private key stays with whoever decrypts. One request. `{}`.
-// ponytail: no rule yet, DEBUG's step 1 calls it once a launch; rules.go decides when to register in step 2.
+// The phone's web push channels (docs/PLAN-push.md): `state` is the last answer of IGPushSetup, IGPushDrain or
+// IGRegisterPush ("" the first time), `accounts` a JSON array of account IDs. A channel and keys for each account
+// without one, the channels of accounts not listed dropped. Mozilla only. Answers the new state, which holds private
+// keys: only for Swift to write straight to the Keychain, never logged (as IGSession's cookies, decision C3).
+//
+//export IGPushSetup
+func IGPushSetup(stateJSON, accountsJSON *C.char) *C.char {
+	s, err := pushState(stateJSON)
+	var accounts []string
+	if err == nil {
+		err = json.Unmarshal([]byte(C.GoString(accountsJSON)), &accounts)
+	}
+	if err != nil {
+		return fail(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	if s, err = webpush.Setup(ctx, s, accounts); err != nil {
+		return fail(err)
+	}
+	return jsonOut(s)
+}
+
+// What Mozilla held for the phone, read and acked: `{state, pushes}`, each push marked whether to notify (a message
+// newer than `since`, Unix ms: the last time the app was open). Mozilla only; Instagram isn't asked anything, so the
+// app can call it from a background wake.
+//
+//export IGPushDrain
+func IGPushDrain(stateJSON *C.char, since C.longlong) *C.char {
+	s, err := pushState(stateJSON)
+	if err != nil {
+		return fail(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	s, pushes, err := webpush.Drain(ctx, s, int64(since), 1500*time.Millisecond, 10*time.Second)
+	if err != nil {
+		return fail(err)
+	}
+	return jsonOut(map[string]any{"state": s, "pushes": pushes})
+}
+
+// Registers the account's web push channel with Instagram (`device_type: web_vapid`, what instagram.com sends when a
+// browser allows notifications) when rules.go's PushRegister says to: one request, else none. Only the public keys
+// go. `{state, sent}`.
 //
 //export IGRegisterPush
-func IGRegisterPush(acct, subJSON *C.char) *C.char {
+func IGRegisterPush(acct, stateJSON *C.char) *C.char {
 	return call(acct, func(a *account) (any, error) {
-		var sub struct {
-			Endpoint string `json:"endpoint"`
-			instameow.PushKeys
-		}
-		if err := json.Unmarshal([]byte(C.GoString(subJSON)), &sub); err != nil {
+		s, err := pushState(stateJSON)
+		if err != nil {
 			return nil, err
 		}
-		if sub.Endpoint == "" || len(sub.P256DH) == 0 || len(sub.Auth) == 0 {
-			return nil, errors.New("A push subscription needs an endpoint and both keys.")
+		ch := s.Accounts[a.id]
+		if ch == nil {
+			return nil, errors.New("This account has no push channel yet.")
 		}
-		return struct{}{}, a.cli.RegisterPushNotifications(a.ctx, sub.Endpoint, sub.PushKeys)
+		mu.Lock()
+		loginAt := a.loginAt
+		mu.Unlock()
+		if !chat.PushRegister(ch.Endpoint, ch.RegisteredEndpoint, ch.RegisteredAt, loginAt, now()) {
+			return map[string]any{"state": s, "sent": false}, nil
+		}
+		keys := instameow.PushKeys{P256DH: ch.Keys.P256DH, Auth: ch.Keys.Auth}
+		if err := a.cli.RegisterPushNotifications(a.ctx, ch.Endpoint, keys); err != nil {
+			return nil, err
+		}
+		ch.RegisteredEndpoint, ch.RegisteredAt = ch.Endpoint, now()
+		return map[string]any{"state": s, "sent": true}, nil
 	})
+}
+
+// The room a push names, once its account's chats have loaded: `{room}`, "" for the inbox.
+//
+//export IGPushRoom
+func IGPushRoom(acct, pushJSON *C.char) *C.char {
+	return call(acct, func(a *account) (any, error) {
+		var p webpush.Push
+		if err := json.Unmarshal([]byte(C.GoString(pushJSON)), &p); err != nil {
+			return nil, err
+		}
+		a.chats.Lock()
+		defer a.chats.Unlock()
+		return map[string]string{"room": a.chats.PushRoom(p.Thread, p.User)}, nil
+	})
+}
+
+func pushState(stateJSON *C.char) (s webpush.State, err error) {
+	if text := C.GoString(stateJSON); text != "" {
+		err = json.Unmarshal([]byte(text), &s)
+	}
+	return s, err
 }
 
 // Disconnects the account and forgets its client and chats (Remove Account). Instagram isn't told.

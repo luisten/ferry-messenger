@@ -32,10 +32,6 @@ import Foundation
 ///   account stack only (the dev stack has two accounts; the stack changes from four). Nothing else sees them.
 /// - `FERRY_DEBUG_PLAYER_FAILS=1`: every video in the player and every voice note fails to play, as when AVFoundation
 ///   drops them (M1's failed state, a voice note's "Can't play"). Downloads still happen.
-/// - `FERRY_DEBUG_WEB_PUSH=<host path to a JSON file>`: `{account, endpoint, p256dh, auth}`, made on the Mac by
-///   `core/cmd/pushtool` and `core/cmd/autopush` (docs/PLAN-push.md step 1). Once that account connects, the app
-///   registers the subscription with Instagram, once a launch (one request), and logs how it went (category `push`).
-///   Push keys only, never cookies; the private key stays on the Mac.
 /// - `FERRY_DEBUG_DEMO=1`: made-up accounts and chats only, for the README's screenshots (the repo is public) and the UI
 ///   tests (C8): the Keychain's accounts are left alone and nothing connects, so nothing reaches Instagram. Includes the
 ///   requests and the group.
@@ -52,11 +48,6 @@ nonisolated enum DebugFixtures {
     static let voiceFile = env["FERRY_DEBUG_VOICE_FILE"].flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) }
     static let playerFails = env["FERRY_DEBUG_PLAYER_FAILS"] == "1"
     static let endedSessions = Set((env["FERRY_DEBUG_ENDED_SESSION"] ?? "").split(separator: ",").map(String.init))
-    static let webPush: (account: String, subscription: String)? = env["FERRY_DEBUG_WEB_PUSH"].flatMap { path in
-        guard let data = FileManager.default.contents(atPath: path),
-              let account = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["account"] as? String else { return nil }
-        return (account, String(decoding: data, as: UTF8.self))
-    }
     private static let loginStates: [String: String] = Dictionary(
         (env["FERRY_DEBUG_LOGIN_STATE"] ?? "").split(separator: ",").compactMap { pair in
             let parts = pair.split(separator: "=", maxSplits: 1).map(String.init)
