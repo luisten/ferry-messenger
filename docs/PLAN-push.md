@@ -1,8 +1,8 @@
 # Ferry Messenger: catch-up notifications on the iPhone (plan)
 
 > Draft, 2026-10-24, rewritten the same day: everything runs on the phone, no server (the user's call; the relay
-> design is in this file's history). W1 decided (Mozilla, 2026-10-24), W2–W4 wait for the user. Step 1 done the same
-> day: Mozilla keeps Instagram's pushes for a phone that isn't connected (§3). Account names are the
+> design is in this file's history). W1–W4 decided 2026-10-24 (the recommendations). Steps 1–3 done the same day
+> (§3): the app shows catch-up notifications; the tap and real wakes wait for step 4, on the phone. Account names are the
 > fictional stand-ins (`tamoveska` personal, `kivostudio` professional). Builds on the on-device spike's web push runs
 > ([spikes/2026-10-16-on-device.md](spikes/2026-10-16-on-device.md) "Web push").
 
@@ -41,9 +41,9 @@ Each has a recommendation. W1 is needed before step 1; the rest can wait until s
 | # | Question | Recommendation |
 |---|---|---|
 | W1 | **Decided 2026-10-24: go ahead.** **Mozilla's push service from an app that isn't Firefox.** It publishes no terms for other clients (searched 2026-10-24; its docs describe it as Firefox's service). The README's "The app talks only to Instagram" becomes "Instagram, and Mozilla's push service for notifications". | **Go ahead with step 1**, using it lightly (a connection of a few seconds per wake, one channel per account). Asking Mozilla first (the autopush team's #push channel) is yours to do if you want certainty. |
-| W2 | **Which pushes become notifications** | **Every message web push carries**, which step 1 found is texts, photos and videos from the camera roll, and voice notes, one push each. Reactions, likes and anything taken with Instagram's in-chat camera send no push, so they can't notify; shares weren't tried. Requests: notify too until step 1 shows whether a push says it's a request; then your call. |
-| W3 | **What a notification shows** | The sender (`@handle`, or the group's name) as the title, the text as the body, the account's name as the subtitle when there are two or more accounts; iOS's "Show Previews" hides the text as usual. Grouped per chat. No icon badge and no sender photo at first. |
-| W4 | **When the app asks for permission** | Once, right after the first account connects (the end of onboarding), plus a row in Accounts to turn it on later, which also says when Background App Refresh is off for the app. Never at first launch. A "no" costs nothing: the app works as today. |
+| W2 | **Decided 2026-10-24: the recommendation.** **Which pushes become notifications** | **Every message web push carries**, which step 1 found is texts, photos and videos from the camera roll, and voice notes, one push each. Reactions, likes and anything taken with Instagram's in-chat camera send no push, so they can't notify; shares weren't tried. Requests: notify too until step 1 shows whether a push says it's a request; then your call. |
+| W3 | **Decided 2026-10-24: the recommendation.** **What a notification shows** | The sender (`@handle`, or the group's name) as the title, the text as the body, the account's name as the subtitle when there are two or more accounts; iOS's "Show Previews" hides the text as usual. Grouped per chat. No icon badge and no sender photo at first. |
+| W4 | **Decided 2026-10-24: the recommendation.** **When the app asks for permission** | Once, right after the first account connects (the end of onboarding), plus a row in Accounts to turn it on later, which also says when Background App Refresh is off for the app. Never at first launch. A "no" costs nothing: the app works as today. |
 
 ## 2. What gets built
 
@@ -142,6 +142,23 @@ is gone: step 3 registers for real. Tests: a fake Mozilla holding the four scrub
 a removed account; one drain reads, acks and marks what notifies, leaving out what can't be read; a UAID Mozilla
 forgot starts over with new endpoints; with no channels nothing connects. Three deliberate bugs (no ack, `since`
 ignored, the wrong thread field) each failed them.
+
+**Step 3 done 2026-10-24** (the simulator, both dummies; the user sent as `kivostudio` from Instagram's app on their
+phone). `PushNotifications` (setup, register, drain, one at a time), `PushNotice` (W3), the app delegate (taps), the
+Background App Refresh task, W4's prompt and the Accounts row; `FERRY_DEBUG_REFRESH_AFTER_HOME` for the simulator,
+whose wake shows everything held. Unit tests: 297 (4 new, on `engine_push.json` from `go test ./push -update`); UI
+tests pass on made-up data (the demo never asks or registers).
+
+- **Live:** the prompt came once, as the inbox first showed its chats; after Allow, each account registered its
+  channel (`POST /api/v1/web/push/register/`, one each). A text sent while the app was open showed live; after HOME
+  the wake drained it and posted the notification: `@sender` as the title, the receiving account's name as the
+  subtitle (two accounts), the text.
+- **Counts:** one launch, 11 requests: `tamoveska` 5 (inbox page, mailbox query, a folder page, socket, the
+  registration), `kivostudio` 6 (the same with two folder pages). No chat opened: no "Seen". `kivostudio`: 1 text.
+- **Not verified: the tap.** The simulator's synthesized taps don't open a notification from Notification Center,
+  and `simctl push` test banners came and went too fast to catch; the tap moves to step 4, on the phone.
+- **Fixed on the way:** the Accounts row started empty while checking, and an empty view never appears, so the check
+  never ran (it now shows a placeholder line).
 
 ## 4. Risks
 
