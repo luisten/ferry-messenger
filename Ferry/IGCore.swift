@@ -154,13 +154,23 @@ nonisolated enum IGCore {
         return try answer(call([account, json]) { IGPushRoom($0[0], $0[1]) }).room.flatMap { $0.isEmpty ? nil : $0 }
     }
 
-    /// `{state, pushes}`: the state back as text (it's only stored) and the pushes, if any.
+    /// `{state, pushes}`: the state back as text (it's only stored) and the pushes, if any. No state, no answer: an
+    /// empty one would replace the stored keys.
     static func drained(_ data: Data) throws -> (state: String, pushes: [IG.Push]) {
         struct Body: Decodable { var pushes: [IG.Push]? }
-        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        let state = try JSONSerialization.data(withJSONObject: object?["state"] ?? [String: Any]())
+        guard let stored = (try JSONSerialization.jsonObject(with: data) as? [String: Any])?["state"] as? [String: Any] else {
+            throw Failure(message: "core/ answered without the push state.", code: "UNKNOWN_ERROR")
+        }
+        let state = try JSONSerialization.data(withJSONObject: stored)
         return (String(decoding: state, as: UTF8.self), try JSONDecoder().decode(Body.self, from: data).pushes ?? [])
     }
+
+    /// The app went to the background: every socket closes, retries stop and folder paging waits, so a Background App
+    /// Refresh wake never reaches Instagram. Chats stay.
+    @concurrent static func pause() async { _ = call([]) { _ in IGPause(); return nil } }
+
+    /// The app is back: every socket reconnects and catches up, with no index reload.
+    @concurrent static func unpause() async { _ = call([]) { _ in IGUnpause(); return nil } }
 
     /// Disconnects the account and forgets its client and chats (Remove Account). Instagram isn't told.
     @concurrent static func stop(_ account: String) async {

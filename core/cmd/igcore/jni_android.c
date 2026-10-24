@@ -129,6 +129,10 @@ JNIEXPORT jbyteArray FN(pushDrain)(JNIEnv *env, jclass c, jbyteArray state, jlon
   return r;
 }
 
+JNIEXPORT void FN(pause)(JNIEnv *env, jclass c) { IGPause(); }
+
+JNIEXPORT void FN(unpause)(JNIEnv *env, jclass c) { IGUnpause(); }
+
 JNIEXPORT jbyteArray FN(counts)(JNIEnv *env, jclass c) { return out(env, IGCounts()); }
 
 JNIEXPORT void FN(stop)(JNIEnv *env, jclass c, jbyteArray acct) {

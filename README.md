@@ -22,7 +22,7 @@ one inbox, and no feed, no Explore, no algorithm.
 - **Message requests,** opened without sending "Seen". Accept or delete them when you're ready.
 - **Primary and General** for business and creator accounts, plus an archive for chats you're done with.
 - **Notifications** for new messages while the app is closed. They're not instant: they come when iOS lets the app
-  check, usually within the hour.
+  check, sometimes hours later.
 - Light and dark mode, large text and VoiceOver.
 
 ## How it works
@@ -44,9 +44,9 @@ service, which keeps them until your iPhone collects them. They're encrypted so 
 
 ## Good to know
 
-- **Notifications are late, by design.** iOS decides when the app may check: often within the hour, sometimes
-  longer, and not at all after you swipe the app away, until you open it again. Reactions, and photos and videos
-  taken with Instagram's camera, don't send any.
+- **Notifications are late, by design.** iOS decides when the app may check, sometimes hours after a message
+  arrives, and not at all after you swipe the app away, until you open it again. Reactions, and photos and videos
+  taken with Instagram's camera, don't notify.
 - **Instagram's end-to-end encrypted chats** can't be shown; open those in Instagram.
 - **It's unofficial.** Instagram can change how its website works, and it may ask you to confirm a new login in the
   Instagram app. Do your first logins on your home Wi-Fi.

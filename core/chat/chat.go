@@ -534,10 +534,11 @@ func content(m Message) map[string]any {
 	case m.ContentType == "RAVEN_IMAGE" || m.ContentType == "RAVEN_VIDEO":
 		// Instagram's in-chat camera (live 2026-10-24, `ig_camera_media_tamo`): `view_mode` 0 view once, 1 allow replay,
 		// 2 keep in chat. Kept, it carries the same attachment as a photo or video from the camera roll, so it's the
-		// same card; the others carry none and stay a line (never shown as a lasting photo, D13). The bridge's own
+		// same card (without one, as a mailbox copy may be, still a photo or video until the thread is read, like a
+		// GIF's); the others carry none and stay a line (never shown as a lasting photo, D13). The bridge's own
 		// wording is how `MessageKind` knows view-once media.
 		video := m.ContentType == "RAVEN_VIDEO"
-		if mode, _ := c["view_mode"].(float64); mode == 2 && obj(c["attachment"]) != nil {
+		if mode, _ := c["view_mode"].(float64); mode == 2 {
 			return album([]any{c["attachment"]}, &video)
 		}
 		what := "photo"

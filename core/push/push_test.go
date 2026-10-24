@@ -41,6 +41,11 @@ type fake struct {
 	channels     map[string]bool
 	held         []msg
 	unregistered []string
+	dials        int
+	// Misbehaviours: keep talking after the held pushes (a drain only stops at its deadline), hang up once this many
+	// pushes are acked, refuse every unregister.
+	chatter, refuseUnregister bool
+	dropAfterAcks             int
 }
 
 func start(t *testing.T) *fake {
@@ -61,6 +66,20 @@ func (f *fake) serve(w http.ResponseWriter, r *http.Request) {
 	defer ws.CloseNow()
 	ctx := r.Context()
 	send := func(v any) { b, _ := json.Marshal(v); ws.Write(ctx, websocket.MessageText, b) }
+	f.mu.Lock()
+	f.dials++
+	if f.chatter {
+		go func() {
+			for ctx.Err() == nil {
+				time.Sleep(100 * time.Millisecond)
+				f.mu.Lock()
+				send(map[string]any{"messageType": "ping"})
+				f.mu.Unlock()
+			}
+		}()
+	}
+	f.mu.Unlock()
+	acks := 0
 	for {
 		_, b, err := ws.Read(ctx)
 		if err != nil {
@@ -87,10 +106,15 @@ func (f *fake) serve(w http.ResponseWriter, r *http.Request) {
 		case "unregister":
 			delete(f.channels, m.ChannelID)
 			f.unregistered = append(f.unregistered, m.ChannelID)
-			send(msg{MessageType: "unregister", ChannelID: m.ChannelID, Status: 200})
+			send(msg{MessageType: "unregister", ChannelID: m.ChannelID, Status: map[bool]int{false: 200, true: 404}[f.refuseUnregister]})
 		case "ack":
 			for _, u := range m.Updates {
 				f.held = slices.DeleteFunc(f.held, func(h msg) bool { return h.Version == u.Version })
+			}
+			if acks++; acks == f.dropAfterAcks {
+				f.mu.Unlock()
+				ws.CloseNow()
+				return
 			}
 		}
 		f.mu.Unlock()
@@ -293,6 +317,60 @@ func TestAForgottenPhoneStartsOver(t *testing.T) {
 	fresh, err := Setup(ctx, forgotten, []string{tamo})
 	if err != nil || fresh.Accounts[tamo] == nil || fresh.Accounts[tamo].Endpoint == s.Accounts[tamo].Endpoint {
 		t.Errorf("%+v (%v)", fresh, err)
+	}
+}
+
+// A drain that runs into its deadline (a slow network, Mozilla still talking) answers what it acked: those pushes are
+// gone from Mozilla.
+func TestADrainCutShortKeepsWhatItAcked(t *testing.T) {
+	f := start(t)
+	s, _ := Setup(ctx, State{}, []string{tamo})
+	f.hold(t, s.Accounts[tamo], capture(t, "photo"))
+	f.mu.Lock()
+	f.chatter = true
+	f.mu.Unlock()
+	short, cancel := context.WithTimeout(ctx, 700*time.Millisecond)
+	defer cancel()
+	_, pushes, err := Drain(short, s, 0, 500*time.Millisecond, 5*time.Second)
+	if err != nil || len(pushes) != 1 || f.waiting() != 0 {
+		t.Errorf("%d pushes (%v), %d still held", len(pushes), err, f.waiting())
+	}
+}
+
+// Mozilla hanging up after the acks: the pushes still come back.
+func TestADroppedConnectionStillAnswersThePushes(t *testing.T) {
+	f := start(t)
+	s, _ := Setup(ctx, State{}, []string{tamo})
+	f.hold(t, s.Accounts[tamo], capture(t, "text"))
+	f.hold(t, s.Accounts[tamo], capture(t, "photo"))
+	f.mu.Lock()
+	f.dropAfterAcks = 2
+	f.mu.Unlock()
+	if _, pushes, err := Drain(ctx, s, 0, time.Second, 3*time.Second); err != nil || len(pushes) != 2 {
+		t.Errorf("%d pushes (%v)", len(pushes), err)
+	}
+}
+
+// The app sets up on every open: with nothing to make or drop it doesn't connect.
+func TestASetupWithNothingToDoStaysOffline(t *testing.T) {
+	f := start(t)
+	s, _ := Setup(ctx, State{}, []string{tamo, kivo})
+	again, err := Setup(ctx, s, []string{kivo, tamo})
+	if err != nil || again.Accounts[tamo].ID != s.Accounts[tamo].ID || f.dials != 1 {
+		t.Errorf("%+v (%v), %d connections", again, err, f.dials)
+	}
+}
+
+// Mozilla refusing to unregister a channel (one it no longer has) still drops it, and the setup carries on.
+func TestARefusedUnregisterStillDropsTheChannel(t *testing.T) {
+	f := start(t)
+	s, _ := Setup(ctx, State{}, []string{tamo, kivo})
+	f.mu.Lock()
+	f.refuseUnregister = true
+	f.mu.Unlock()
+	one, err := Setup(ctx, s, []string{tamo})
+	if err != nil || len(one.Accounts) != 1 || one.Accounts[kivo] != nil {
+		t.Errorf("%+v (%v)", one, err)
 	}
 }
 

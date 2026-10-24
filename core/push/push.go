@@ -69,6 +69,11 @@ var messageKinds = []string{"direct_v2_text", "direct_v2_media", "direct_v2_voic
 // aren't listed, over one connection. A UAID Mozilla no longer knows comes back new with every channel gone: they're
 // made again, and their new endpoints get registered again.
 func Setup(ctx context.Context, s State, accounts []string) (State, error) {
+	// Nothing to make or drop: no connection (the app calls this on every open). A UAID Mozilla forgot shows at the
+	// next drain.
+	if s.UAID != "" && len(s.Accounts) == len(accounts) && !slices.ContainsFunc(accounts, func(id string) bool { return s.Accounts[id] == nil }) {
+		return s, nil
+	}
 	c, err := dial(ctx)
 	if err != nil {
 		return s, err
@@ -84,7 +89,8 @@ func Setup(ctx context.Context, s State, accounts []string) (State, error) {
 		if err := c.send(ctx, map[string]any{"messageType": "unregister", "channelID": ch.ID}); err != nil {
 			return s, err
 		}
-		if _, err := c.await(ctx, "unregister"); err != nil {
+		// A refusal (a channel Mozilla no longer has) still drops it here, or every later setup would stop at it.
+		if _, err := c.await(ctx, "unregister"); err != nil && !errors.Is(err, errRefused) {
 			return s, err
 		}
 		delete(s.Accounts, id)
@@ -127,27 +133,32 @@ func Drain(ctx context.Context, s State, since int64, quiet, limit time.Duration
 	}
 	end := time.Now().Add(limit)
 	var out []Push
+	acked := false
 	for {
 		wait := min(quiet, time.Until(end))
 		if wait <= 0 {
 			break
 		}
-		rctx, cancel := context.WithTimeout(ctx, wait)
+		rctx, cancel := context.WithTimeout(ctx, wait) // also ends at the caller's deadline
 		m, err := c.next(rctx)
+		stopped := rctx.Err() != nil // checked before cancel(), which sets it
 		cancel()
 		if err != nil {
-			if ctx.Err() == nil && rctx.Err() != nil {
-				break // quiet: everything held has come
+			// Quiet (everything held has come), out of time, or the connection dropped: whatever was acked is gone
+			// from Mozilla, so it's answered, never dropped with an error.
+			if stopped || acked {
+				break
 			}
-			return s, out, err
+			return s, nil, err
 		}
 		if m.MessageType != "notification" {
 			continue
 		}
 		if err := c.send(ctx, map[string]any{"messageType": "ack",
 			"updates": []map[string]any{{"channelID": m.ChannelID, "version": m.Version, "code": 100}}}); err != nil {
-			return s, out, err
+			break // not acked: Mozilla sends it again next time
 		}
+		acked = true
 		account := byChannel[m.ChannelID]
 		if account == "" {
 			continue
@@ -194,6 +205,8 @@ type msg struct {
 	Headers      map[string]string `json:"headers,omitempty"`
 }
 
+var errRefused = errors.New("push service refused")
+
 type conn struct{ ws *websocket.Conn }
 
 func dial(ctx context.Context) (*conn, error) {
@@ -230,7 +243,7 @@ func (c *conn) await(ctx context.Context, kind string) (msg, error) {
 			continue
 		}
 		if m.Status != 200 {
-			return m, fmt.Errorf("push service: %s answered %d", kind, m.Status)
+			return m, fmt.Errorf("%w: %s answered %d", errRefused, kind, m.Status)
 		}
 		return m, nil
 	}

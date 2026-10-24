@@ -210,18 +210,22 @@ func TestAPushOpensItsChat(t *testing.T) {
 	}
 	fixture(t, "push_text_kivo", &p)
 	c := New(tamo)
-	if c.PushRoom(p.Params["t_id"], p.Params["s"]) != "" {
+	if c.PushRoom(p.Params["t_id"], p.Params["s"], false) != "" {
 		t.Error("a room before the chat loaded")
 	}
 	id := c.Thread(thread(t)).Room
-	if got := c.PushRoom(p.Params["t_id"], p.Params["s"]); got != id {
+	if got := c.PushRoom(p.Params["t_id"], p.Params["s"], false); got != id {
 		t.Errorf("by its push: %q", got)
 	}
-	if got := c.PushRoom("", p.Params["s"]); got != id {
+	if got := c.PushRoom("", p.Params["s"], false); got != id {
 		t.Errorf("by its sender: %q", got)
 	}
-	if got := c.PushRoom("340282366841710300000000000000000000999", "4200000999"); got != "" {
+	if got := c.PushRoom("340282366841710300000000000000000000999", "4200000999", false); got != "" {
 		t.Errorf("a stranger's push opened %q", got)
+	}
+	// A group's push whose thread isn't loaded opens the inbox, never the sender's DM.
+	if got := c.PushRoom("340282366841710300000000000000000000999", p.Params["s"], true); got != "" {
+		t.Errorf("a group's push opened %q", got)
 	}
 }
 

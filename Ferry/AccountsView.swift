@@ -32,7 +32,8 @@ struct AccountsView: View {
             } header: {
                 Text("Notifications")
             } footer: {
-                Text("New messages arrive when iOS lets Ferry check, usually within the hour, not instantly. Reactions, and photos and videos taken with Instagram's camera, don't send any.")
+                Text("Notifications come when iOS lets Ferry Messenger check, sometimes hours after a message arrives, and one that waits too long is skipped. None come after you swipe the app away, until you open it again. Reactions, and photos and videos taken with Instagram's camera, don't notify.")
+                    .foregroundStyle(.inkSecondary)  // the List's own footer grey is 3.3:1
             }
             Section {} footer: {
                 Text(Self.appVersion ?? "").accessibilityIdentifier("accounts.footer")
@@ -53,8 +54,9 @@ struct AccountsView: View {
     private static let appVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String).map { "Ferry Messenger \($0)" }
 }
 
-/// Catch-up notifications (docs/PLAN-push.md W4): on, off with the way to turn them on, or on but unable to arrive
-/// because Background App Refresh is off for the app.
+/// Catch-up notifications (docs/PLAN-push.md W4): on, off with the way to turn them on, or allowed but unable to arrive
+/// because Background App Refresh is off for the app or Low Power Mode is on. Status lines carry a glyph, not colour
+/// alone (DESIGN §7.1); HStacks, not Labels, for the same reason as `HealthLabel`.
 private struct NotificationsRow: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
@@ -66,14 +68,28 @@ private struct NotificationsRow: View {
             case .notAsked:
                 Button("Turn On Notifications", systemImage: "bell") { Task { await model.turnOnNotifications(); await check() } }
             case .off:
-                Button("Turn On in Settings", systemImage: "bell.slash") { openSettings() }
+                Button(action: openSettings) {
+                    line("Notifications are off", opensSettings: true) {
+                        Text("Turn them on in Settings.").foregroundStyle(.inkSecondary)
+                    }
+                }
             case .noRefresh:
                 Button(action: openSettings) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Label("Notifications are on", systemImage: "bell")
-                        Text("Background App Refresh is off for Ferry, so none can arrive. Turn it on in Settings.")
-                            .font(.footnote).foregroundStyle(.statusWarn)
+                    line("Notifications can't arrive", opensSettings: true) {
+                        HStack(alignment: .firstTextBaseline, spacing: 5) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                            Text("Background App Refresh is off for Ferry Messenger. Turn it on in Settings, under General → Background App Refresh.")
+                        }
+                        .foregroundStyle(.statusWarn)
                     }
+                }
+            case .lowPower:
+                line("Notifications are paused") {
+                    HStack(alignment: .firstTextBaseline, spacing: 5) {
+                        Image(systemName: "battery.25percent")
+                        Text("Low Power Mode is on, so iOS won't let Ferry Messenger check.")
+                    }
+                    .foregroundStyle(.inkSecondary)
                 }
             case .on:
                 Label("Notifications are on", systemImage: "bell")
@@ -84,6 +100,25 @@ private struct NotificationsRow: View {
         .accessibilityIdentifier("accounts.notifications")
         .task { await check() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in Task { await check() } }
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in Task { await check() } }
+    }
+
+    /// A state with its second line under the title (not the icon), and a chevron when the row opens Settings.
+    private func line(_ title: String, opensSettings: Bool = false, @ViewBuilder detail: () -> some View) -> some View {
+        HStack {
+            Label {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                    detail().font(.footnote)
+                }
+            } icon: {
+                Image(systemName: "bell.slash")
+            }
+            if opensSettings {
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+            }
+        }
     }
 
     private func check() async { status = await model.notificationStatus() }

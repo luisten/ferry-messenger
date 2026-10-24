@@ -223,6 +223,10 @@ func (a *account) loadFolders(next string, professional bool) {
 			}
 		}
 		for range chat.MaxPages {
+			// ponytail: polls while the app is in the background (IGPause), so a wake never pages; a cond if it matters.
+			for paused.Load() && a.ctx.Err() == nil {
+				time.Sleep(time.Second)
+			}
 			if a.ctx.Err() != nil {
 				return
 			}
@@ -508,7 +512,9 @@ func login(cookiesJSON string) (map[string]any, error) {
 		}
 		return out
 	})
-	go cli.Connect(ctx) // after the chats are in: its live changes apply to them
+	if !paused.Load() { // else IGUnpause connects it
+		go cli.Connect(ctx) // after the chats are in: its live changes apply to them
+	}
 	go a.loadFolders(next, v.IsProfessionalAccount)
 	return map[string]any{"account": id, "viewer": shown, "seq": n}, nil
 }
@@ -548,7 +554,7 @@ func IGResume(acct, cookiesJSON *C.char) *C.char {
 
 // ponytail: a fixed 30 s while the app runs; backoff if it ever hammers.
 func retryLater(id, cookies string, err error) {
-	if state, _ := classify(err); state != "TRANSIENT_DISCONNECT" {
+	if state, _ := classify(err); state != "TRANSIENT_DISCONNECT" || paused.Load() { // paused: the app retries on return
 		return
 	}
 	mu.Lock()
@@ -1095,6 +1101,50 @@ func IGSession(acct *C.char) *C.char {
 	return C.CString(string(b))
 }
 
+// paused is IGPause's: the app is in the background, so no socket, retry or folder page may reach Instagram.
+var paused atomic.Bool
+
+// The app went to the background: every account's socket closes, retries stop and folder paging waits, so a Background
+// App Refresh wake, which resumes this process, never reaches Instagram (docs/PLAN-push.md). Before wakes existed only
+// the user resumed the app. Chats stay; IGUnpause reconnects without reloading the index, as the library's own
+// reconnect did on return.
+//
+//export IGPause
+func IGPause() {
+	if paused.Swap(true) {
+		return
+	}
+	mu.Lock()
+	all := make([]*account, 0, len(accounts))
+	for _, a := range accounts {
+		all = append(all, a)
+	}
+	for id, t := range retries {
+		t.Stop()
+		delete(retries, id)
+	}
+	mu.Unlock()
+	var wg sync.WaitGroup
+	for _, a := range all {
+		wg.Go(a.cli.Disconnect) // each waits up to 5 s for its loop to end
+	}
+	wg.Wait()
+}
+
+// The app is active again: every account's socket reconnects, and Instagram's client catches up on what it missed.
+//
+//export IGUnpause
+func IGUnpause() {
+	if !paused.Swap(false) {
+		return
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	for _, a := range accounts {
+		go a.cli.Connect(a.ctx)
+	}
+}
+
 // The phone's web push channels (docs/PLAN-push.md): `state` is the last answer of IGPushSetup, IGPushDrain or
 // IGRegisterPush ("" the first time), `accounts` a JSON array of account IDs. A channel and keys for each account
 // without one, the channels of accounts not listed dropped. Mozilla only. Answers the new state, which holds private
@@ -1159,7 +1209,9 @@ func IGRegisterPush(acct, stateJSON *C.char) *C.char {
 			return map[string]any{"state": s, "sent": false}, nil
 		}
 		keys := instameow.PushKeys{P256DH: ch.Keys.P256DH, Auth: ch.Keys.Auth}
-		if err := a.cli.RegisterPushNotifications(a.ctx, ch.Endpoint, keys); err != nil {
+		ctx, cancel := context.WithTimeout(a.ctx, 15*time.Second) // a hung request would hold up a wake's drain
+		defer cancel()
+		if err := a.cli.RegisterPushNotifications(ctx, ch.Endpoint, keys); err != nil {
 			return nil, err
 		}
 		ch.RegisteredEndpoint, ch.RegisteredAt = ch.Endpoint, now()
@@ -1178,7 +1230,7 @@ func IGPushRoom(acct, pushJSON *C.char) *C.char {
 		}
 		a.chats.Lock()
 		defer a.chats.Unlock()
-		return map[string]string{"room": a.chats.PushRoom(p.Thread, p.User)}, nil
+		return map[string]string{"room": a.chats.PushRoom(p.Thread, p.User, p.Group != "")}, nil
 	})
 }
 

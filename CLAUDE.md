@@ -56,7 +56,9 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   environment variables, DEBUG switches or test runners.
 - **Catch-up notifications talk to Mozilla, not Instagram** ([docs/PLAN-push.md](docs/PLAN-push.md)): a Background
   App Refresh wake only drains the phone's web push channels (`IGPushDrain`); Instagram hears from them only through
-  `IGRegisterPush`, when `rules.go`'s `PushRegister` says so. The push state (Mozilla's ID, each account's channel and
+  `IGRegisterPush`, when `rules.go`'s `PushRegister` says so. A wake resumes the whole process, so the app closes every
+  Instagram socket and stops retries and folder paging in the background (`IGPause`), and reopens them on return
+  (`IGUnpause`). The push state (Mozilla's ID, each account's channel and
   private keys) is like the cookies: it leaves `core/` only for the Keychain (service `ferry`, account `push`), never
   logged.
 - **Live tests use the two dummy accounts only**, never the user's real ones. Their names are in the gitignored

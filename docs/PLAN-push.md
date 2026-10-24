@@ -161,6 +161,31 @@ tests pass on made-up data (the demo never asks or registers).
 - **Fixed on the way:** the Accounts row started empty while checking, and an empty view never appears, so the check
   never ran (it now shows a placeholder line).
 
+**QA round before the PR (2026-10-24):** a code review, a UX review and a simulator pass on made-up data (agents).
+
+- **Fixed from the review:**
+  - A wake that launched the app cold marked "last open" at the wake, so nothing it collected notified: only a real
+    open moves it now (`AppModel.isOpen`).
+  - A wake of a suspended app resumed the Instagram clients: sockets reconnected, retries and folder paging went on.
+    The app now closes every socket in the background and reopens them on return (`IGPause`/`IGUnpause`, with their
+    JNI functions; no index reload, as before).
+  - Channels made outside a login waited for a cold relaunch to be registered: every return from the background now
+    asks (the rule usually says no), and a new account gets its channel before its registration.
+  - A drain cut short by its deadline or a dropped connection lost pushes it had acked; read errors looked like quiet.
+  - Every return made two Mozilla connections: a setup with nothing to do no longer connects.
+  - Smaller ones: wakes are booked only when notifications are on; a group's push never falls back to the sender's
+    DM; Mozilla refusing an unregister no longer blocks setup; Remove Account clears its notifications and any
+    pending tap; the registration has a 15 s timeout; the push state is updated in place; the demo never asks or
+    wakes; a kept camera message without its attachment is still media.
+- **From the UX review:** "To <account>" as the subtitle (DESIGN §3.3), "Sent 14:05" on a notification over 10
+  minutes late, one sound per wake, honest footer copy, and states that say what's wrong with a glyph (off; can't
+  arrive with Background App Refresh off; paused in Low Power Mode). Waiting on the owner: an explanation card before
+  the system prompt (it changes W4), display names instead of `@handle` (names stored on the phone), and requests
+  (DESIGN §4.5 has them off; a push can't tell one apart yet).
+- **Left for step 4 (the phone):** the tap; how often iOS wakes the app; that a wake makes no Instagram request or
+  socket connect (log one); whether Low Power Mode reports Background App Refresh as off. Known and left: a re-login's
+  registration is remembered in memory only, so an app killed before it registers waits for the weekly renewal.
+
 ## 4. Risks
 
 - **Late by design.** iOS wakes an app more often the more it's used, perhaps between one wake an hour and a few a

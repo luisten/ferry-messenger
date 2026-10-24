@@ -268,13 +268,17 @@ a Background App Refresh wake collects and decrypts them, and the app posts a lo
 than the app's last close. Not instant: iOS decides when to wake the app.
 
 - **Permission:** asked once, the first time the inbox shows with an account; never at first launch, never in the demo.
-  A1's Notifications row turns it on later ("Turn On Notifications", or "Turn On in Settings" after a no), says
-  "Notifications are on", and warns when Background App Refresh is off for the app (nothing can arrive).
+  A1's Notifications row: "Turn On Notifications"; "Notifications are off", then Settings; "Notifications are on";
+  "Notifications can't arrive" (⚠ Background App Refresh is off for the app, then Settings); "Notifications are
+  paused" (Low Power Mode). Its footer says they can be hours late, skipped when too old, and stop after a swipe-away.
+- **In the background** every Instagram socket closes and nothing retries or pages (`IGPause`), so a wake never reaches
+  Instagram; on return the sockets reconnect without an index reload (`IGUnpause`).
 - **What notifies:** texts, photos and videos from the camera roll, voice notes. Reactions, likes and anything taken
   with Instagram's in-chat camera send no push.
-- **What it shows:** the sender's `@handle` (a group's name, with "@sender: text"), the text or Instagram's line for
-  media ("Sent a photo"), and the account's name as the subtitle when there are two or more accounts; one stack per
-  chat, one notification per message. Opening the app clears them and collects what's waiting without notifying.
+- **What it shows:** the sender's `@handle` (a group's name, with "@sender: text"; "New message" without a sender),
+  the text or Instagram's line for media ("Sent a photo"), and a subtitle: "To" the account when there are two or
+  more, and "Sent 14:05" when it was sent over 10 minutes before the wake. One stack per chat, one notification per
+  message, one sound per wake. Opening the app clears them and collects what's waiting without notifying.
 - **Tap:** opens the chat once its account's chats have loaded, else the inbox.
 - **Remove Account** drops the account's channel at Mozilla; Instagram isn't told.
 

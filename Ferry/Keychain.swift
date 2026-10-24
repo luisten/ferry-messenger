@@ -52,14 +52,16 @@ nonisolated enum Keychain {
         return String(decoding: data, as: UTF8.self)
     }
 
+    /// Updated in place, never deleted first: a failed add would lose the keys, and every account would register anew.
     static func savePushState(_ state: String) {
         let item: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
                                    kSecAttrAccount as String: pushAccount]
-        SecItemDelete(item as CFDictionary)
-        var add = item
-        add[kSecValueData as String] = Data(state.utf8)
-        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        SecItemAdd(add as CFDictionary, nil)
+        let data = [kSecValueData as String: Data(state.utf8)]
+        if SecItemUpdate(item as CFDictionary, data as CFDictionary) == errSecItemNotFound {
+            var add = item.merging(data) { $1 }
+            add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            SecItemAdd(add as CFDictionary, nil)
+        }
     }
 
     /// Not an `instagram:` item, so `accounts()` skips it.

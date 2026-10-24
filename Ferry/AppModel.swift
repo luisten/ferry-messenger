@@ -48,6 +48,11 @@ final class AppModel {
     var openRoom: String?
     /// A tapped notification waiting for its account's chats to load (`openPendingPush`).
     @ObservationIgnored private var pendingPush: IG.Push?
+    /// The app has been active since it last went to the background: false at a launch straight into the background
+    /// (a Background App Refresh wake) and while Control Center or a system alert only makes it inactive.
+    @ObservationIgnored private var isOpen = false
+    /// `IGPause` and `IGUnpause`, in the order the app went away and came back.
+    @ObservationIgnored private var lifecycle: Task<Void, Never>?
     /// Both observable themselves; the views read their state directly.
     @ObservationIgnored let media = MediaCache()
     @ObservationIgnored let voice = VoicePlayback()
@@ -119,17 +124,41 @@ final class AppModel {
     // MARK: Accounts and connections (PLAN-core P1)
 
     /// The app became active: listen to core, and connect every account that isn't.
+    /// From the background (not back from Control Center or a system alert, which only made it inactive) the sockets
+    /// reconnect (`IGUnpause`), and each account gets its push channel and, when the engine's rule says so, its
+    /// registration: a channel made here (notifications allowed in Settings, a UAID Mozilla forgot) is registered too.
     func startSync() {
         if eventTask == nil { eventTask = Task { await eventLoop() } }
-        if pushes { PushNotifications.shared.opened(accounts: Array(sessions.keys)) }
+        if !isOpen {
+            isOpen = true
+            lifecycle = Task { [previous = lifecycle] in
+                await previous?.value
+                await IGCore.unpause()
+            }
+            if pushes {
+                PushNotifications.shared.opened(accounts: Array(sessions.keys))
+                for id in loaded where running.contains(id) { PushNotifications.shared.connected(id) }
+            }
+        }
         for id in sessions.keys where !running.contains(id) { connect(id) }
     }
 
-    /// To the background: keeps the Keychain's cookies current (Instagram rotates some). The sockets go when iOS
-    /// suspends the app; the library reconnects and catches up on return (spike: 30 ms).
+    /// To the background: keeps the Keychain's cookies current (Instagram rotates some) and closes every socket until
+    /// the app is back (`IGPause`), since a Background App Refresh wake resumes the process and must never reach
+    /// Instagram (docs/PLAN-push.md). A launch straight into the background (a wake) was never open: nothing to close,
+    /// and the last open stays as it was, or the wake would take everything waiting as already seen.
     func stopSync() {
         Task { for id in running { await saveSession(id) } }
-        if pushes { PushNotifications.shared.closed() }
+        if isOpen {
+            isOpen = false
+            let task = UIApplication.shared.beginBackgroundTask()
+            lifecycle = Task { [previous = lifecycle] in
+                await previous?.value
+                await IGCore.pause()
+                UIApplication.shared.endBackgroundTask(task)
+            }
+            if pushes { PushNotifications.shared.closed() }
+        }
         #if DEBUG
         // The simulator can't be relied on to run Background App Refresh: the same wake, while iOS lets the app finish.
         if let seconds = DebugFixtures.refreshAfterHome, pushes {
@@ -172,6 +201,7 @@ final class AppModel {
         loaded.insert(login.account)
         sessions[login.account] = Keychain.Account(cookies: cookies, viewer: login.viewer)
         Keychain.save(sessions[login.account]!, id: login.account)
+        if pushes { PushNotifications.shared.opened(accounts: Array(sessions.keys)) }  // its channel, before `apply` registers it
         apply(login)
         await saveSession(login.account)
         return login.account
@@ -190,7 +220,8 @@ final class AppModel {
         identities[id] = nil
         AccountIdentity.save(identities)
         updateAccounts()
-        if pushes { PushNotifications.shared.removed(remaining: Array(sessions.keys)) }
+        if pendingPush?.account == id { pendingPush = nil }
+        if pushes { PushNotifications.shared.removed(id, remaining: Array(sessions.keys)) }
     }
 
     private func connect(_ id: String) {
@@ -314,6 +345,7 @@ final class AppModel {
     }
 
     private func openPendingPush() {
+        if let push = pendingPush, sessions[push.account] == nil { pendingPush = nil }  // an account removed since
         guard let push = pendingPush, loaded.contains(push.account) else { return }
         pendingPush = nil
         Task { if let room = try? await IGCore.pushRoom(push.account, push: push) { openRoom = room } }
@@ -329,21 +361,23 @@ final class AppModel {
 
     /// The system's question; a yes gives every account a channel and registers the connected ones.
     @discardableResult func turnOnNotifications() async -> Bool {
-        guard (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) == true else { return false }
-        guard pushes else { return true }
+        guard pushes, (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) == true else { return false }
         PushNotifications.shared.opened(accounts: Array(sessions.keys))
         for id in loaded where running.contains(id) { PushNotifications.shared.connected(id) }
         return true
     }
 
-    enum NotificationStatus { case notAsked, off, on, noRefresh }
+    enum NotificationStatus { case notAsked, off, on, noRefresh, lowPower }
 
-    /// For Accounts: allowed or not, and whether iOS may wake the app at all (Background App Refresh).
+    /// For Accounts: allowed or not, and whether iOS may wake the app at all (Background App Refresh, which Low Power
+    /// Mode pauses: then there's nothing to change in Settings).
     func notificationStatus() async -> NotificationStatus {
         switch await UNUserNotificationCenter.current().notificationSettings().authorizationStatus {
-        case .notDetermined: .notAsked
-        case .denied: .off
-        default: UIApplication.shared.backgroundRefreshStatus == .available ? .on : .noRefresh
+        case .notDetermined: return .notAsked
+        case .denied: return .off
+        default:
+            if UIApplication.shared.backgroundRefreshStatus == .available { return .on }
+            return ProcessInfo.processInfo.isLowPowerModeEnabled ? .lowPower : .noRefresh
         }
     }
 

@@ -199,13 +199,13 @@ func (c *Chats) ExistingDM(user string) string {
 	return ""
 }
 
-// PushRoom is the room a push names (docs/PLAN-push.md): the thread's long ID, else a DM with its sender's Instagram
-// user ID; "" when this account hasn't loaded that chat (the app opens the inbox).
-func (c *Chats) PushRoom(long, user string) string {
+// PushRoom is the room a push names (docs/PLAN-push.md): the thread's long ID, else (not for a group's) a DM with its
+// sender's Instagram user ID; "" when this account hasn't loaded that chat (the app opens the inbox).
+func (c *Chats) PushRoom(long, user string, group bool) string {
 	if id := c.byLong[long]; id != "" && c.rooms[id] != nil {
 		return id
 	}
-	if fbid := c.fbidByUserID[user]; fbid != "" {
+	if fbid := c.fbidByUserID[user]; fbid != "" && !group {
 		return c.ExistingDM(fbid)
 	}
 	return ""

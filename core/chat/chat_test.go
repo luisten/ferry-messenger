@@ -559,6 +559,13 @@ func TestCameraPhotosAndVideos(t *testing.T) {
 		t.Errorf("kept video: %v", video)
 	}
 
+	// Kept, but without its attachment (a mailbox copy may be so; none captured): still a photo, with no media yet.
+	bare := copies.Thread[2]
+	bare.Content = map[string]any{"view_mode": 2.0, "attachment": nil}
+	if c := messageEvents(bare, tamo)[0].Content; c["msgtype"] != "m.image" || has(c, "url") {
+		t.Errorf("kept, bare: %v", c)
+	}
+
 	// A view-once video (none captured): the video's copy with Instagram's view-once shape.
 	once := copies.Thread[3]
 	once.Content = map[string]any{"view_mode": 0.0, "attachment": nil}
