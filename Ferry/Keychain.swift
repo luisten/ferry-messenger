@@ -41,6 +41,32 @@ nonisolated enum Keychain {
         return accounts
     }
 
+    /// The phone's web push state (docs/PLAN-push.md): Mozilla's ID for it, and each account's channel and keys as the
+    /// engine made them. It holds private keys, so it's kept here and nowhere else, never logged. After the first
+    /// unlock, so a background wake on a locked phone reads it.
+    static func pushState() -> String? {
+        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
+                                    kSecAttrAccount as String: pushAccount, kSecReturnData as String: true]
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess, let data = result as? Data else { return nil }
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    /// Updated in place, never deleted first: a failed add would lose the keys, and every account would register anew.
+    static func savePushState(_ state: String) {
+        let item: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
+                                   kSecAttrAccount as String: pushAccount]
+        let data = [kSecValueData as String: Data(state.utf8)]
+        if SecItemUpdate(item as CFDictionary, data as CFDictionary) == errSecItemNotFound {
+            var add = item.merging(data) { $1 }
+            add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            SecItemAdd(add as CFDictionary, nil)
+        }
+    }
+
+    /// Not an `instagram:` item, so `accounts()` skips it.
+    private static let pushAccount = "push"
+
     static func delete(_ id: String) {
         let item: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
                                    kSecAttrAccount as String: prefix + id]

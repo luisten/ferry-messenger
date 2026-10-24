@@ -362,6 +362,11 @@ func (c *Chats) Delta(raw []byte) (out []Envelope, reread string) {
 	if json.Unmarshal(raw, &d) != nil || d.ThreadFBID == "" {
 		return nil, ""
 	}
+	// A photo or video from Instagram's in-chat camera, and Meta AI's answers, arrive as their own kinds of new message;
+	// the library reads all three alike (slidetypes/event.go). Missed, a camera message waited for the next read.
+	if d.Typename == "SlideUQPPNewRavenMessage" || d.Typename == "SlideUQPPNewGenieMessage" {
+		d.Typename = "SlideUQPPNewMessage"
+	}
 	id := RoomID(c.Account, d.ThreadFBID)
 	r := c.rooms[id]
 	if r == nil {

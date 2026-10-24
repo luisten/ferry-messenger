@@ -1,11 +1,12 @@
 import SwiftUI
+import UserNotifications
 #if DEBUG
 import os
 #endif
 
 @main
 struct FerryApp: App {
-    @State private var model = AppModel()
+    @UIApplicationDelegateAdaptor private var delegate: AppDelegate
     @Environment(\.scenePhase) private var scenePhase
     /// Hosted unit tests launch the app; keep it inert so tests never hit the network or a web view.
     private let isUnitTestHost = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
@@ -15,18 +16,41 @@ struct FerryApp: App {
             if isUnitTestHost {
                 Text("Running unit tests")
             } else {
-                RootView().environment(model)
+                RootView().environment(delegate.model)
             }
         }
-        // Connected only while open (D6: no push); iOS suspends the sockets in the background anyway.
+        // Connected to Instagram only while open; iOS suspends the sockets in the background anyway. Closed, catch-up
+        // notifications come from Mozilla when iOS wakes the app (docs/PLAN-push.md).
         .onChange(of: scenePhase, initial: true) { _, phase in
             guard !isUnitTestHost else { return }
             switch phase {
-            case .active: model.startSync()
-            case .background: model.stopSync()
+            case .active: delegate.model.startSync()
+            case .background: delegate.model.stopSync()
             default: break
             }
         }
+        .backgroundTask(.appRefresh(PushNotifications.refreshID)) { await PushNotifications.shared.refresh() }
+    }
+}
+
+/// Owns the model, so a notification tapped on a cold launch reaches it: the delegate is the notification center's.
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    let model = AppModel()
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        guard let text = response.notification.request.content.userInfo["push"] as? String,
+              let push = try? JSONDecoder().decode(IG.Push.self, from: Data(text.utf8)) else { return }
+        await MainActor.run { model.openPush(push) }
+    }
+
+    /// Notifications are posted only from a wake; the app opening takes the rest without showing them.
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        []
     }
 }
 

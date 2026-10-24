@@ -243,6 +243,19 @@ final class SmokeUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["inbox.requestsCard"].exists)
     }
 
+    /// The one-time notifications card (docs/PLAN-push.md W4): explains before iOS asks, and either answer hides it.
+    /// Made-up data: its buttons only hide it, and iOS's question never comes.
+    @MainActor
+    func testNotificationsCardHidesOnceAnswered() throws {
+        let app = launch(["FERRY_DEBUG_NOTIFICATIONS_CARD": "1"])
+        let card = app.descendants(matching: .any)["inbox.notificationsCard"]
+        XCTAssertTrue(card.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["inbox.notificationsCard.turnOn"].exists)
+        app.buttons["inbox.notificationsCard.notNow"].tap()
+        XCTAssertTrue(card.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+    }
+
     /// Groups (FOLLOWUPS #24) on the hand-made DEBUG group (no request about it leaves the app):
     /// every incoming bubble tells VoiceOver who sent it, ours don't, someone who left is named from their profile,
     /// and the header opens Chat Info with the members, "You" last.

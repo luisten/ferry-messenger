@@ -5,7 +5,8 @@ Instagram library (Go, `core/`). It grew out of Ferry, the same SwiftUI app on a
 Its history starts fresh at 1.0 (2026-10-17); the earlier history (Ferry's, and this app's first steps) is a private
 bundle outside the repo.
 
-**Status:** the app runs on `core/` at parity with Ferry except notifications (P0–P7 of
+**Status:** the app runs on `core/` at parity with Ferry, plus catch-up notifications that Ferry never had
+([docs/PLAN-push.md](docs/PLAN-push.md): steps 1–3 done, step 4 is a week on the user's phone) (P0–P7 of
 [docs/PLAN-core.md](docs/PLAN-core.md), each checked live with the two dummies; its "Done" blocks hold the results and
 request counts). Instagram's data becomes the Matrix-shaped rooms the views always showed (decision C2), in the engine
 since stage 1 of [docs/PLAN-android.md](docs/PLAN-android.md) (`core/chat`, so an Android app can share it), so
@@ -53,6 +54,13 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   only through `IGSession`, whose result Swift writes straight to the Keychain and doesn't keep (Instagram rotates
   some cookies mid-session; decision C3 in [docs/PLAN-core.md](docs/PLAN-core.md)). Never pass cookies through
   environment variables, DEBUG switches or test runners.
+- **Catch-up notifications talk to Mozilla, not Instagram** ([docs/PLAN-push.md](docs/PLAN-push.md)): a Background
+  App Refresh wake only drains the phone's web push channels (`IGPushDrain`); Instagram hears from them only through
+  `IGRegisterPush`, when `rules.go`'s `PushRegister` says so. A wake resumes the whole process, so the app closes every
+  Instagram socket and stops retries and folder paging in the background (`IGPause`), and reopens them on return
+  (`IGUnpause`). The push state (Mozilla's ID, each account's channel and
+  private keys) is like the cookies: it leaves `core/` only for the Keychain (service `ferry`, account `push`), never
+  logged.
 - **Live tests use the two dummy accounts only**, never the user's real ones. Their names are in the gitignored
   `docs/local/test-accounts.md`; tracked files use the fictional stand-ins `tamoveska` (personal) and `kivostudio`
   (professional), `sample.*` for third parties. `git grep` for the real names must stay empty.
@@ -105,7 +113,8 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   accounts stand in for the Keychain's and never connect, identities in memory only; screenshots and the UI tests),
   every send and upload blocked (`FERRY_DEBUG_BLOCK_SENDS`), a voice file standing in for the microphone
   (`FERRY_DEBUG_VOICE_FILE`), stand-in accounts in the toolbar stack only (`FERRY_DEBUG_STACK_EXTRA`), failing
-  playback (`FERRY_DEBUG_PLAYER_FAILS`), the fixture capture (`FERRY_DEBUG_CAPTURE`) and a session Instagram ends for
+  playback (`FERRY_DEBUG_PLAYER_FAILS`), the fixture capture (`FERRY_DEBUG_CAPTURE`), a Background App Refresh wake
+  after HOME (`FERRY_DEBUG_REFRESH_AFTER_HOME`), the inbox's notifications card (`FERRY_DEBUG_NOTIFICATIONS_CARD`) and a session Instagram ends for
   one launch (`FERRY_DEBUG_ENDED_SESSION`: a broken `sessionid`, never saved; Instagram wouldn't let the dummies' new
   web sessions be removed from "Where you're logged in").
   **Fixture rooms (`!debug-…`) never reach Instagram:** the engine refuses a room it didn't make (E4),
@@ -182,6 +191,11 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   then rests on frame 0 with a play button for one more; none of that by itself in a request (`autoplaysGIFs`) or under
   Reduce Motion. Links to GIFs that others send stay links. No GIF search: no outside service (the user's calls,
   2026-10-17).
+- **Instagram's in-chat camera** sends `RAVEN_IMAGE` / `RAVEN_VIDEO` with `view_mode` 0 (view once), 1 (allow replay)
+  or 2 (keep in chat) (live 2026-10-24, `ig_camera_media_tamo`). Kept, it carries the camera roll's attachment shape
+  and is the same card; otherwise it has no attachment and is the view-once line. Arriving live it's
+  `SlideUQPPNewRavenMessage`, a new message like `SlideUQPPNewMessage` (Meta AI's `…NewGenieMessage` too). Web push
+  sends nothing for any of them (PLAN-push step 1), and a push's sender is `s` (`u` is the account it's for).
 - **Several photos sent at once** are one `IMAGES` message with every attachment (live 2026-10-18,
   `ig_message_photos_tamo`); `core/chat`'s `album` keeps the first as the content and all of them under `fi.ferry.album`
   (`MediaInfo.album`), which `AlbumStack` shows as a pile that unfolds in place: one message, so one menu, reaction

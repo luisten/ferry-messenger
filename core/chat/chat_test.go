@@ -530,6 +530,60 @@ func TestGIPHYStickersAndGIFsAreAnimatedImages(t *testing.T) {
 	golden(t, "animated_images_tamo", map[string][]Event{"thread": thread, "mailbox_sender": sender, "mailbox_receiver": receiver})
 }
 
+// Photos and videos from Instagram's in-chat camera (live 2026-10-24, `ig_camera_media_tamo`, the thread's copies):
+// view once (`view_mode` 0), allow replay (1), and kept in chat (2), a photo and a video. Kept, they're the same cards
+// as camera-roll media; Ferry showed the kept photo as view-once and the video as a message it couldn't show. The
+// others stay a view-once line, with no media to keep (D13).
+func TestCameraPhotosAndVideos(t *testing.T) {
+	var copies struct {
+		Thread []Message `json:"thread"`
+	}
+	fixture(t, "ig_camera_media_tamo", &copies)
+	var events []Event
+	for _, m := range copies.Thread {
+		events = append(events, messageEvents(m, tamo)...)
+	}
+	if len(events) != 4 {
+		t.Fatalf("%d events for four messages", len(events))
+	}
+	for i := range 2 {
+		if c := events[i].Content; c["msgtype"] != "m.notice" || c["body"] != "This photo can only be viewed once. Use the Instagram app to view." || has(c, "url") {
+			t.Errorf("view once (%d): %v", i, c)
+		}
+	}
+	photo, video := events[2].Content, events[3].Content
+	if photo["msgtype"] != "m.image" || photo["url"] != "https://scontent.example.invalid/v/c004.jpg" || obj(photo["info"])["w"] != 540.0 {
+		t.Errorf("kept photo: %v", photo)
+	}
+	if video["msgtype"] != "m.video" || !strings.HasSuffix(video["url"].(string), ".mp4") || obj(video["info"])["thumbnail_url"] == nil {
+		t.Errorf("kept video: %v", video)
+	}
+
+	// Kept, but without its attachment (a mailbox copy may be so; none captured): still a photo, with no media yet.
+	bare := copies.Thread[2]
+	bare.Content = map[string]any{"view_mode": 2.0, "attachment": nil}
+	if c := messageEvents(bare, tamo)[0].Content; c["msgtype"] != "m.image" || has(c, "url") {
+		t.Errorf("kept, bare: %v", c)
+	}
+
+	// A view-once video (none captured): the video's copy with Instagram's view-once shape.
+	once := copies.Thread[3]
+	once.Content = map[string]any{"view_mode": 0.0, "attachment": nil}
+	if c := messageEvents(once, tamo)[0].Content; c["body"] != "This video can only be viewed once. Use the Instagram app to view." {
+		t.Errorf("view-once video: %v", c)
+	}
+
+	// One arriving live is a new message of its own kind (`SlideUQPPNewRavenMessage`), which waited for the next read.
+	c := New(tamo)
+	c.Thread(thread(t))
+	live, _ := json.Marshal(map[string]any{"__typename": "SlideUQPPNewRavenMessage", "thread_fbid": "1700000000000301", "message": copies.Thread[3]})
+	out, _ := c.Delta(live)
+	if got := updates(out); len(got) != 1 || len(got[0].Timeline.Events) != 1 || got[0].Timeline.Events[0].Content["msgtype"] != "m.video" {
+		t.Errorf("live: %v", out)
+	}
+	golden(t, "camera_media_tamo", map[string][]Event{"thread": events})
+}
+
 // Three photos sent at once from the Instagram app (live 2026-10-18): one message with every photo, in order, so it
 // keeps one menu, one row of reactions and one unsend. Ferry showed only the first.
 func TestPhotosSentTogetherAreOneMessageWithAll(t *testing.T) {

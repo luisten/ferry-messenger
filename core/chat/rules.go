@@ -7,9 +7,9 @@ import (
 )
 
 // Instagram's rules (docs/PLAN-android.md stage 2): how often a chat is read again, when "Seen" and typing go out,
-// what a request allows, New Message's drafts. They decide how many Instagram actions the apps spend, so both apps
-// get them from here. Each decides from the engine's copy; the C API makes the requests it says to make. Times are
-// Unix ms, passed in.
+// what a request allows, New Message's drafts, when a web push channel is registered. They decide how many Instagram
+// actions the apps spend, so both apps get them from here. Each decides from the engine's copy; the C API makes the
+// requests it says to make. Times are Unix ms, passed in.
 
 const (
 	reReadAfter  = 30_000  // opening a chat reads it again at most every 30 s
@@ -197,6 +197,28 @@ func (c *Chats) ExistingDM(user string) string {
 		}
 	}
 	return ""
+}
+
+// PushRoom is the room a push names (docs/PLAN-push.md): the thread's long ID, else (not for a group's) a DM with its
+// sender's Instagram user ID; "" when this account hasn't loaded that chat (the app opens the inbox).
+func (c *Chats) PushRoom(long, user string, group bool) string {
+	if id := c.byLong[long]; id != "" && c.rooms[id] != nil {
+		return id
+	}
+	if fbid := c.fbidByUserID[user]; fbid != "" && !group {
+		return c.ExistingDM(fbid)
+	}
+	return ""
+}
+
+// ponytail: a week is a guess; step 4's soak says whether Instagram drops registrations sooner.
+const registerEvery = 7 * 24 * 3600_000
+
+// PushRegister says whether to register an account's web push channel with Instagram now (one request): the channel's
+// endpoint isn't the one registered, the account logged in since (a new web session, `loginAt`; 0 for a stored one),
+// or a week has passed.
+func PushRegister(endpoint, registered string, registeredAt, loginAt, now int64) bool {
+	return endpoint != registered || registeredAt < loginAt || now-registeredAt >= registerEvery
 }
 
 // DraftID is the chat with someone we've never messaged: Instagram has no thread until the first message.

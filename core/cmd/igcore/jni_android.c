@@ -64,6 +64,9 @@ TWO(resolveMedia, IGResolveMedia)
 TWO(unsend, IGUnsend)
 ONE(markRead, IGMarkRead)
 ONE(session, IGSession)
+TWO(pushSetup, IGPushSetup)
+TWO(registerPush, IGRegisterPush)
+TWO(pushRoom, IGPushRoom)
 
 JNIEXPORT void FN(setCapture)(JNIEnv *env, jclass c, jbyteArray dir) {
   char *a = in(env, dir);
@@ -118,6 +121,17 @@ JNIEXPORT jbyteArray FN(typing)(JNIEnv *env, jclass c, jbyteArray room, jboolean
   free(a);
   return r;
 }
+
+JNIEXPORT jbyteArray FN(pushDrain)(JNIEnv *env, jclass c, jbyteArray state, jlong since) {
+  char *a = in(env, state);
+  jbyteArray r = out(env, IGPushDrain(a, since));
+  free(a);
+  return r;
+}
+
+JNIEXPORT void FN(pause)(JNIEnv *env, jclass c) { IGPause(); }
+
+JNIEXPORT void FN(unpause)(JNIEnv *env, jclass c) { IGUnpause(); }
 
 JNIEXPORT jbyteArray FN(counts)(JNIEnv *env, jclass c) { return out(env, IGCounts()); }
 

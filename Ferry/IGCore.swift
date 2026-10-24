@@ -129,6 +129,49 @@ nonisolated enum IGCore {
         _ = try result(call([room]) { IGMarkRead($0[0]) })
     }
 
+    // Web push (docs/PLAN-push.md): Mozilla only, but for `registerPush`. The state is the engine's and opaque here: it
+    // holds private keys, so it goes straight to the Keychain and is never logged.
+
+    /// A channel for each listed account without one; the channels of accounts not listed dropped.
+    @concurrent static func pushSetup(state: String, accounts: [String]) async throws -> String {
+        let list = String(decoding: try JSONEncoder().encode(accounts), as: UTF8.self)
+        return String(decoding: try result(call([state, list]) { IGPushSetup($0[0], $0[1]) }), as: UTF8.self)
+    }
+
+    /// What Mozilla held, read and acked; a push notifies when it's a message newer than `since` (ms).
+    @concurrent static func pushDrain(state: String, since: Int64) async throws -> (state: String, pushes: [IG.Push]) {
+        try drained(result(call([state]) { IGPushDrain($0[0], since) }))
+    }
+
+    /// Registers the account's channel with Instagram when the engine's rule says to (one request), else nothing.
+    @concurrent static func registerPush(_ account: String, state: String) async throws -> String {
+        try drained(result(call([account, state]) { IGRegisterPush($0[0], $0[1]) })).state
+    }
+
+    /// The chat a tapped notification opens, once its account's chats have loaded; nil for the inbox.
+    @concurrent static func pushRoom(_ account: String, push: IG.Push) async throws -> String? {
+        let json = String(decoding: try JSONEncoder().encode(push), as: UTF8.self)
+        return try answer(call([account, json]) { IGPushRoom($0[0], $0[1]) }).room.flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    /// `{state, pushes}`: the state back as text (it's only stored) and the pushes, if any. No state, no answer: an
+    /// empty one would replace the stored keys.
+    static func drained(_ data: Data) throws -> (state: String, pushes: [IG.Push]) {
+        struct Body: Decodable { var pushes: [IG.Push]? }
+        guard let stored = (try JSONSerialization.jsonObject(with: data) as? [String: Any])?["state"] as? [String: Any] else {
+            throw Failure(message: "core/ answered without the push state.", code: "UNKNOWN_ERROR")
+        }
+        let state = try JSONSerialization.data(withJSONObject: stored)
+        return (String(decoding: state, as: UTF8.self), try JSONDecoder().decode(Body.self, from: data).pushes ?? [])
+    }
+
+    /// The app went to the background: every socket closes, retries stop and folder paging waits, so a Background App
+    /// Refresh wake never reaches Instagram. Chats stay.
+    @concurrent static func pause() async { _ = call([]) { _ in IGPause(); return nil } }
+
+    /// The app is back: every socket reconnects and catches up, with no index reload.
+    @concurrent static func unpause() async { _ = call([]) { _ in IGUnpause(); return nil } }
+
     /// Disconnects the account and forgets its client and chats (Remove Account). Instagram isn't told.
     @concurrent static func stop(_ account: String) async {
         _ = call([account]) { IGStop($0[0]); return nil }

@@ -32,6 +32,12 @@ import Foundation
 ///   account stack only (the dev stack has two accounts; the stack changes from four). Nothing else sees them.
 /// - `FERRY_DEBUG_PLAYER_FAILS=1`: every video in the player and every voice note fails to play, as when AVFoundation
 ///   drops them (M1's failed state, a voice note's "Can't play"). Downloads still happen.
+/// - `FERRY_DEBUG_NOTIFICATIONS_CARD=1`: the inbox's one-time notifications card shows whatever was answered before;
+///   with made-up data its buttons only hide it (screenshots, the UI test).
+/// - `FERRY_DEBUG_REFRESH_AFTER_HOME=<seconds>`: that long after the app goes to the background, the same wake as
+///   Background App Refresh's (catch-up notifications from Mozilla, docs/PLAN-push.md), which the simulator can't be
+///   relied on to run. Within iOS's background time (about 30 s). It shows everything Mozilla held, what came while
+///   the app was open too, so a message sent before HOME can be checked.
 /// - `FERRY_DEBUG_DEMO=1`: made-up accounts and chats only, for the README's screenshots (the repo is public) and the UI
 ///   tests (C8): the Keychain's accounts are left alone and nothing connects, so nothing reaches Instagram. Includes the
 ///   requests and the group.
@@ -47,6 +53,8 @@ nonisolated enum DebugFixtures {
     static let blocksSends = env["FERRY_DEBUG_BLOCK_SENDS"] == "1"
     static let voiceFile = env["FERRY_DEBUG_VOICE_FILE"].flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) }
     static let playerFails = env["FERRY_DEBUG_PLAYER_FAILS"] == "1"
+    static let refreshAfterHome = Double(env["FERRY_DEBUG_REFRESH_AFTER_HOME"] ?? "")
+    static let offersNotifications = env["FERRY_DEBUG_NOTIFICATIONS_CARD"] == "1"
     static let endedSessions = Set((env["FERRY_DEBUG_ENDED_SESSION"] ?? "").split(separator: ",").map(String.init))
     private static let loginStates: [String: String] = Dictionary(
         (env["FERRY_DEBUG_LOGIN_STATE"] ?? "").split(separator: ",").compactMap { pair in
