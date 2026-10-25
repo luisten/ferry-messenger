@@ -201,8 +201,14 @@ new messages, typing or own messages in the inbox until a relaunch.
   `kivostudio` 7 (with a thread read, its message list and the send) and 3 socket connects, 2 typing; no "Seen", no
   index reload on any return. The built-in browser refused instagram.com even after the user allowed it, so the
   other side was the phone again.
-- **Notifications:** open. A likely part: swiping the app away to get fresh messages, after which iOS never wakes it
-  until it's opened again.
+- **Notifications:** they did come (Accounts said on, Background App Refresh on), but **every tap crashed the app**,
+  warm or cold (three crash reports from the phone, copied with `xcrun devicectl device copy from --domain-type
+  systemCrashLogs`): the `async` `didReceive` ran on Swift's pool, which then called UIKit's completion handler there,
+  and UIKit asserts the main thread (`_updateSnapshotAndStateRestorationWithAction`). Now the completion-handler form,
+  answered on the main actor. The simulator delivers a `simctl push` banner's tap but didn't crash on the old code, so
+  only the phone can confirm it.
+- **Known and left (review):** Remove Account while a resnapshot's re-login is loading the index brings the account
+  back in the engine until a relaunch (hidden in the app; the same window as a retry timer that has fired).
 
 ## 4. Risks
 

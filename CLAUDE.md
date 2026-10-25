@@ -351,9 +351,10 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
 - **`.accessibilityLabel { label in Text("From X: "); label }` reads its parts joined by ", "** ("From X: , hi"), so
   write `Text("From X")`: VoiceOver says "From X, hi" (`SpokenSender`, the group UI test checks the exact label). It
   wraps any element's label (text, link, media cards), which a plain `accessibilityLabel(String)` can't.
-- **An `HStack` offered less than its width shrinks its `Text`s, never fixed frames:** a group's reaction pill (❤ from
-  three people, then 😂) drew its first emoji under the faces after it, though the bubble left room (why it was offered
-  less is unknown). `ReactionPills` is `.fixedSize()`; the DEBUG group has that pill.
+- **A view proposed exactly its own width can come back narrower:** a group's reaction pill (❤ from three people with
+  their overlapping faces, then 😂) measured 116 pt, was placed at 116, and laid out at 105, shrinking the first emoji's
+  `Text` under its faces (a temporary `Layout` that logs proposals showed it, 2026-10-25). `MessageRow.PillPlacement`
+  places it at `.unspecified`; the DEBUG group has that pill, and one wider than our own short bubble.
 - **A `Canvas` with a taller sibling in a `ZStack` moves down the page:** the stack takes the sibling's height and the
   fixed-height frame around it centres it (O1's 307 pt ferry artboard pushed the 224 pt sea up 42 pt). Put the taller
   part in an `.overlay`, which never sizes its parent.

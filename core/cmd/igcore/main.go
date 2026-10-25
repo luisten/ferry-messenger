@@ -520,7 +520,7 @@ func login(cookiesJSON string) (map[string]any, error) {
 		return out
 	})
 	mu.Lock()
-	if !paused.Load() { // else IGUnpause connects it
+	if !paused.Load() && a.stop == nil { // else IGUnpause connects it (or just did)
 		a.connect() // after the chats are in: its live changes apply to them
 	}
 	mu.Unlock()

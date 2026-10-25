@@ -13,8 +13,9 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
   until you closed and reopened the app (1.6).
 - After a long time away, Ferry could stop getting new messages until it was reopened; it now loads the inbox again
   by itself.
+- Tapping a notification crashed Ferry (1.6).
 - In groups, an emoji three people reacted with could hide behind their faces when the message had another reaction
-  too.
+  too, and a long row of reactions on a short message of yours ran off the screen.
 
 ## [1.6] - 2026-10-24
 

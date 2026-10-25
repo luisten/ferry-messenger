@@ -169,8 +169,28 @@ struct MessageRow: View {
     /// DESIGN §6.2: the reactions on the bubble's bottom edge.
     @ViewBuilder private var pills: some View {
         if !message.reactions.isEmpty {
-            ReactionPills(reactions: message.reactions, me: me, face: isGroup ? member : nil, show: { actions.showReactions(message) })
-                .offset(x: own ? -8 : 8, y: 14)
+            PillPlacement(own: own) {
+                ReactionPills(reactions: message.reactions, me: me, face: isGroup ? member : nil, show: { actions.showReactions(message) })
+            }
+            .offset(y: 14)
+        }
+    }
+
+    /// The pill at its own size, 8 pt past the bubble's inner corner; one too wide grows inward from the outer edge,
+    /// not off the screen. Never proposed its own width: a group's pill offered its 116 pt came back 105, the first
+    /// emoji's Text squeezed under its three faces (measured 2026-10-25).
+    struct PillPlacement: Layout {
+        let own: Bool
+
+        func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+            proposal.replacingUnspecifiedDimensions()
+        }
+
+        func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+            guard let pill = subviews.first else { return }
+            let width = pill.sizeThatFits(.unspecified).width
+            let x = own ? min(bounds.minX - 8, bounds.maxX - width) : max(bounds.maxX + 8 - width, bounds.minX)
+            pill.place(at: CGPoint(x: x, y: bounds.maxY), anchor: .bottomLeading, proposal: .unspecified)
         }
     }
 
@@ -611,7 +631,6 @@ struct ReactionPills: View {
                 }
             }
             .font(.system(size: 14))
-            .fixedSize()  // squeezed, the first emoji's Text shrank under its three faces (2026-10-25)
             .padding(.horizontal, 6)
             .frame(minHeight: 24)
             .background(Color.reactionBackground, in: .capsule)

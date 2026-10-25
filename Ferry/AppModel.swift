@@ -474,7 +474,8 @@ final class AppModel {
             loaded.insert(id)
             apply(IG.Login(account: id, viewer: viewer, seq: update.seq))
             Task { await saveSession(id) }
-        case "LoginFailed":
+        case "LoginFailed":  // a retry, or the engine's own re-login after a resnapshot: Try Again may connect it again
+            running.remove(id)
             failed(id, IGCore.Failure(message: update.error ?? "Can't reach Instagram.", code: update.code, reason: update.reason))
         case "Room":
             apply(update, account: id)
