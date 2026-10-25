@@ -58,6 +58,7 @@ type account struct {
 	cli    *instameow.Client
 	ctx    context.Context
 	cancel context.CancelFunc
+	stop   context.CancelFunc // ends the socket connect started (IGPause); under mu
 	count  *counter
 	chats  *book
 	// When IGLogin last made a new web session for it (ms; 0 if only resumed this launch): a new session registers
@@ -429,6 +430,12 @@ func (a *account) handle(evt slidetypes.ClientEvent) error {
 		}
 	case *slidetypes.Connected, *slidetypes.Disconnected, *slidetypes.AuthError:
 		push(e)
+	case *slidetypes.ResnapshotRequired:
+		// Instagram can't replay what the socket missed (a long time away) and the library stops reconnecting: load
+		// the inbox again, as a launch does (upstream's bridge does a full reconnect). ponytail: no guard against a
+		// loop, as upstream; the new mailbox's seqID is fresh. Add one if C6 ever shows repeated logins.
+		cookies, _ := json.Marshal(a.cli.GetCookies().GetAll())
+		go relogin(a.id, string(cookies))
 	}
 	return nil
 }
@@ -512,9 +519,11 @@ func login(cookiesJSON string) (map[string]any, error) {
 		}
 		return out
 	})
+	mu.Lock()
 	if !paused.Load() { // else IGUnpause connects it
-		go cli.Connect(ctx) // after the chats are in: its live changes apply to them
+		a.connect() // after the chats are in: its live changes apply to them
 	}
+	mu.Unlock()
 	go a.loadFolders(next, v.IsProfessionalAccount)
 	return map[string]any{"account": id, "viewer": shown, "seq": n}, nil
 }
@@ -567,20 +576,25 @@ func retryLater(id, cookies string, err error) {
 			delete(retries, id)
 		}
 		mu.Unlock()
-		if !current {
-			return
+		if current {
+			relogin(id, cookies)
 		}
-		out, err := login(cookies)
-		if err != nil {
-			state, reason := classify(err)
-			push(map[string]any{"account": id, "kind": "LoginFailed", "error": err.Error(), "code": state, "reason": reason})
-			retryLater(id, cookies, err)
-			return
-		}
-		out["kind"] = "Login"
-		push(out)
 	})
 	retries[id] = t
+}
+
+// Logs in again by itself, telling the app (`Login` with IGLogin's answer, or `LoginFailed`) and retrying after a
+// passing failure.
+func relogin(id, cookies string) {
+	out, err := login(cookies)
+	if err != nil {
+		state, reason := classify(err)
+		push(map[string]any{"account": id, "kind": "LoginFailed", "error": err.Error(), "code": state, "reason": reason})
+		retryLater(id, cookies, err)
+		return
+	}
+	out["kind"] = "Login"
+	push(out)
 }
 
 func stopRetry(id string) {
@@ -1115,20 +1129,16 @@ func IGPause() {
 		return
 	}
 	mu.Lock()
-	all := make([]*account, 0, len(accounts))
+	defer mu.Unlock()
 	for _, a := range accounts {
-		all = append(all, a)
+		if a.stop != nil {
+			a.stop()
+		}
 	}
 	for id, t := range retries {
 		t.Stop()
 		delete(retries, id)
 	}
-	mu.Unlock()
-	var wg sync.WaitGroup
-	for _, a := range all {
-		wg.Go(a.cli.Disconnect) // each waits up to 5 s for its loop to end
-	}
-	wg.Wait()
 }
 
 // The app is active again: every account's socket reconnects, and Instagram's client catches up on what it missed.
@@ -1141,8 +1151,17 @@ func IGUnpause() {
 	mu.Lock()
 	defer mu.Unlock()
 	for _, a := range accounts {
-		go a.cli.Connect(a.ctx)
+		a.connect()
 	}
+}
+
+// Starts the account's sockets on a context of their own, which IGPause cancels. Not the library's Disconnect: that
+// stops a client's sockets for good (dgw's `stopping`), and 1.6.0 never reconnected after its first return
+// (TestASocketReconnectsAfterItsContextEnds). Holds mu.
+func (a *account) connect() {
+	ctx, stop := context.WithCancel(a.ctx)
+	a.stop = stop
+	go a.cli.Connect(ctx)
 }
 
 // The phone's web push channels (docs/PLAN-push.md): `state` is the last answer of IGPushSetup, IGPushDrain or

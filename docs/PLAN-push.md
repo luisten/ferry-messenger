@@ -186,6 +186,17 @@ tests pass on made-up data (the demo never asks or registers).
   socket connect (log one); whether Low Power Mode reports Background App Refresh as off. Known and left: a re-login's
   registration is remembered in memory only, so an app killed before it registers waits for the weekly renewal.
 
+**Step 4, the first days on the phone (1.6.0, reported 2026-10-25):** no notifications; after a return to the app, no
+new messages, typing or own messages in the inbox until a relaunch.
+
+- **The return:** `IGPause` closed the sockets with the library's `Disconnect`, which stops a client's sockets for good
+  (dgw's `stopping`), so `IGUnpause`'s `Connect` returned at once. Each connection now has its own context, which
+  `IGPause` cancels (`TestASocketReconnectsAfterItsContextEnds` pins both library behaviours). On the way:
+  `ResnapshotRequired` (Instagram can't replay what a socket missed) ended the connect loop with nothing else done;
+  the core now logs in again, as a launch does (upstream's full reconnect).
+- **Notifications:** open. A likely part: swiping the app away to get fresh messages, after which iOS never wakes it
+  until it's opened again.
+
 ## 4. Risks
 
 - **Late by design.** iOS wakes an app more often the more it's used, perhaps between one wake an hour and a few a

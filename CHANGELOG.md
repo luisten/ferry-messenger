@@ -7,6 +7,13 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+### Fixed
+
+- After you came back to Ferry, new messages, typing and the messages you sent stopped showing in the inbox and chats
+  until you closed and reopened the app (1.6).
+- After a long time away, Ferry could stop getting new messages until it was reopened; it now loads the inbox again
+  by itself.
+
 ## [1.6] - 2026-10-24
 
 ### Added
