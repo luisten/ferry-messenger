@@ -7,6 +7,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-10-25
+
 ### Fixed
 
 - After you came back to Ferry, new messages, typing and the messages you sent stopped showing in the inbox and chats
@@ -127,6 +129,7 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
   straight from your iPhone.
 
 [unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.6...HEAD
+[1.6.1]: https://github.com/luisten/ferry-messenger/compare/v1.6...v1.6.1
 [1.6]: https://github.com/luisten/ferry-messenger/compare/v1.5.1...v1.6
 [1.5.1]: https://github.com/luisten/ferry-messenger/compare/v1.5...v1.5.1
 [1.5]: https://github.com/luisten/ferry-messenger/compare/v1.4...v1.5
