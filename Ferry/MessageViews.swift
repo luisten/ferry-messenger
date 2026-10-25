@@ -611,6 +611,7 @@ struct ReactionPills: View {
                 }
             }
             .font(.system(size: 14))
+            .fixedSize()  // squeezed, the first emoji's Text shrank under its three faces (2026-10-25)
             .padding(.horizontal, 6)
             .frame(minHeight: 24)
             .background(Color.reactionBackground, in: .capsule)

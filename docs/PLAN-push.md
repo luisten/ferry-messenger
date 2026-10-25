@@ -194,6 +194,13 @@ new messages, typing or own messages in the inbox until a relaunch.
   `IGPause` cancels (`TestASocketReconnectsAfterItsContextEnds` pins both library behaviours). On the way:
   `ResnapshotRequired` (Instagram can't replay what a socket missed) ended the connect loop with nothing else done;
   the core now logs in again, as a launch does (upstream's full reconnect).
+- **Live on the simulator (2026-10-25, both dummies; the user sent and typed as `kivostudio` from their phone):** a
+  text sent while the app was in the background showed on return in both accounts' rows, same process; "typing" and a
+  live text showed with the app open; our own send after a return was the inbox's last message for one account and
+  unread for the other. Counts for one launch and two returns: `tamoveska` 3 requests and 3 socket connects,
+  `kivostudio` 7 (with a thread read, its message list and the send) and 3 socket connects, 2 typing; no "Seen", no
+  index reload on any return. The built-in browser refused instagram.com even after the user allowed it, so the
+  other side was the phone again.
 - **Notifications:** open. A likely part: swiping the app away to get fresh messages, after which iOS never wakes it
   until it's opened again.
 
