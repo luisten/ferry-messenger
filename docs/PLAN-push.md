@@ -63,8 +63,9 @@ Each has a recommendation. W1 is needed before step 1; the rest can wait until s
     10 s at most), acks, answers the decrypted pushes, each marked whether to notify (W2's kinds, and newer than
     `since`, the last time the app was open, so nothing already seen comes back).
   - `IGRegisterPush(account, state)`: registers the account's channel with Instagram when `rules.go` says to: a new
-    session (every login, A3's re-login included), a new endpoint, or 7 days since the last (one request per account
-    a week, tuned by step 4). C6 counts it like any request. `IGLogin` marks the new session.
+    session (every login, A3's re-login included), a new endpoint, or an hour since the last (was 7 days until step 4
+    showed Instagram drops registrations within hours to a day and a half). C6 counts it like any request. `IGLogin`
+    marks the new session.
   - `IGPushRoom(account, push)`: the room a tap opens (below).
 - **The push state** (the phone's UAID, and per account the channel, endpoint, key pair and when it was last
   registered) leaves `core/` only for Swift to write straight to the Keychain, like the cookies (decision C3), never
@@ -207,6 +208,18 @@ new messages, typing or own messages in the inbox until a relaunch.
   and UIKit asserts the main thread (`_updateSnapshotAndStateRestorationWithAction`). Now the completion-handler form,
   answered on the main actor. The simulator delivers a `simctl push` banner's tap but didn't crash on the old code, so
   only the phone can confirm it.
+- **Registrations expire (live 2026-10-26, QA round):** with 10-24's registration, no message reached Mozilla, sent
+  with the app open or in the background (the new DEBUG log: "wake: 0 pushes", "opened, 0 pushes taken"). Right after
+  registering again (a temporary `registerEvery = 0` build), a message sent in the background was there (1), and still
+  after a cold relaunch that didn't register (1). On the phone, 1.6.0's first registration delivered for at least
+  2.6 h, then nothing a couple of days later. So Instagram drops a registration somewhere between about 3 h and
+  1.5 days; `PushRegister` now renews hourly, on open or return only (never in a wake: notifications last that long
+  after the app was last used). The wake log measures the rest on the phone.
+- **Live re-check of 1.6.1 (same session):** a text sent with the app in the background arrived on return, same
+  process. Counts: 4 cold launches of 3 requests (`tamoveska`) and 4 (`kivostudio`) each, 2 registrations logged and
+  most likely 2 more lost (the build was replaced before HOME), about 6 socket connects per account; no "Seen", no
+  sends. The notification tap couldn't be checked end to end: no push arrived until the re-registration, and the test
+  that followed was about the registration.
 - **Known and left (review):** Remove Account while a resnapshot's re-login is loading the index brings the account
   back in the engine until a relaunch (hidden in the app; the same window as a retry timer that has fired).
 
@@ -224,8 +237,8 @@ new messages, typing or own messages in the inbox until a relaunch.
   Instagram, so it can't know. Accepted.
 - **Two notifications per message** when Instagram's app is also installed with its notifications on: the user's
   setting.
-- **Account risk:** a web push registration is what instagram.com sends when a browser allows notifications; about
-  one request a week per account. Low.
+- **Account risk:** a web push registration is what instagram.com sends when a browser allows notifications; at most
+  one request an hour per account, only while the app is used. Low.
 
 ## 5. Not in this plan
 

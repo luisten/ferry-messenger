@@ -142,7 +142,7 @@ final class AppModel {
                 for id in loaded where running.contains(id) { PushNotifications.shared.connected(id) }
             }
         }
-        for id in sessions.keys where !running.contains(id) { connect(id) }
+        for id in sessions.keys where !running.contains(id) && statuses[id]?.state != "BAD_CREDENTIALS" { connect(id) }  // as restartSync
     }
 
     /// To the background: keeps the Keychain's cookies current (Instagram rotates some) and closes every socket until

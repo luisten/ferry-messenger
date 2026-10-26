@@ -16,6 +16,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 - After a long time away, Ferry could stop getting new messages until it was reopened; it now loads the inbox again
   by itself.
 - Tapping a notification crashed Ferry (1.6).
+- Notifications stopped coming some hours after you turned them on: Instagram forgets a sign-up for notifications
+  within a day or so, and Ferry renewed it only weekly. It now renews it, at most once an hour, when you open Ferry.
 - In groups, an emoji three people reacted with could hide behind their faces when the message had another reaction
   too, and a long row of reactions on a short message of yours ran off the screen.
 

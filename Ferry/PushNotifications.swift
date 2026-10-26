@@ -1,10 +1,13 @@
 import BackgroundTasks
 import Foundation
 import UserNotifications
+#if DEBUG
+import os
+#endif
 
 /// Catch-up notifications (docs/PLAN-push.md): each account's web push channel at Mozilla, and what Mozilla held for
 /// them, shown as local notifications when iOS wakes the app (Background App Refresh). Instagram is asked only to
-/// register a channel, when the engine's rule says to (a new endpoint, a new login, or weekly); a wake talks to Mozilla
+/// register a channel, when the engine's rule says to (a new endpoint, a new login, or hourly); a wake talks to Mozilla
 /// only. Nothing happens unless the user allowed notifications.
 final class PushNotifications {
     static let shared = PushNotifications()
@@ -43,6 +46,9 @@ final class PushNotifications {
             var state = Keychain.pushState() ?? ""
             if !state.isEmpty, let drained = try? await IGCore.pushDrain(state: state, since: .max) {
                 state = drained.state
+                #if DEBUG
+                Self.log("opened, \(drained.pushes.count) pushes taken without notifying")
+                #endif
             }
             if let made = try? await IGCore.pushSetup(state: state, accounts: accounts) {
                 state = made
@@ -88,7 +94,18 @@ final class PushNotifications {
         await enqueue {
             guard let state = Keychain.pushState() else { return }
             let since = override ?? Int64(UserDefaults.standard.integer(forKey: Self.lastOpenKey))
-            guard let drained = try? await IGCore.pushDrain(state: state, since: since) else { return }
+            let drained: (state: String, pushes: [IG.Push])
+            do {
+                drained = try await IGCore.pushDrain(state: state, since: since)
+            } catch {
+                #if DEBUG
+                Self.log("drain failed: \(error.localizedDescription)")  // network errors only, never the state
+                #endif
+                return
+            }
+            #if DEBUG
+            Self.log("\(drained.pushes.count) pushes, \(drained.pushes.filter(\.notify).count) to notify")
+            #endif
             Keychain.savePushState(drained.state)
             let names = AccountIdentity.load()
             let now = Int64(Date.now.timeIntervalSince1970 * 1000)
@@ -100,6 +117,14 @@ final class PushNotifications {
         }.value
         Self.schedule()
     }
+
+    #if DEBUG
+    /// What a wake collected, counts only (never a push's content or the state). Read it with `log show --predicate
+    /// 'subsystem == "<bundle ID>" AND category == "push"'`, on the phone with Console.
+    private static func log(_ line: String) {
+        Logger(subsystem: Bundle.main.bundleIdentifier ?? "ferry", category: "push").notice("wake: \(line, privacy: .public)")
+    }
+    #endif
 
     /// The next wake: no sooner than 15 minutes; iOS decides when (or whether), by how much the app is used.
     nonisolated static func schedule() {

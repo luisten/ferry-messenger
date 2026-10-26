@@ -263,7 +263,7 @@ Instagram to see it."
 ## Notifications
 
 Catch-up notifications, on the phone, no server ([docs/PLAN-push.md](docs/PLAN-push.md)): each account has a Mozilla
-web push channel, registered with Instagram (on a new channel, a new login, or weekly); Mozilla holds the pushes until
+web push channel, registered with Instagram (on a new channel, a new login, or hourly while the app is used); Mozilla holds the pushes until
 a Background App Refresh wake collects and decrypts them, and the app posts a local notification per message newer
 than the app's last close. Not instant: iOS decides when to wake the app.
 

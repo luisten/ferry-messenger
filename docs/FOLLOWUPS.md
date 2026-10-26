@@ -57,6 +57,10 @@ days, **L** more. Live items the user has to do are in [manual-verification.md](
 | 57 | `testThreadOpensAtTheBottomAfterColdLaunch` failed once in two full runs (2026-10-15): after Back, the second read chat's row (`read.element(boundBy: 1)`) wasn't found within 5 s; it passed alone and in the next full run | Flaky smoke test; unrelated to round 2 (inbox untouched) | Re-find the row by its label after Back instead of by index among read rows, or wait longer | S |
 | 58 | At accessibility text sizes Welcome's legal line sits at the end of the scroll content (spec), so VoiceOver reads it before the pinned button, not after (spec's order 4–5) | Minor order difference at AX sizes only | `accessibilitySortPriority`, or accept the visual order | S |
 | 43 | A prepared video or a recording dropped without sending (thread closed with the attachment still there, app killed mid-upload) stays in `tmp/` | Up to 25 MB each until iOS purges `tmp` | Sweep `tmp/video-*`, `tmp/voice-*` older than a day at launch, next to `MediaCache.trim` | S |
+| 59 | A reaction pill's tap target is its 24 pt capsule (1.6.1 QA, the UX review) | DESIGN §11 asks 44 pt for reaction pills | A `contentShape` with a negative inset around `ReactionPills` | S |
+| 60 | In dark mode a group pill's faces nearly vanish: their grey and their 1.5 pt `reactionBackground` ring match the dark pill (1.6.1 QA; older) | A stack reads as loose letters | A ring in a colour that contrasts with the pill in both appearances | S |
+| 61 | A tapped notification for a chat in Requests or General opens the inbox on a cold launch (1.6.1 review; older) | `openPendingPush` acts once the first Inbox page is in; the other folders load later, so `PushRoom` finds no room | Wait for the folders (or retry `PushRoom` when they land) before giving up | S |
+| 62 | A group pill wider than the screen (about 5 emoji with faces) still runs off it (1.6.1 QA, the UX review) | Rare: about 15 people reacting | Past the available width, fall back to DM-style counts ("❤ 3") | S |
 
 ## P3: deferred by decision (product)
 

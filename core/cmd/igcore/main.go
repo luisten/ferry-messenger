@@ -61,6 +61,8 @@ type account struct {
 	stop   context.CancelFunc // ends the socket connect started (IGPause); under mu
 	count  *counter
 	chats  *book
+	// Its client stopped for a resnapshot: a re-login replaces it, so IGUnpause leaves it (its seqID is gone). Under mu.
+	stale bool
 	// When IGLogin last made a new web session for it (ms; 0 if only resumed this launch): a new session registers
 	// its web push channel again (rules.go's PushRegister).
 	loginAt int64
@@ -434,6 +436,9 @@ func (a *account) handle(evt slidetypes.ClientEvent) error {
 		// Instagram can't replay what the socket missed (a long time away) and the library stops reconnecting: load
 		// the inbox again, as a launch does (upstream's bridge does a full reconnect). ponytail: no guard against a
 		// loop, as upstream; the new mailbox's seqID is fresh. Add one if C6 ever shows repeated logins.
+		mu.Lock()
+		a.stale = true
+		mu.Unlock()
 		cookies, _ := json.Marshal(a.cli.GetCookies().GetAll())
 		go relogin(a.id, string(cookies))
 	}
@@ -584,10 +589,19 @@ func retryLater(id, cookies string, err error) {
 }
 
 // Logs in again by itself, telling the app (`Login` with IGLogin's answer, or `LoginFailed`) and retrying after a
-// passing failure.
+// passing failure; a failure is the app's only while no other login (IGResume's) replaced the account meanwhile.
 func relogin(id, cookies string) {
+	mu.Lock()
+	before := accounts[id]
+	mu.Unlock()
 	out, err := login(cookies)
 	if err != nil {
+		mu.Lock()
+		replaced := accounts[id] != before
+		mu.Unlock()
+		if replaced {
+			return
+		}
 		state, reason := classify(err)
 		push(map[string]any{"account": id, "kind": "LoginFailed", "error": err.Error(), "code": state, "reason": reason})
 		retryLater(id, cookies, err)
@@ -1151,7 +1165,9 @@ func IGUnpause() {
 	mu.Lock()
 	defer mu.Unlock()
 	for _, a := range accounts {
-		a.connect()
+		if !a.stale {
+			a.connect()
+		}
 	}
 }
 
