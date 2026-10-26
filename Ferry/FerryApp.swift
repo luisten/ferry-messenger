@@ -42,10 +42,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         return true
     }
 
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        guard let text = response.notification.request.content.userInfo["push"] as? String,
-              let push = try? JSONDecoder().decode(IG.Push.self, from: Data(text.utf8)) else { return }
-        await MainActor.run { model.openPush(push) }
+    /// Not the `async` form: Swift calls its completion handler on a background thread, and UIKit's asserts the main
+    /// one, so 1.6.0 crashed on every tap (the phone's crash reports, 2026-10-25). The simulator can't tap one.
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                            withCompletionHandler completionHandler: @escaping () -> Void) {
+        let push = (response.notification.request.content.userInfo["push"] as? String)
+            .flatMap { try? JSONDecoder().decode(IG.Push.self, from: Data($0.utf8)) }
+        nonisolated(unsafe) let done = completionHandler  // only ever called on the main thread, below
+        Task { @MainActor in
+            if let push { model.openPush(push) }
+            done()
+        }
     }
 
     /// Notifications are posted only from a wake; the app opening takes the rest without showing them.

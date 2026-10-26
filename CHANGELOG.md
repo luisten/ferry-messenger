@@ -7,6 +7,20 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-10-25
+
+### Fixed
+
+- After you came back to Ferry, new messages, typing and the messages you sent stopped showing in the inbox and chats
+  until you closed and reopened the app (1.6).
+- After a long time away, Ferry could stop getting new messages until it was reopened; it now loads the inbox again
+  by itself.
+- Tapping a notification crashed Ferry (1.6).
+- Notifications stopped coming some hours after you turned them on: Instagram forgets a sign-up for notifications
+  within a day or so, and Ferry renewed it only weekly. It now renews it, at most once an hour, when you open Ferry.
+- In groups, an emoji three people reacted with could hide behind their faces when the message had another reaction
+  too, and a long row of reactions on a short message of yours ran off the screen.
+
 ## [1.6] - 2026-10-24
 
 ### Added
@@ -117,6 +131,7 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
   straight from your iPhone.
 
 [unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.6...HEAD
+[1.6.1]: https://github.com/luisten/ferry-messenger/compare/v1.6...v1.6.1
 [1.6]: https://github.com/luisten/ferry-messenger/compare/v1.5.1...v1.6
 [1.5.1]: https://github.com/luisten/ferry-messenger/compare/v1.5...v1.5.1
 [1.5]: https://github.com/luisten/ferry-messenger/compare/v1.4...v1.5

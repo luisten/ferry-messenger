@@ -232,7 +232,7 @@ func TestAPushOpensItsChat(t *testing.T) {
 // A web push channel is registered with Instagram when its endpoint is new, after a login, or a week on; never on
 // every launch.
 func TestRegisteringAPushChannel(t *testing.T) {
-	const week = int64(7 * 24 * 3600_000)
+	const hour = int64(3600_000)
 	for _, step := range []struct {
 		name                     string
 		registered               string
@@ -240,11 +240,12 @@ func TestRegisteringAPushChannel(t *testing.T) {
 		want                     bool
 	}{
 		{"never registered", "", 0, 0, at, true},
-		{"a launch the next day", "e1", at, 0, at + 24*3600_000, false},
+		{"a return within the hour", "e1", at, 0, at + hour - 1, false},
 		{"a new endpoint", "e0", at, 0, at + 1, true},
 		{"a login since", "e1", at, at + 5, at + 10, true},
 		{"the login it registered after", "e1", at + 10, at + 5, at + 20, false},
-		{"a week on", "e1", at, 0, at + week, true},
+		{"an hour on", "e1", at, 0, at + hour, true},
+		{"a launch the next day", "e1", at, 0, at + 24*hour, true},
 	} {
 		if got := PushRegister("e1", step.registered, step.registeredAt, step.loginAt, step.n); got != step.want {
 			t.Errorf("%s: %v", step.name, got)

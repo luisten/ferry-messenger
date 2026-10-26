@@ -142,7 +142,7 @@ final class AppModel {
                 for id in loaded where running.contains(id) { PushNotifications.shared.connected(id) }
             }
         }
-        for id in sessions.keys where !running.contains(id) { connect(id) }
+        for id in sessions.keys where !running.contains(id) && statuses[id]?.state != "BAD_CREDENTIALS" { connect(id) }  // as restartSync
     }
 
     /// To the background: keeps the Keychain's cookies current (Instagram rotates some) and closes every socket until
@@ -474,7 +474,8 @@ final class AppModel {
             loaded.insert(id)
             apply(IG.Login(account: id, viewer: viewer, seq: update.seq))
             Task { await saveSession(id) }
-        case "LoginFailed":
+        case "LoginFailed":  // a retry, or the engine's own re-login after a resnapshot: Try Again may connect it again
+            running.remove(id)
             failed(id, IGCore.Failure(message: update.error ?? "Can't reach Instagram.", code: update.code, reason: update.reason))
         case "Room":
             apply(update, account: id)

@@ -169,8 +169,28 @@ struct MessageRow: View {
     /// DESIGN §6.2: the reactions on the bubble's bottom edge.
     @ViewBuilder private var pills: some View {
         if !message.reactions.isEmpty {
-            ReactionPills(reactions: message.reactions, me: me, face: isGroup ? member : nil, show: { actions.showReactions(message) })
-                .offset(x: own ? -8 : 8, y: 14)
+            PillPlacement(own: own) {
+                ReactionPills(reactions: message.reactions, me: me, face: isGroup ? member : nil, show: { actions.showReactions(message) })
+            }
+            .offset(y: 14)
+        }
+    }
+
+    /// The pill at its own size, 8 pt past the bubble's inner corner; one too wide grows inward from 6 pt inside the
+    /// outer edge, level with "Seen", not off the screen (the UX review, 2026-10-26). Never proposed its own width: a group's pill offered its 116 pt came back 105, the first
+    /// emoji's Text squeezed under its three faces (measured 2026-10-25).
+    struct PillPlacement: Layout {
+        let own: Bool
+
+        func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+            proposal.replacingUnspecifiedDimensions()
+        }
+
+        func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+            guard let pill = subviews.first else { return }
+            let width = pill.sizeThatFits(.unspecified).width
+            let x = own ? min(bounds.minX - 8, bounds.maxX - 6 - width) : max(bounds.maxX + 8 - width, bounds.minX + 6)
+            pill.place(at: CGPoint(x: x, y: bounds.maxY), anchor: .bottomLeading, proposal: .unspecified)
         }
     }
 
@@ -591,9 +611,9 @@ struct ReactionPills: View {
 
     var body: some View {
         Button(action: show) {
-            HStack(spacing: face == nil ? 2 : 6) {
+            HStack(spacing: face == nil ? 2 : 10) {  // groups: each emoji's faces read as its own
                 ForEach(reactions, id: \.key) { reaction in
-                    HStack(spacing: 2) {
+                    HStack(spacing: face == nil ? 2 : 1) {
                         Text(reaction.key)
                         if let face {
                             HStack(spacing: -5) {

@@ -235,7 +235,11 @@ nonisolated enum DebugFixtures {
                                 eventID: "$debug-group-extra-\(i)", sender: [maya, sam, theo][i % 3],
                                 originServerTS: ms - 11 * 60_000 + Int64(i) * 1000))
         }
-        for (i, (target, key, sender)) in [(4, "❤️", maya), (4, "🔥", theo), (6, "👍", theo), (6, "👍", maya), (6, "👍", me)].enumerated() {
+        // Three on Instagram's "❤" (no selector) beside a 😂: the squeezed pill hid the heart behind the faces; our own
+        // short message's pill is wider than the bubble, so it grows inward (`PillPlacement`, 2026-10-25).
+        for (i, (target, key, sender)) in [(2, "❤", theo), (2, "❤", sam), (2, "❤", me), (2, "😂", priya), (4, "❤️", maya),
+                                            (4, "❤️", sam), (4, "❤️", priya), (4, "🔥", theo), (4, "😂", me),
+                                            (6, "👍", theo), (6, "👍", maya), (6, "👍", me)].enumerated() {
             events.append(Event(type: "m.reaction", content: ["m.relates_to": ["rel_type": "m.annotation", "event_id": .string("$debug-group-msg-\(target)"), "key": .string(key)]],
                                 eventID: "$debug-group-reaction-\(i)", sender: sender, originServerTS: ms - 47 * 60_000))
         }

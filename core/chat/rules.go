@@ -211,12 +211,14 @@ func (c *Chats) PushRoom(long, user string, group bool) string {
 	return ""
 }
 
-// ponytail: a week is a guess; step 4's soak says whether Instagram drops registrations sooner.
-const registerEvery = 7 * 24 * 3600_000
+// Instagram stops pushing to a registration within hours to a day and a half: the phone's 1.6.0 had notifications for
+// hours after registering, none a couple of days later, and a fresh one survived a cold relaunch (live 2026-10-26).
+// ponytail: an hour is well inside that; step 4's wake log narrows it, and whether a wake should renew.
+const registerEvery = 3600_000
 
-// PushRegister says whether to register an account's web push channel with Instagram now (one request): the channel's
-// endpoint isn't the one registered, the account logged in since (a new web session, `loginAt`; 0 for a stored one),
-// or a week has passed.
+// PushRegister says whether to register an account's web push channel with Instagram now (one request, asked when the
+// app opens or comes back, never in a wake): the channel's endpoint isn't the one registered, the account logged in
+// since (a new web session, `loginAt`; 0 for a stored one), or an hour has passed.
 func PushRegister(endpoint, registered string, registeredAt, loginAt, now int64) bool {
 	return endpoint != registered || registeredAt < loginAt || now-registeredAt >= registerEvery
 }

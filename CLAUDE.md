@@ -26,7 +26,7 @@ SIM=$(xcrun simctl list devices booted | grep -oE '[0-9A-F-]{36}' | head -1)
 t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
-t test -only-testing:FerryTests              # 293 unit tests, ~3 s
+t test -only-testing:FerryTests              # 300 unit tests, ~3 s
 (cd core && go test ./...)                    # core/chat on P0's captures; -update in ./chat rewrites the golden files
 t test -only-testing:FerryUITests            # UI tests on made-up data (live ones opt-in: docs/DEVELOPMENT.md)
 t build-for-testing                           # all 3 targets
@@ -58,7 +58,8 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   App Refresh wake only drains the phone's web push channels (`IGPushDrain`); Instagram hears from them only through
   `IGRegisterPush`, when `rules.go`'s `PushRegister` says so. A wake resumes the whole process, so the app closes every
   Instagram socket and stops retries and folder paging in the background (`IGPause`), and reopens them on return
-  (`IGUnpause`). The push state (Mozilla's ID, each account's channel and
+  (`IGUnpause`). It closes them by cancelling each connection's context: the library's `Disconnect` stops a client's
+  sockets for good, so 1.6.0 stayed offline after its first return until a relaunch. The push state (Mozilla's ID, each account's channel and
   private keys) is like the cookies: it leaves `core/` only for the Keychain (service `ferry`, account `push`), never
   logged.
 - **Live tests use the two dummy accounts only**, never the user's real ones. Their names are in the gitignored
@@ -196,6 +197,9 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   and is the same card; otherwise it has no attachment and is the view-once line. Arriving live it's
   `SlideUQPPNewRavenMessage`, a new message like `SlideUQPPNewMessage` (Meta AI's `…NewGenieMessage` too). Web push
   sends nothing for any of them (PLAN-push step 1), and a push's sender is `s` (`u` is the account it's for).
+- **Web push registrations expire** between about 3 h and 1.5 days (live 2026-10-26: 10-24's delivered nothing, a
+  fresh one survived a cold relaunch), so `PushRegister` renews hourly on open or return. DEBUG builds log what each
+  wake and each open collect, counts only (category `push`): the first thing to read when notifications don't come.
 - **Several photos sent at once** are one `IMAGES` message with every attachment (live 2026-10-18,
   `ig_message_photos_tamo`); `core/chat`'s `album` keeps the first as the content and all of them under `fi.ferry.album`
   (`MediaInfo.album`), which `AlbumStack` shows as a pile that unfolds in place: one message, so one menu, reaction
@@ -350,6 +354,10 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
 - **`.accessibilityLabel { label in Text("From X: "); label }` reads its parts joined by ", "** ("From X: , hi"), so
   write `Text("From X")`: VoiceOver says "From X, hi" (`SpokenSender`, the group UI test checks the exact label). It
   wraps any element's label (text, link, media cards), which a plain `accessibilityLabel(String)` can't.
+- **A view proposed exactly its own width can come back narrower:** a group's reaction pill (❤ from three people with
+  their overlapping faces, then 😂) measured 116 pt, was placed at 116, and laid out at 105, shrinking the first emoji's
+  `Text` under its faces (a temporary `Layout` that logs proposals showed it, 2026-10-25). `MessageRow.PillPlacement`
+  places it at `.unspecified`; the DEBUG group has that pill, and one wider than our own short bubble.
 - **A `Canvas` with a taller sibling in a `ZStack` moves down the page:** the stack takes the sibling's height and the
   fixed-height frame around it centres it (O1's 307 pt ferry artboard pushed the 224 pt sea up 42 pt). Put the taller
   part in an `.overlay`, which never sizes its parent.

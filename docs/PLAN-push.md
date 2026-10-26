@@ -63,8 +63,9 @@ Each has a recommendation. W1 is needed before step 1; the rest can wait until s
     10 s at most), acks, answers the decrypted pushes, each marked whether to notify (W2's kinds, and newer than
     `since`, the last time the app was open, so nothing already seen comes back).
   - `IGRegisterPush(account, state)`: registers the account's channel with Instagram when `rules.go` says to: a new
-    session (every login, A3's re-login included), a new endpoint, or 7 days since the last (one request per account
-    a week, tuned by step 4). C6 counts it like any request. `IGLogin` marks the new session.
+    session (every login, A3's re-login included), a new endpoint, or an hour since the last (was 7 days until step 4
+    showed Instagram drops registrations within hours to a day and a half). C6 counts it like any request. `IGLogin`
+    marks the new session.
   - `IGPushRoom(account, push)`: the room a tap opens (below).
 - **The push state** (the phone's UAID, and per account the channel, endpoint, key pair and when it was last
   registered) leaves `core/` only for Swift to write straight to the Keychain, like the cookies (decision C3), never
@@ -186,6 +187,46 @@ tests pass on made-up data (the demo never asks or registers).
   socket connect (log one); whether Low Power Mode reports Background App Refresh as off. Known and left: a re-login's
   registration is remembered in memory only, so an app killed before it registers waits for the weekly renewal.
 
+**Step 4, the first days on the phone (1.6.0, reported 2026-10-25):** no notifications; after a return to the app, no
+new messages, typing or own messages in the inbox until a relaunch.
+
+- **The return:** `IGPause` closed the sockets with the library's `Disconnect`, which stops a client's sockets for good
+  (dgw's `stopping`), so `IGUnpause`'s `Connect` returned at once. Each connection now has its own context, which
+  `IGPause` cancels (`TestASocketReconnectsAfterItsContextEnds` pins both library behaviours). On the way:
+  `ResnapshotRequired` (Instagram can't replay what a socket missed) ended the connect loop with nothing else done;
+  the core now logs in again, as a launch does (upstream's full reconnect).
+- **Live on the simulator (2026-10-25, both dummies; the user sent and typed as `kivostudio` from their phone):** a
+  text sent while the app was in the background showed on return in both accounts' rows, same process; "typing" and a
+  live text showed with the app open; our own send after a return was the inbox's last message for one account and
+  unread for the other. Counts for one launch and two returns: `tamoveska` 3 requests and 3 socket connects,
+  `kivostudio` 7 (with a thread read, its message list and the send) and 3 socket connects, 2 typing; no "Seen", no
+  index reload on any return. The built-in browser refused instagram.com even after the user allowed it, so the
+  other side was the phone again.
+- **Notifications:** they did come (Accounts said on, Background App Refresh on), but **every tap crashed the app**,
+  warm or cold (three crash reports from the phone, copied with `xcrun devicectl device copy from --domain-type
+  systemCrashLogs`): the `async` `didReceive` ran on Swift's pool, which then called UIKit's completion handler there,
+  and UIKit asserts the main thread (`_updateSnapshotAndStateRestorationWithAction`). Now the completion-handler form,
+  answered on the main actor. The simulator delivers a `simctl push` banner's tap but didn't crash on the old code, so
+  only the phone can confirm it.
+- **Registrations expire (live 2026-10-26, QA round):** with 10-24's registration, no message reached Mozilla, sent
+  with the app open or in the background (the new DEBUG log: "wake: 0 pushes", "opened, 0 pushes taken"). Right after
+  registering again (a temporary `registerEvery = 0` build), a message sent in the background was there (1), and still
+  after a cold relaunch that didn't register (1). On the phone, 1.6.0's first registration delivered for at least
+  2.6 h, then nothing a couple of days later. So Instagram drops a registration somewhere between about 3 h and
+  1.5 days; `PushRegister` now renews hourly, on open or return only (never in a wake: notifications last that long
+  after the app was last used). The wake log measures the rest on the phone.
+- **Live re-check of 1.6.1 (same session):** a text sent with the app in the background arrived on return, same
+  process. Counts: 4 cold launches of 3 requests (`tamoveska`) and 4 (`kivostudio`) each, 2 registrations logged and
+  most likely 2 more lost (the build was replaced before HOME), about 6 socket connects per account; no "Seen", no
+  sends. The notification tap couldn't be checked end to end: no push arrived until the re-registration, and the test
+  that followed was about the registration.
+- **Three reviews of 1.6.1, fixed:** the push registration never goes out from the background (a login finishing
+  after HOME); a retry that comes due in the background waits and starts 30 s after the return, so the app's own
+  connect goes first; a removed account is never retried or re-logged in; a client stale after a resnapshot isn't
+  reconnected; a login another one overtook doesn't report its failure; an ended session isn't retried on each return.
+- **Known and left (review):** Remove Account while a resnapshot's re-login is loading the index brings the account
+  back in the engine until a relaunch (hidden in the app; the same window as a retry timer that has fired).
+
 ## 4. Risks
 
 - **Late by design.** iOS wakes an app more often the more it's used, perhaps between one wake an hour and a few a
@@ -200,8 +241,8 @@ tests pass on made-up data (the demo never asks or registers).
   Instagram, so it can't know. Accepted.
 - **Two notifications per message** when Instagram's app is also installed with its notifications on: the user's
   setting.
-- **Account risk:** a web push registration is what instagram.com sends when a browser allows notifications; about
-  one request a week per account. Low.
+- **Account risk:** a web push registration is what instagram.com sends when a browser allows notifications; at most
+  one request an hour per account, only while the app is used. Low.
 
 ## 5. Not in this plan
 
