@@ -7,6 +7,15 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+## [1.6.2] - 2026-10-26
+
+### Security
+
+- Ferry's connection to Instagram and to Mozilla's push service now uses Go 1.27.3 and golang.org/x/net 0.60.0, which
+  fix known issues: certificates from compromised authorities were still trusted where a phone's own list isn't
+  updated (CVE-2026-111943), and a misbehaving server could make Ferry use too much memory or processor time
+  (CVE-2026-78669, CVE-2026-94440, CVE-2026-78660 and others).
+
 ## [1.6.1] - 2026-10-25
 
 ### Fixed
@@ -131,6 +140,7 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
   straight from your iPhone.
 
 [unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.6...HEAD
+[1.6.2]: https://github.com/luisten/ferry-messenger/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/luisten/ferry-messenger/compare/v1.6...v1.6.1
 [1.6]: https://github.com/luisten/ferry-messenger/compare/v1.5.1...v1.6
 [1.5.1]: https://github.com/luisten/ferry-messenger/compare/v1.5...v1.5.1

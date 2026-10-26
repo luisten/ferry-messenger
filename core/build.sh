@@ -1,6 +1,6 @@
 #!/bin/sh
 # Builds core/ (cmd/igcore) as a static library for iOS devices and the simulator, then build/IGCore.xcframework.
-# Needs Xcode and Go 1.27.1 on PATH (core/go.mod's toolchain line). No gomobile: Go's c-archive mode with Xcode's clang;
+# Needs Xcode and Go 1.27.3 on PATH (core/go.mod's toolchain line). No gomobile: Go's c-archive mode with Xcode's clang;
 # the Go linker takes the platform (device or simulator) from the cgo objects.
 set -eu
 cd "$(dirname "$0")"
@@ -15,12 +15,12 @@ stamp() {
 }
 if [ "${1-}" = --check ]; then
   [ "$(cat ../build/IGCore.xcframework/core.sha256 2>/dev/null)" = "$(stamp)" ] && exit 0
-  echo "error: build/IGCore.xcframework is missing or older than core/: run core/build.sh (Go 1.27.1 on PATH)" >&2
+  echo "error: build/IGCore.xcframework is missing or older than core/: run core/build.sh (Go 1.27.3 on PATH)" >&2
   exit 1
 fi
 
-want=go1.27.1
-have=$(go env GOVERSION)
+want=go1.27.3
+have=$(GOTOOLCHAIN=local go env GOVERSION)  # local: an older Go would otherwise fetch the toolchain line's by itself
 [ "$have" = "$want" ] || { echo "core/build.sh: need $want on PATH, found $have" >&2; exit 1; }
 
 sum=$(stamp)
