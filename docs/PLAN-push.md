@@ -220,6 +220,10 @@ new messages, typing or own messages in the inbox until a relaunch.
   most likely 2 more lost (the build was replaced before HOME), about 6 socket connects per account; no "Seen", no
   sends. The notification tap couldn't be checked end to end: no push arrived until the re-registration, and the test
   that followed was about the registration.
+- **Three reviews of 1.6.1, fixed:** the push registration never goes out from the background (a login finishing
+  after HOME); a retry that comes due in the background waits and starts 30 s after the return, so the app's own
+  connect goes first; a removed account is never retried or re-logged in; a client stale after a resnapshot isn't
+  reconnected; a login another one overtook doesn't report its failure; an ended session isn't retried on each return.
 - **Known and left (review):** Remove Account while a resnapshot's re-login is loading the index brings the account
   back in the engine until a relaunch (hidden in the app; the same window as a retry timer that has fired).
 

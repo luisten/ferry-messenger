@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -62,4 +64,46 @@ func TestASocketReconnectsAfterItsContextEnds(t *testing.T) {
 		t.Fatalf("after Disconnect: err %v, %d dials; if it reconnects now, IGPause could use it again", err, dials.Load())
 	}
 	pause()
+}
+
+// A retry that comes due in the background waits for the app: IGUnpause starts it again 30 s on, so the app's own
+// connect on return (IGResume, whose stopRetry cancels it) goes first. A removed account never retries.
+func TestARetryWaitsForTheAppToComeBack(t *testing.T) {
+	offline := &net.OpError{Op: "dial", Err: errors.New("no network")}
+	started := func(id string) (kept, running bool) {
+		mu.Lock()
+		defer mu.Unlock()
+		r := retries[id]
+		return r != nil, r != nil && r.timer != nil
+	}
+	paused.Store(true)
+	defer paused.Store(false)
+
+	retryLater("1", "{}", offline)
+	if kept, running := started("1"); !kept || running {
+		t.Fatalf("in the background: kept %v, started %v", kept, running)
+	}
+	IGUnpause()
+	if _, running := started("1"); !running {
+		t.Fatal("back in the app: not started")
+	}
+	IGPause()
+	if kept, running := started("1"); !kept || running {
+		t.Fatalf("in the background again: kept %v, started %v", kept, running)
+	}
+	stopRetry("1") // IGResume, first thing
+	if kept, _ := started("1"); kept {
+		t.Fatal("the app's connect didn't cancel it")
+	}
+
+	mu.Lock()
+	removed["2"] = true
+	mu.Unlock()
+	retryLater("2", "{}", offline)
+	if kept, _ := started("2"); kept {
+		t.Fatal("a removed account retries")
+	}
+	mu.Lock()
+	delete(removed, "2")
+	mu.Unlock()
 }

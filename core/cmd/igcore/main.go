@@ -87,8 +87,11 @@ var (
 
 	otids atomic.Int64
 
-	// A passing login failure tries again every 30 s, by account (IGResume).
-	retries = map[string]*time.Timer{}
+	// A passing login failure tries again every 30 s, by account (IGResume, a re-login). In the background the timer
+	// waits and IGUnpause starts it again, so the app's own connect on return (IGResume's stopRetry) comes first.
+	retries = map[string]*retry{}
+	// Accounts IGStop removed: no retry or re-login brings them back; a new IGLogin does.
+	removed = map[string]bool{}
 
 	// DEBUG builds only (IGSetDebug): every send blocked, and a real chat shown as a request.
 	debugMu          sync.Mutex
@@ -440,7 +443,7 @@ func (a *account) handle(evt slidetypes.ClientEvent) error {
 		a.stale = true
 		mu.Unlock()
 		cookies, _ := json.Marshal(a.cli.GetCookies().GetAll())
-		go relogin(a.id, string(cookies))
+		go relogin(a.id, string(cookies), a)
 	}
 	return nil
 }
@@ -546,6 +549,7 @@ func IGLogin(cookiesJSON *C.char) *C.char {
 	if a := accounts[out["account"].(string)]; a != nil {
 		a.loginAt = now()
 	}
+	delete(removed, out["account"].(string))
 	mu.Unlock()
 	return jsonOut(out)
 }
@@ -558,6 +562,9 @@ func IGLogin(cookiesJSON *C.char) *C.char {
 func IGResume(acct, cookiesJSON *C.char) *C.char {
 	id, cookies := C.GoString(acct), C.GoString(cookiesJSON)
 	stopRetry(id)
+	mu.Lock()
+	delete(removed, id) // the app has it
+	mu.Unlock()
 	out, err := login(cookies)
 	if err != nil {
 		retryLater(id, cookies, err)
@@ -566,39 +573,61 @@ func IGResume(acct, cookiesJSON *C.char) *C.char {
 	return jsonOut(out)
 }
 
+type retry struct {
+	cookies string
+	timer   *time.Timer // nil in the background: IGUnpause starts it
+}
+
 // ponytail: a fixed 30 s while the app runs; backoff if it ever hammers.
 func retryLater(id, cookies string, err error) {
-	if state, _ := classify(err); state != "TRANSIENT_DISCONNECT" || paused.Load() { // paused: the app retries on return
+	if state, _ := classify(err); state != "TRANSIENT_DISCONNECT" {
 		return
 	}
 	mu.Lock()
 	defer mu.Unlock()
-	var t *time.Timer
-	t = time.AfterFunc(30*time.Second, func() {
+	if removed[id] {
+		return
+	}
+	r := &retry{cookies: cookies}
+	retries[id] = r
+	if !paused.Load() {
+		r.start(id)
+	}
+}
+
+// Holds mu.
+func (r *retry) start(id string) {
+	r.timer = time.AfterFunc(30*time.Second, func() {
 		mu.Lock()
-		current := retries[id] == t
-		if current {
+		due := retries[id] == r && !paused.Load()
+		if due {
 			delete(retries, id)
+		} else if retries[id] == r {
+			r.timer = nil // fired as the app went to the background: IGUnpause starts it again
 		}
+		before := accounts[id]
 		mu.Unlock()
-		if current {
-			relogin(id, cookies)
+		if due {
+			relogin(id, r.cookies, before)
 		}
 	})
-	retries[id] = t
 }
 
 // Logs in again by itself, telling the app (`Login` with IGLogin's answer, or `LoginFailed`) and retrying after a
-// passing failure; a failure is the app's only while no other login (IGResume's) replaced the account meanwhile.
-func relogin(id, cookies string) {
-	mu.Lock()
-	before := accounts[id]
-	mu.Unlock()
+// passing failure. `before` is the account it replaces (nil if none): a failure is the app's only while no other
+// login (IGResume's) replaced it meanwhile, and nothing is the app's once Remove Account came first.
+func relogin(id, cookies string, before *account) {
 	out, err := login(cookies)
+	mu.Lock()
+	replaced, gone := accounts[id] != before, removed[id]
+	mu.Unlock()
+	if gone {
+		if err == nil {
+			stop(id) // the login put it back
+		}
+		return
+	}
 	if err != nil {
-		mu.Lock()
-		replaced := accounts[id] != before
-		mu.Unlock()
 		if replaced {
 			return
 		}
@@ -614,8 +643,10 @@ func relogin(id, cookies string) {
 func stopRetry(id string) {
 	mu.Lock()
 	defer mu.Unlock()
-	if t := retries[id]; t != nil {
-		t.Stop()
+	if r := retries[id]; r != nil {
+		if r.timer != nil {
+			r.timer.Stop()
+		}
 		delete(retries, id)
 	}
 }
@@ -1149,9 +1180,11 @@ func IGPause() {
 			a.stop()
 		}
 	}
-	for id, t := range retries {
-		t.Stop()
-		delete(retries, id)
+	for _, r := range retries {
+		if r.timer != nil {
+			r.timer.Stop()
+			r.timer = nil
+		}
 	}
 }
 
@@ -1167,6 +1200,11 @@ func IGUnpause() {
 	for _, a := range accounts {
 		if !a.stale {
 			a.connect()
+		}
+	}
+	for id, r := range retries {
+		if r.timer == nil {
+			r.start(id)
 		}
 	}
 }
@@ -1237,6 +1275,9 @@ func IGRegisterPush(acct, stateJSON *C.char) *C.char {
 		if ch == nil {
 			return nil, errors.New("This account has no push channel yet.")
 		}
+		if paused.Load() { // a login that finished after HOME: never from the background; asked again on return
+			return map[string]any{"state": s, "sent": false}, nil
+		}
 		mu.Lock()
 		loginAt := a.loginAt
 		mu.Unlock()
@@ -1280,10 +1321,19 @@ func pushState(stateJSON *C.char) (s webpush.State, err error) {
 //
 //export IGStop
 func IGStop(acct *C.char) {
-	stopRetry(C.GoString(acct))
+	id := C.GoString(acct)
+	stopRetry(id)
 	mu.Lock()
-	a := accounts[C.GoString(acct)]
-	delete(accounts, C.GoString(acct))
+	removed[id] = true
+	mu.Unlock()
+	stop(id)
+}
+
+// Forgets the account's client: it stops and goes (Remove Account, or a re-login that finished after it).
+func stop(id string) {
+	mu.Lock()
+	a := accounts[id]
+	delete(accounts, id)
 	mu.Unlock()
 	if a != nil {
 		a.cancel()
