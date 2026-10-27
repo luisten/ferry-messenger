@@ -1,6 +1,6 @@
 # Ferry Messenger: catch-up notifications on the iPhone (plan)
 
-> **Removed 2026-10-27** (after 1.6.2): Instagram's web push hardly ever reached Mozilla on the phone (step 4's logs,
+> **Removed 2026-10-27, in 1.6.3:** Instagram's web push hardly ever reached Mozilla on the phone (step 4's logs,
 > below), so the notifications went, and with them `core/push`, the Mac tools (`core/cmd/autopush`, `pushtool`), the
 > four push exports and their JNI functions, `PushRegister` and `PushRoom`, Background App Refresh, the inbox card and
 > the Accounts row. Kept: `IGPause`/`IGUnpause` (nothing new starts in the background) and a one-line delete of

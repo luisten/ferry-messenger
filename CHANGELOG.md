@@ -7,6 +7,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+## [1.6.3] - 2026-10-27
+
 ### Removed
 
 - Notifications. They relied on Instagram sending the notifications it sends to its website, and on an iPhone it
@@ -146,7 +148,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 - First public release: your Instagram direct messages, from all your accounts in one inbox, talking to Instagram
   straight from your iPhone.
 
-[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.6...HEAD
+[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.6.3...HEAD
+[1.6.3]: https://github.com/luisten/ferry-messenger/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/luisten/ferry-messenger/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/luisten/ferry-messenger/compare/v1.6...v1.6.1
 [1.6]: https://github.com/luisten/ferry-messenger/compare/v1.5.1...v1.6

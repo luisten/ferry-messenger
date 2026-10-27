@@ -194,7 +194,7 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
 - **Instagram's web push isn't dependable** (1.6–1.6.2, [docs/PLAN-push.md](docs/PLAN-push.md)): it reached Mozilla
   for the dummies in tests, but on the phone one account's registration got a web page instead of "ok" every time and
   the other's, accepted, brought no push for a text an hour later, while iOS woke the app every 15–25 minutes. The
-  catch-up notifications built on it were removed (2026-10-27); notifications come back only as a relay to APNs, and
+  catch-up notifications built on it were removed in 1.6.3 (2026-10-27); notifications come back only as a relay to APNs, and
   only once web push proves reliable. A phone's log: `sudo log collect --device-udid <UDID> --last 3d`, then
   `/usr/bin/log show --archive …` (zsh's own `log` builtin shadows it).
 - **Several photos sent at once** are one `IMAGES` message with every attachment (live 2026-10-18,
