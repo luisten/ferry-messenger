@@ -49,27 +49,6 @@ nonisolated enum IG {
         var seq: Int?
     }
 
-    /// A push Mozilla held for the phone (`IGPushDrain`, docs/PLAN-push.md): who sent what, in which chat, and whether
-    /// it notifies (a message newer than the last time the app was open).
-    struct Push: Codable, Equatable, Sendable {
-        var account: String
-        /// Instagram's type: `direct_v2_text`, `direct_v2_media`, `direct_v2_voice_message`, or one that isn't a message.
-        var kind: String
-        /// Their handle.
-        var sender: String
-        /// A group's name (never captured: no group on the dummies).
-        var group: String?
-        /// The message, or Instagram's line for media ("Sent a photo").
-        var text: String
-        /// The thread's long ID and the sender's Instagram user ID, for `IGCore.pushRoom`.
-        var thread: String
-        var user: String
-        /// Instagram's message ID: one notification per message.
-        var message: String
-        var time: Int64
-        var notify: Bool
-    }
-
     /// The login's viewer is Instagram's snake_case JSON.
     static func decode<T: Decodable>(_ type: T.Type, _ data: Data) throws -> T {
         let decoder = JSONDecoder()

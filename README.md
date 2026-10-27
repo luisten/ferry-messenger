@@ -21,8 +21,6 @@ one inbox, and no feed, no Explore, no algorithm.
 - **Photos, videos, voice notes and GIFs,** sent and received. Shared reels play right in the chat.
 - **Message requests,** opened without sending "Seen". Accept or delete them when you're ready.
 - **Primary and General** for business and creator accounts, plus an archive for chats you're done with.
-- **Notifications** for new messages while the app is closed. They're not instant: they come when iOS lets the app
-  check, sometimes hours later.
 - Light and dark mode, large text and VoiceOver.
 
 ## How it works
@@ -30,23 +28,17 @@ one inbox, and no feed, no Explore, no algorithm.
 Ferry Messenger talks to Instagram directly from your iPhone, the same way Instagram's website does. There's no
 server and no account to create: nothing sits between you and Instagram.
 
-Notifications work the way they do for Instagram's website in Firefox: Instagram sends them to Mozilla's push
-service, which keeps them until your iPhone collects them. They're encrypted so that only your iPhone can read them.
-
 ## Privacy
 
 - You log in on Instagram's own login page, inside the app. The app never sees or stores your password.
 - Your Instagram session stays in your iPhone's Keychain.
-- The app talks to Instagram and, if you turn on notifications, to Mozilla's push service. Mozilla can't read your
-  notifications; it only sees that one arrived and when. The one other exception: when you send a message that is just
-  a link to a GIF, the app downloads that GIF to send it as a GIF.
+- The app talks only to Instagram. The one exception: when you send a message that is just a link to a GIF, the app
+  downloads that GIF to send it as a GIF.
 - No analytics and no tracking.
 
 ## Good to know
 
-- **Notifications are late, by design.** iOS decides when the app may check, sometimes hours after a message
-  arrives, and not at all after you swipe the app away, until you open it again. Reactions, and photos and videos
-  taken with Instagram's camera, don't notify.
+- **No notifications.** New messages arrive while the app is open.
 - **Instagram's end-to-end encrypted chats** can't be shown; open those in Instagram.
 - **It's unofficial.** Instagram can change how its website works, and it may ask you to confirm a new login in the
   Instagram app. Do your first logins on your home Wi-Fi.

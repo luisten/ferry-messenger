@@ -7,9 +7,9 @@ import (
 )
 
 // Instagram's rules (docs/PLAN-android.md stage 2): how often a chat is read again, when "Seen" and typing go out,
-// what a request allows, New Message's drafts, when a web push channel is registered. They decide how many Instagram
-// actions the apps spend, so both apps get them from here. Each decides from the engine's copy; the C API makes the
-// requests it says to make. Times are Unix ms, passed in.
+// what a request allows, New Message's drafts. They decide how many Instagram actions the apps spend, so both apps get
+// them from here. Each decides from the engine's copy; the C API makes the requests it says to make. Times are Unix
+// ms, passed in.
 
 const (
 	reReadAfter  = 30_000  // opening a chat reads it again at most every 30 s
@@ -197,30 +197,6 @@ func (c *Chats) ExistingDM(user string) string {
 		}
 	}
 	return ""
-}
-
-// PushRoom is the room a push names (docs/PLAN-push.md): the thread's long ID, else (not for a group's) a DM with its
-// sender's Instagram user ID; "" when this account hasn't loaded that chat (the app opens the inbox).
-func (c *Chats) PushRoom(long, user string, group bool) string {
-	if id := c.byLong[long]; id != "" && c.rooms[id] != nil {
-		return id
-	}
-	if fbid := c.fbidByUserID[user]; fbid != "" && !group {
-		return c.ExistingDM(fbid)
-	}
-	return ""
-}
-
-// Instagram stops pushing to a registration within hours to a day and a half: the phone's 1.6.0 had notifications for
-// hours after registering, none a couple of days later, and a fresh one survived a cold relaunch (live 2026-10-26).
-// ponytail: an hour is well inside that; step 4's wake log narrows it, and whether a wake should renew.
-const registerEvery = 3600_000
-
-// PushRegister says whether to register an account's web push channel with Instagram now (one request, asked when the
-// app opens or comes back, never in a wake): the channel's endpoint isn't the one registered, the account logged in
-// since (a new web session, `loginAt`; 0 for a stored one), or an hour has passed.
-func PushRegister(endpoint, registered string, registeredAt, loginAt, now int64) bool {
-	return endpoint != registered || registeredAt < loginAt || now-registeredAt >= registerEvery
 }
 
 // DraftID is the chat with someone we've never messaged: Instagram has no thread until the first message.

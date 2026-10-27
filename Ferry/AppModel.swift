@@ -1,7 +1,6 @@
 import Foundation
 import Observation
 import UIKit
-import UserNotifications
 #if DEBUG
 import os
 #endif
@@ -44,14 +43,8 @@ final class AppModel {
     private(set) var profiles: [String: UserProfile] = [:]
     /// N1 just opened this room: its thread focuses the composer once (DESIGN N1).
     var focusComposer: String?
-    /// A tapped notification's chat: the inbox opens it once (RootView).
-    var openRoom: String?
-    /// The inbox's one-time card about notifications, before iOS's own question (`checkNotificationOffer`).
-    private(set) var offersNotifications = false
-    /// A tapped notification waiting for its account's chats to load (`openPendingPush`).
-    @ObservationIgnored private var pendingPush: IG.Push?
-    /// The app has been active since it last went to the background: false at a launch straight into the background
-    /// (a Background App Refresh wake) and while Control Center or a system alert only makes it inactive.
+    /// The app has been active since it last went to the background (Control Center or a system alert only makes it
+    /// inactive), so `IGPause` and `IGUnpause` come in pairs.
     @ObservationIgnored private var isOpen = false
     /// `IGPause` and `IGUnpause`, in the order the app went away and came back.
     @ObservationIgnored private var lifecycle: Task<Void, Never>?
@@ -99,6 +92,7 @@ final class AppModel {
 
     init() {
         sessions = Keychain.accounts()
+        Keychain.deletePushState()
         for id in sessions.keys { statuses[id] = Status(state: "CONNECTING", since: .now) }
         #if DEBUG
         if DebugFixtures.demo {  // C8: made-up accounts that never connect, so nothing reaches Instagram
@@ -127,8 +121,7 @@ final class AppModel {
 
     /// The app became active: listen to core, and connect every account that isn't.
     /// From the background (not back from Control Center or a system alert, which only made it inactive) the sockets
-    /// reconnect (`IGUnpause`), and each account gets its push channel and, when the engine's rule says so, its
-    /// registration: a channel made here (notifications allowed in Settings, a UAID Mozilla forgot) is registered too.
+    /// reconnect (`IGUnpause`).
     func startSync() {
         if eventTask == nil { eventTask = Task { await eventLoop() } }
         if !isOpen {
@@ -137,18 +130,12 @@ final class AppModel {
                 await previous?.value
                 await IGCore.unpause()
             }
-            if pushes {
-                PushNotifications.shared.opened(accounts: Array(sessions.keys))
-                for id in loaded where running.contains(id) { PushNotifications.shared.connected(id) }
-            }
         }
         for id in sessions.keys where !running.contains(id) && statuses[id]?.state != "BAD_CREDENTIALS" { connect(id) }  // as restartSync
     }
 
     /// To the background: keeps the Keychain's cookies current (Instagram rotates some) and closes every socket until
-    /// the app is back (`IGPause`), since a Background App Refresh wake resumes the process and must never reach
-    /// Instagram (docs/PLAN-push.md). A launch straight into the background (a wake) was never open: nothing to close,
-    /// and the last open stays as it was, or the wake would take everything waiting as already seen.
+    /// the app is back (`IGPause`), so nothing new starts while the app isn't on screen.
     func stopSync() {
         Task { for id in running { await saveSession(id) } }
         if isOpen {
@@ -159,18 +146,8 @@ final class AppModel {
                 await IGCore.pause()
                 UIApplication.shared.endBackgroundTask(task)
             }
-            if pushes { PushNotifications.shared.closed() }
         }
         #if DEBUG
-        // The simulator can't be relied on to run Background App Refresh: the same wake, while iOS lets the app finish.
-        if let seconds = DebugFixtures.refreshAfterHome, pushes {
-            let task = UIApplication.shared.beginBackgroundTask()
-            Task {
-                try? await Task.sleep(for: .seconds(seconds))
-                await PushNotifications.shared.refresh(since: 0)
-                UIApplication.shared.endBackgroundTask(task)
-            }
-        }
         // C6: what this launch asked of Instagram, per account (operation names only). Read it with `log show
         // --predicate 'subsystem == "<bundle ID>" AND category == "instagram"'`.
         Logger(subsystem: Bundle.main.bundleIdentifier ?? "ferry", category: "instagram").notice("requests: \(IGCore.counts(), privacy: .public)")
@@ -203,7 +180,6 @@ final class AppModel {
         loaded.insert(login.account)
         sessions[login.account] = Keychain.Account(cookies: cookies, viewer: login.viewer)
         Keychain.save(sessions[login.account]!, id: login.account)
-        if pushes { PushNotifications.shared.opened(accounts: Array(sessions.keys)) }  // its channel, before `apply` registers it
         apply(login)
         await saveSession(login.account)
         return login.account
@@ -222,8 +198,6 @@ final class AppModel {
         identities[id] = nil
         AccountIdentity.save(identities)
         updateAccounts()
-        if pendingPush?.account == id { pendingPush = nil }
-        if pushes { PushNotifications.shared.removed(id, remaining: Array(sessions.keys)) }
     }
 
     private func connect(_ id: String) {
@@ -258,7 +232,6 @@ final class AppModel {
         syncFailures = 0
         updateAccounts()
         updateInitialSync()
-        if pushes { PushNotifications.shared.connected(id) }
     }
 
     /// One of the engine's updates for a chat. A room starts with its first fresh window (an update for a room this
@@ -326,75 +299,6 @@ final class AppModel {
 
     private func updateInitialSync() {
         initialSyncDone = sessions.keys.allSatisfy(loaded.contains)
-        openPendingPush()  // an account's chats may have just loaded
-    }
-
-    // MARK: Catch-up notifications (docs/PLAN-push.md)
-
-    /// Not for made-up data: the demo and the UI tests never ask, register or wake.
-    private var pushes: Bool {
-        #if DEBUG
-        !DebugFixtures.demo
-        #else
-        true
-        #endif
-    }
-
-    /// A notification was tapped: its chat opens once its account's chats have loaded; the inbox if it isn't found.
-    func openPush(_ push: IG.Push) {
-        pendingPush = push
-        openPendingPush()
-    }
-
-    private func openPendingPush() {
-        if let push = pendingPush, sessions[push.account] == nil { pendingPush = nil }  // an account removed since
-        guard let push = pendingPush, loaded.contains(push.account) else { return }
-        pendingPush = nil
-        Task { if let room = try? await IGCore.pushRoom(push.account, push: push) { openRoom = room } }
-    }
-
-    /// W4 (changed 2026-10-24, DESIGN O7): the inbox explains notifications in a card, once, before iOS asks, since
-    /// iOS asks only once, its question can't say they're late, and popping up as the chats appear it caught taps
-    /// meant for a chat. Shown with an account until it's answered, while iOS hasn't asked yet.
-    func checkNotificationOffer() async {
-        #if DEBUG
-        if DebugFixtures.offersNotifications { offersNotifications = true; return }  // made-up data: answering does nothing
-        #endif
-        guard pushes, !sessions.isEmpty, !UserDefaults.standard.bool(forKey: "push.asked") else { return }
-        offersNotifications = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .notDetermined
-    }
-
-    /// The card's answer, either one for good (Accounts still turns them on): "Turn On" brings iOS's question.
-    func answerNotificationOffer(turnOn: Bool) {
-        offersNotifications = false
-        guard pushes else { return }
-        UserDefaults.standard.set(true, forKey: "push.asked")
-        if turnOn { Task { await turnOnNotifications() } }
-    }
-
-    /// The system's question; a yes gives every account a channel and registers the connected ones.
-    @discardableResult func turnOnNotifications() async -> Bool {
-        guard pushes else { return false }
-        offersNotifications = false  // answered from Accounts: the card has nothing left to offer
-        UserDefaults.standard.set(true, forKey: "push.asked")
-        guard (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) == true else { return false }
-        PushNotifications.shared.opened(accounts: Array(sessions.keys))
-        for id in loaded where running.contains(id) { PushNotifications.shared.connected(id) }
-        return true
-    }
-
-    enum NotificationStatus { case notAsked, off, on, noRefresh, lowPower }
-
-    /// For Accounts: allowed or not, and whether iOS may wake the app at all (Background App Refresh, which Low Power
-    /// Mode pauses: then there's nothing to change in Settings).
-    func notificationStatus() async -> NotificationStatus {
-        switch await UNUserNotificationCenter.current().notificationSettings().authorizationStatus {
-        case .notDetermined: return .notAsked
-        case .denied: return .off
-        default:
-            if UIApplication.shared.backgroundRefreshStatus == .available { return .on }
-            return ProcessInfo.processInfo.isLowPowerModeEnabled ? .lowPower : .noRefresh
-        }
     }
 
     /// Rebuilds `accounts` from the stored profiles and statuses, then the DEBUG stand-ins and default identities.

@@ -18,12 +18,6 @@ struct RootView: View {
             }
         }
         .onChange(of: model.needsOnboarding, initial: true) { _, needed in if needed { onboarding = true; path = [] } }
-        // A tapped notification's chat (catch-up notifications, docs/PLAN-push.md).
-        .onChange(of: model.openRoom) { _, id in
-            guard let id, !onboarding else { return }
-            path = [.thread(id)]
-            model.openRoom = nil
-        }
         .tint(.primary)  // monochrome chrome: color means account (DESIGN §0.1); account scopes override it
         .overlay(alignment: .top) { toast }
         // One alert for failed thread and request actions, wherever they were started.

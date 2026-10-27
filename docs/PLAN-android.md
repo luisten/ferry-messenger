@@ -255,4 +255,5 @@ count before each run; the baseline costs the same actions once more.
 - An Instagram-native chat model instead of the Matrix-style one, if the Matrix vocabulary ever gets in the way
   (changes the contract for both apps).
 - `core/` in a repo of its own: about an afternoon (the module path changes), if a third consumer ever appears.
-- Notifications on iOS: catch-up ones on the phone, with no relay ([PLAN-push.md](PLAN-push.md), draft 2026-10-24).
+- Notifications on iOS: none. 1.6's catch-up ones (Mozilla's push queue) were removed 2026-10-27: Instagram's web push
+  hardly ever arrived ([PLAN-push.md](PLAN-push.md)), which also weighs against a Mozilla connection for E8.
