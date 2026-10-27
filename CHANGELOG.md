@@ -7,6 +7,13 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+### Removed
+
+- Notifications. They relied on Instagram sending the notifications it sends to its website, and on an iPhone it
+  hardly ever did: for one account Instagram never accepted them, and for another a message sent an hour later never
+  came. New messages arrive while Ferry is open, as before 1.6. Ferry no longer talks to Mozilla's push service, and
+  it deletes the notification keys it kept on your iPhone.
+
 ## [1.6.2] - 2026-10-26
 
 ### Security

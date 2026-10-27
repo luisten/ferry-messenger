@@ -50,7 +50,6 @@ import (
 	"go.mau.fi/mautrix-meta/pkg/messagix/types"
 
 	"github.com/luisten/ferry-messenger/core/chat"
-	webpush "github.com/luisten/ferry-messenger/core/push"
 )
 
 type account struct {
@@ -63,9 +62,6 @@ type account struct {
 	chats  *book
 	// Its client stopped for a resnapshot: a re-login replaces it, so IGUnpause leaves it (its seqID is gone). Under mu.
 	stale bool
-	// When IGLogin last made a new web session for it (ms; 0 if only resumed this launch): a new session registers
-	// its web push channel again (rules.go's PushRegister).
-	loginAt int64
 }
 
 // book is an account's chats, kept across a re-login. Its lock is held while an update is queued, so the app gets
@@ -229,7 +225,7 @@ func (a *account) loadFolders(next string, professional bool) {
 			}
 		}
 		for range chat.MaxPages {
-			// ponytail: polls while the app is in the background (IGPause), so a wake never pages; a cond if it matters.
+			// ponytail: polls while the app is in the background (IGPause), so nothing pages then; a cond if it matters.
 			for paused.Load() && a.ctx.Err() == nil {
 				time.Sleep(time.Second)
 			}
@@ -490,7 +486,7 @@ func login(cookiesJSON string) (map[string]any, error) {
 	mu.Lock()
 	old := accounts[id]
 	if old != nil {
-		a.chats, a.loginAt = old.chats, old.loginAt
+		a.chats = old.chats
 	} else {
 		a.chats = &book{Chats: chat.New(id)}
 	}
@@ -546,9 +542,6 @@ func IGLogin(cookiesJSON *C.char) *C.char {
 		return fail(err)
 	}
 	mu.Lock()
-	if a := accounts[out["account"].(string)]; a != nil {
-		a.loginAt = now()
-	}
 	delete(removed, out["account"].(string))
 	mu.Unlock()
 	return jsonOut(out)
@@ -1163,10 +1156,9 @@ func IGSession(acct *C.char) *C.char {
 // paused is IGPause's: the app is in the background, so no socket, retry or folder page may reach Instagram.
 var paused atomic.Bool
 
-// The app went to the background: every account's socket closes, retries stop and folder paging waits, so a Background
-// App Refresh wake, which resumes this process, never reaches Instagram (docs/PLAN-push.md). Before wakes existed only
-// the user resumed the app. Chats stay; IGUnpause reconnects without reloading the index, as the library's own
-// reconnect did on return.
+// The app went to the background: every account's socket closes, retries stop and folder paging waits, so nothing
+// reaches Instagram in the seconds before iOS suspends the app, or if iOS resumes it in the background. Chats stay;
+// IGUnpause reconnects without reloading the index, as the library's own reconnect did on return.
 //
 //export IGPause
 func IGPause() {
@@ -1216,105 +1208,6 @@ func (a *account) connect() {
 	ctx, stop := context.WithCancel(a.ctx)
 	a.stop = stop
 	go a.cli.Connect(ctx)
-}
-
-// The phone's web push channels (docs/PLAN-push.md): `state` is the last answer of IGPushSetup, IGPushDrain or
-// IGRegisterPush ("" the first time), `accounts` a JSON array of account IDs. A channel and keys for each account
-// without one, the channels of accounts not listed dropped. Mozilla only. Answers the new state, which holds private
-// keys: only for Swift to write straight to the Keychain, never logged (as IGSession's cookies, decision C3).
-//
-//export IGPushSetup
-func IGPushSetup(stateJSON, accountsJSON *C.char) *C.char {
-	s, err := pushState(stateJSON)
-	var accounts []string
-	if err == nil {
-		err = json.Unmarshal([]byte(C.GoString(accountsJSON)), &accounts)
-	}
-	if err != nil {
-		return fail(err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	if s, err = webpush.Setup(ctx, s, accounts); err != nil {
-		return fail(err)
-	}
-	return jsonOut(s)
-}
-
-// What Mozilla held for the phone, read and acked: `{state, pushes}`, each push marked whether to notify (a message
-// newer than `since`, Unix ms: the last time the app was open). Mozilla only; Instagram isn't asked anything, so the
-// app can call it from a background wake.
-//
-//export IGPushDrain
-func IGPushDrain(stateJSON *C.char, since C.longlong) *C.char {
-	s, err := pushState(stateJSON)
-	if err != nil {
-		return fail(err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	s, pushes, err := webpush.Drain(ctx, s, int64(since), 1500*time.Millisecond, 10*time.Second)
-	if err != nil {
-		return fail(err)
-	}
-	return jsonOut(map[string]any{"state": s, "pushes": pushes})
-}
-
-// Registers the account's web push channel with Instagram (`device_type: web_vapid`, what instagram.com sends when a
-// browser allows notifications) when rules.go's PushRegister says to: one request, else none. Only the public keys
-// go. `{state, sent}`.
-//
-//export IGRegisterPush
-func IGRegisterPush(acct, stateJSON *C.char) *C.char {
-	return call(acct, func(a *account) (any, error) {
-		s, err := pushState(stateJSON)
-		if err != nil {
-			return nil, err
-		}
-		ch := s.Accounts[a.id]
-		if ch == nil {
-			return nil, errors.New("This account has no push channel yet.")
-		}
-		if paused.Load() { // a login that finished after HOME: never from the background; asked again on return
-			return map[string]any{"state": s, "sent": false}, nil
-		}
-		mu.Lock()
-		loginAt := a.loginAt
-		mu.Unlock()
-		if !chat.PushRegister(ch.Endpoint, ch.RegisteredEndpoint, ch.RegisteredAt, loginAt, now()) {
-			return map[string]any{"state": s, "sent": false}, nil
-		}
-		keys := instameow.PushKeys{P256DH: ch.Keys.P256DH, Auth: ch.Keys.Auth}
-		ctx, cancel := context.WithTimeout(a.ctx, 15*time.Second) // a hung request would hold up a wake's drain
-		defer cancel()
-		if err := a.cli.RegisterPushNotifications(ctx, ch.Endpoint, keys); err != nil {
-			return nil, err
-		}
-		ch.RegisteredEndpoint, ch.RegisteredAt = ch.Endpoint, now()
-		return map[string]any{"state": s, "sent": true}, nil
-	})
-}
-
-// The room a push names, once its account's chats have loaded: `{room}`, "" for the inbox.
-//
-//export IGPushRoom
-func IGPushRoom(acct, pushJSON *C.char) *C.char {
-	return call(acct, func(a *account) (any, error) {
-		var p webpush.Push
-		if err := json.Unmarshal([]byte(C.GoString(pushJSON)), &p); err != nil {
-			return nil, err
-		}
-		a.chats.Lock()
-		defer a.chats.Unlock()
-		return map[string]string{"room": a.chats.PushRoom(p.Thread, p.User, p.Group != "")}, nil
-	})
-}
-
-func pushState(stateJSON *C.char) (s webpush.State, err error) {
-	if text := C.GoString(stateJSON); text != "" {
-		err = json.Unmarshal([]byte(text), &s)
-	}
-	return s, err
 }
 
 // Disconnects the account and forgets its client and chats (Remove Account). Instagram isn't told.

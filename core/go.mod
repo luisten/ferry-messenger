@@ -6,7 +6,6 @@ toolchain go1.27.3
 
 require (
 	github.com/coder/websocket v1.8.15
-	github.com/google/uuid v1.6.0
 	github.com/rs/zerolog v1.35.1
 	go.mau.fi/mautrix-meta v0.2609.0
 	go.mau.fi/util v0.10.1
@@ -19,6 +18,7 @@ require (
 	github.com/beeper/poly1305 v0.0.0-20250815183548-d4eede7bbf3c // indirect
 	github.com/coreos/go-systemd/v22 v22.7.0 // indirect
 	github.com/google/go-querystring v1.2.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/icholy/digest v1.2.0 // indirect
 	github.com/imroc/req/v3 v3.56.0 // indirect
 	github.com/klauspost/compress v1.19.2 // indirect

@@ -1,5 +1,11 @@
 # Ferry Messenger: catch-up notifications on the iPhone (plan)
 
+> **Removed 2026-10-27** (after 1.6.2): Instagram's web push hardly ever reached Mozilla on the phone (step 4's logs,
+> below), so the notifications went, and with them `core/push`, the Mac tools (`core/cmd/autopush`, `pushtool`), the
+> four push exports and their JNI functions, `PushRegister` and `PushRoom`, Background App Refresh, the inbox card and
+> the Accounts row. Kept: `IGPause`/`IGUnpause` (nothing reaches Instagram in the background) and a one-line delete of
+> the phone's push state in the Keychain. The rest of this file is the record of what was tried.
+
 > Draft, 2026-10-24, rewritten the same day: everything runs on the phone, no server (the user's call; the relay
 > design is in this file's history). W1–W4 decided 2026-10-24 (the recommendations). Steps 1–3 done the same day
 > (§3): the app shows catch-up notifications; the tap and real wakes wait for step 4, on the phone. Account names are the
@@ -239,6 +245,12 @@ new messages, typing or own messages in the inbox until a relaunch.
   Store; people who build Ferry themselves run their own relay. A relay takes the same Instagram pushes, so first a day
   or two of 1.6.2's log on the phone says whether Instagram's web push is reliable; then an architecture and design
   round (choosing a relay in the app, its status, the app unaffected while it's down), or no notifications at all.
+- **The checks (1.6.2 with the registration error logged, 2026-10-27):** the refused account's registration gets a web
+  page from Instagram instead of its JSON (`failed to parse response: invalid character '<'`), on every try; it's a
+  personal account, older than the others and linked in Meta's Accounts Center (so is the other one, which registers
+  fine). A text to that account at about 10:08 never reached Mozilla. Then a text to the accepted account, in Primary,
+  about an hour after its registration: wakes at 11:25, 11:41, 11:56 and 12:12 all found Mozilla empty. A relay
+  would have had nothing to forward either, so **the owner removed the notifications** rather than build one.
 
 ## 4. Risks
 

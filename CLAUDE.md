@@ -5,8 +5,8 @@ Instagram library (Go, `core/`). It grew out of Ferry, the same SwiftUI app on a
 Its history starts fresh at 1.0 (2026-10-17); the earlier history (Ferry's, and this app's first steps) is a private
 bundle outside the repo.
 
-**Status:** the app runs on `core/` at parity with Ferry, plus catch-up notifications that Ferry never had
-([docs/PLAN-push.md](docs/PLAN-push.md): steps 1–3 done, step 4 is a week on the user's phone) (P0–P7 of
+**Status:** the app runs on `core/` at parity with Ferry, with no notifications: 1.6's catch-up ones were removed
+when Instagram's web push hardly ever arrived ([docs/PLAN-push.md](docs/PLAN-push.md)) (P0–P7 of
 [docs/PLAN-core.md](docs/PLAN-core.md), each checked live with the two dummies; its "Done" blocks hold the results and
 request counts). Instagram's data becomes the Matrix-shaped rooms the views always showed (decision C2), in the engine
 since stage 1 of [docs/PLAN-android.md](docs/PLAN-android.md) (`core/chat`, so an Android app can share it), so
@@ -26,7 +26,7 @@ SIM=$(xcrun simctl list devices booted | grep -oE '[0-9A-F-]{36}' | head -1)
 t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
-t test -only-testing:FerryTests              # 300 unit tests, ~3 s
+t test -only-testing:FerryTests              # 294 unit tests, ~3 s
 (cd core && go test ./...)                    # core/chat on P0's captures; -update in ./chat rewrites the golden files
 t test -only-testing:FerryUITests            # UI tests on made-up data (live ones opt-in: docs/DEVELOPMENT.md)
 t build-for-testing                           # all 3 targets
@@ -54,14 +54,10 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   only through `IGSession`, whose result Swift writes straight to the Keychain and doesn't keep (Instagram rotates
   some cookies mid-session; decision C3 in [docs/PLAN-core.md](docs/PLAN-core.md)). Never pass cookies through
   environment variables, DEBUG switches or test runners.
-- **Catch-up notifications talk to Mozilla, not Instagram** ([docs/PLAN-push.md](docs/PLAN-push.md)): a Background
-  App Refresh wake only drains the phone's web push channels (`IGPushDrain`); Instagram hears from them only through
-  `IGRegisterPush`, when `rules.go`'s `PushRegister` says so. A wake resumes the whole process, so the app closes every
-  Instagram socket and stops retries and folder paging in the background (`IGPause`), and reopens them on return
-  (`IGUnpause`). It closes them by cancelling each connection's context: the library's `Disconnect` stops a client's
-  sockets for good, so 1.6.0 stayed offline after its first return until a relaunch. The push state (Mozilla's ID, each account's channel and
-  private keys) is like the cookies: it leaves `core/` only for the Keychain (service `ferry`, account `push`), never
-  logged.
+- **Nothing reaches Instagram in the background:** the app closes every socket and stops retries and folder paging
+  when it leaves the screen (`IGPause`), and reopens them on return (`IGUnpause`), by cancelling each connection's
+  context: the library's `Disconnect` stops a client's sockets for good, so 1.6.0 stayed offline after its first
+  return until a relaunch.
 - **Live tests use the two dummy accounts only**, never the user's real ones. Their names are in the gitignored
   `docs/local/test-accounts.md`; tracked files use the fictional stand-ins `tamoveska` (personal) and `kivostudio`
   (professional), `sample.*` for third parties. `git grep` for the real names must stay empty.
@@ -114,8 +110,7 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   accounts stand in for the Keychain's and never connect, identities in memory only; screenshots and the UI tests),
   every send and upload blocked (`FERRY_DEBUG_BLOCK_SENDS`), a voice file standing in for the microphone
   (`FERRY_DEBUG_VOICE_FILE`), stand-in accounts in the toolbar stack only (`FERRY_DEBUG_STACK_EXTRA`), failing
-  playback (`FERRY_DEBUG_PLAYER_FAILS`), the fixture capture (`FERRY_DEBUG_CAPTURE`), a Background App Refresh wake
-  after HOME (`FERRY_DEBUG_REFRESH_AFTER_HOME`), the inbox's notifications card (`FERRY_DEBUG_NOTIFICATIONS_CARD`) and a session Instagram ends for
+  playback (`FERRY_DEBUG_PLAYER_FAILS`), the fixture capture (`FERRY_DEBUG_CAPTURE`) and a session Instagram ends for
   one launch (`FERRY_DEBUG_ENDED_SESSION`: a broken `sessionid`, never saved; Instagram wouldn't let the dummies' new
   web sessions be removed from "Where you're logged in").
   **Fixture rooms (`!debug-…`) never reach Instagram:** the engine refuses a room it didn't make (E4),
@@ -195,14 +190,13 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
 - **Instagram's in-chat camera** sends `RAVEN_IMAGE` / `RAVEN_VIDEO` with `view_mode` 0 (view once), 1 (allow replay)
   or 2 (keep in chat) (live 2026-10-24, `ig_camera_media_tamo`). Kept, it carries the camera roll's attachment shape
   and is the same card; otherwise it has no attachment and is the view-once line. Arriving live it's
-  `SlideUQPPNewRavenMessage`, a new message like `SlideUQPPNewMessage` (Meta AI's `…NewGenieMessage` too). Web push
-  sends nothing for any of them (PLAN-push step 1), and a push's sender is `s` (`u` is the account it's for).
-- **Web push registrations expire** between about 3 h and 1.5 days (live 2026-10-26: 10-24's delivered nothing, a
-  fresh one survived a cold relaunch), so `PushRegister` renews hourly on open or return. DEBUG builds log what each
-  wake and each open collect, counts per account, and why a registration failed (category `push`): the first thing to
-  read when notifications don't come. From the phone: `sudo log collect --device-udid <UDID> --last 3d`, then
-  `/usr/bin/log show --archive …` (zsh's own `log` builtin shadows it). 1.6.1 there (2026-10-27): wakes every
-  15–25 min, Mozilla empty at nearly all of them, one account's registration failing on every try (PLAN-push step 4).
+  `SlideUQPPNewRavenMessage`, a new message like `SlideUQPPNewMessage` (Meta AI's `…NewGenieMessage` too).
+- **Instagram's web push isn't dependable** (1.6–1.6.2, [docs/PLAN-push.md](docs/PLAN-push.md)): it reached Mozilla
+  for the dummies in tests, but on the phone one account's registration got a web page instead of "ok" every time and
+  the other's, accepted, brought no push for a text an hour later, while iOS woke the app every 15–25 minutes. The
+  catch-up notifications built on it were removed (2026-10-27); notifications come back only as a relay to APNs, and
+  only once web push proves reliable. A phone's log: `sudo log collect --device-udid <UDID> --last 3d`, then
+  `/usr/bin/log show --archive …` (zsh's own `log` builtin shadows it).
 - **Several photos sent at once** are one `IMAGES` message with every attachment (live 2026-10-18,
   `ig_message_photos_tamo`); `core/chat`'s `album` keeps the first as the content and all of them under `fi.ferry.album`
   (`MediaInfo.album`), which `AlbumStack` shows as a pile that unfolds in place: one message, so one menu, reaction
