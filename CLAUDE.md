@@ -313,6 +313,9 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   (measured 78 × 44 pt for two accounts, 112 for three or more). Without it, expect about 20 pt more width.
 - `Adding 'UIKitToolbar' as a subview of UIHostingController.view is not supported` shows once in UI test logs; it
   predates design v3 (seen on the code before it too) and nothing visible goes wrong (FOLLOWUPS #50).
+- `<OnScrollGeometryChange Modifier> tried to update multiple times per frame` shows once per launch as a thread
+  opens: SwiftUI's own layout passes in the push's first frame (rows measured, insets arriving), not the bottom pin; it
+  stays with the action emptied (FOLLOWUPS #63). Harmless; don't chase it again.
 - **A horizontal `ScrollView` in the inbox's top safe-area bar that exists at the List's first layout** (accounts
   already loaded, e.g. right after onboarding) draws the chips ~128 pt low, hidden under the list but tappable.
   Inserted later it's fine. Not the large title's fault: v2 (inline title, `safeAreaBar`) still does it (forced-
