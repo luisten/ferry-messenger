@@ -56,6 +56,10 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   only through `IGSession`, whose result Swift writes straight to the Keychain and doesn't keep (Instagram rotates
   some cookies mid-session; decision C3 in [docs/PLAN-core.md](docs/PLAN-core.md)). Never pass cookies through
   environment variables, DEBUG switches or test runners.
+- **The relay gate's own sessions** (PLAN-relay step 1, `core/cmd/relaygate`) are the one exception to the Keychain
+  rule: the dummies' separate web sessions, made by hand in `relaygate-login` and piped (never a terminal or a file)
+  into its state file, mode 0600, on the relay's host, as the relay will keep them (R2). Never the app's sessions; its
+  log holds no cookies, message text, senders or chats.
 - **Nothing new starts in the background:** the app closes every socket and stops retries and folder paging
   when it leaves the screen (`IGPause`), and reopens them on return (`IGUnpause`), by cancelling each connection's
   context: the library's `Disconnect` stops a client's sockets for good, so 1.6.0 stayed offline after its first
