@@ -199,7 +199,10 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   sends nothing for any of them (PLAN-push step 1), and a push's sender is `s` (`u` is the account it's for).
 - **Web push registrations expire** between about 3 h and 1.5 days (live 2026-10-26: 10-24's delivered nothing, a
   fresh one survived a cold relaunch), so `PushRegister` renews hourly on open or return. DEBUG builds log what each
-  wake and each open collect, counts only (category `push`): the first thing to read when notifications don't come.
+  wake and each open collect, counts per account, and why a registration failed (category `push`): the first thing to
+  read when notifications don't come. From the phone: `sudo log collect --device-udid <UDID> --last 3d`, then
+  `/usr/bin/log show --archive …` (zsh's own `log` builtin shadows it). 1.6.1 there (2026-10-27): wakes every
+  15–25 min, Mozilla empty at nearly all of them, one account's registration failing on every try (PLAN-push step 4).
 - **Several photos sent at once** are one `IMAGES` message with every attachment (live 2026-10-18,
   `ig_message_photos_tamo`); `core/chat`'s `album` keeps the first as the content and all of them under `fi.ferry.album`
   (`MediaInfo.album`), which `AlbumStack` shows as a pile that unfolds in place: one message, so one menu, reaction

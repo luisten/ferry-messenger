@@ -227,6 +227,19 @@ new messages, typing or own messages in the inbox until a relaunch.
 - **Known and left (review):** Remove Account while a resnapshot's re-login is loading the index brings the account
   back in the engine until a relaunch (hidden in the app; the same window as a retry timer that has fired).
 
+**Step 4, the phone's log (1.6.1, 2026-10-26 20:26 to 10-27 09:20; the owner had one notification in days):**
+
+- **iOS isn't the bottleneck:** 22 wakes, every 15–25 minutes apart from 00:15–06:40. **Mozilla was empty** at every
+  wake and at every open but one (07:24, 2 pushes taken without notifying).
+- **One account's registration fails on every try:** 7 attempts in 11 hours, two of them a minute apart, where the
+  hourly rule allows one; the core records only a success and the app dropped the error (`try?`). The other account
+  registered about hourly, as designed. DEBUG now logs the error and each drain's pushes per account.
+- **The owner's call (2026-10-27):** catch-up notifications go. Notifications come back only as the relay to APNs (this
+  file's 10-24 draft, in its history; the paid account), for the owner and friends' ad hoc installs, not the App
+  Store; people who build Ferry themselves run their own relay. A relay takes the same Instagram pushes, so first a day
+  or two of 1.6.2's log on the phone says whether Instagram's web push is reliable; then an architecture and design
+  round (choosing a relay in the app, its status, the app unaffected while it's down), or no notifications at all.
+
 ## 4. Risks
 
 - **Late by design.** iOS wakes an app more often the more it's used, perhaps between one wake an hour and a few a
