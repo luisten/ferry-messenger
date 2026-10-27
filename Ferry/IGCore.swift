@@ -129,8 +129,8 @@ nonisolated enum IGCore {
         _ = try result(call([room]) { IGMarkRead($0[0]) })
     }
 
-    /// The app went to the background: every socket closes, retries stop and folder paging waits, so nothing reaches
-    /// Instagram while the app isn't on screen. Chats stay.
+    /// The app went to the background: every socket closes, retries stop and folder paging waits, so nothing new
+    /// starts while the app isn't on screen. Chats stay.
     @concurrent static func pause() async { _ = call([]) { _ in IGPause(); return nil } }
 
     /// The app is back: every socket reconnects and catches up, with no index reload.

@@ -54,7 +54,7 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   only through `IGSession`, whose result Swift writes straight to the Keychain and doesn't keep (Instagram rotates
   some cookies mid-session; decision C3 in [docs/PLAN-core.md](docs/PLAN-core.md)). Never pass cookies through
   environment variables, DEBUG switches or test runners.
-- **Nothing reaches Instagram in the background:** the app closes every socket and stops retries and folder paging
+- **Nothing new starts in the background:** the app closes every socket and stops retries and folder paging
   when it leaves the screen (`IGPause`), and reopens them on return (`IGUnpause`), by cancelling each connection's
   context: the library's `Disconnect` stops a client's sockets for good, so 1.6.0 stayed offline after its first
   return until a relaunch.

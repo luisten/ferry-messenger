@@ -3,7 +3,7 @@
 > **Removed 2026-10-27** (after 1.6.2): Instagram's web push hardly ever reached Mozilla on the phone (step 4's logs,
 > below), so the notifications went, and with them `core/push`, the Mac tools (`core/cmd/autopush`, `pushtool`), the
 > four push exports and their JNI functions, `PushRegister` and `PushRoom`, Background App Refresh, the inbox card and
-> the Accounts row. Kept: `IGPause`/`IGUnpause` (nothing reaches Instagram in the background) and a one-line delete of
+> the Accounts row. Kept: `IGPause`/`IGUnpause` (nothing new starts in the background) and a one-line delete of
 > the phone's push state in the Keychain. The rest of this file is the record of what was tried.
 
 > Draft, 2026-10-24, rewritten the same day: everything runs on the phone, no server (the user's call; the relay
@@ -239,7 +239,7 @@ new messages, typing or own messages in the inbox until a relaunch.
   wake and at every open but one (07:24, 2 pushes taken without notifying).
 - **One account's registration fails on every try:** 7 attempts in 11 hours, two of them a minute apart, where the
   hourly rule allows one; the core records only a success and the app dropped the error (`try?`). The other account
-  registered about hourly, as designed. DEBUG now logs the error and each drain's pushes per account.
+  registered about hourly, as designed. 1.6.2's DEBUG build logged the error and each drain's pushes per account.
 - **The owner's call (2026-10-27):** catch-up notifications go. Notifications come back only as the relay to APNs (this
   file's 10-24 draft, in its history; the paid account), for the owner and friends' ad hoc installs, not the App
   Store; people who build Ferry themselves run their own relay. A relay takes the same Instagram pushes, so first a day

@@ -44,6 +44,9 @@ nonisolated enum Keychain {
     /// 1.6's catch-up notifications kept the phone's web push state here (Mozilla's ID for it, each account's channel
     /// and private keys). ponytail: drop once every install has opened a build without them.
     static func deletePushState() {
+        #if DEBUG
+        if DebugFixtures.demo { return }  // C8: made-up data leaves the Keychain alone
+        #endif
         let item: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
                                    kSecAttrAccount as String: "push"]
         SecItemDelete(item as CFDictionary)

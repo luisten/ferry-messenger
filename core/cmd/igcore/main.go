@@ -1157,8 +1157,8 @@ func IGSession(acct *C.char) *C.char {
 var paused atomic.Bool
 
 // The app went to the background: every account's socket closes, retries stop and folder paging waits, so nothing
-// reaches Instagram in the seconds before iOS suspends the app, or if iOS resumes it in the background. Chats stay;
-// IGUnpause reconnects without reloading the index, as the library's own reconnect did on return.
+// new starts in the seconds before iOS suspends the app, or if iOS resumes it in the background (calls under way
+// finish). Chats stay; IGUnpause reconnects without reloading the index, as the library's own reconnect did on return.
 //
 //export IGPause
 func IGPause() {

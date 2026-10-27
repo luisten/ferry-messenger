@@ -135,7 +135,7 @@ final class AppModel {
     }
 
     /// To the background: keeps the Keychain's cookies current (Instagram rotates some) and closes every socket until
-    /// the app is back (`IGPause`), so nothing reaches Instagram while the app isn't on screen.
+    /// the app is back (`IGPause`), so nothing new starts while the app isn't on screen.
     func stopSync() {
         Task { for id in running { await saveSession(id) } }
         if isOpen {

@@ -18,7 +18,7 @@ struct FerryApp: App {
                 RootView().environment(model)
             }
         }
-        // Connected only while open (D6: no push); iOS suspends the sockets in the background anyway.
+        // Connected only while open (D6: no push): the sockets close in the background (`stopSync`, `IGPause`).
         .onChange(of: scenePhase, initial: true) { _, phase in
             guard !isUnitTestHost else { return }
             switch phase {
