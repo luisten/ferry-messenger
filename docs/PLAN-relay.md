@@ -1,7 +1,7 @@
 # Ferry Messenger: notifications through a relay (plan)
 
-> Draft, 2026-10-27: R3 (trust) and R4 (hosting is the operator's choice) decided the same day; R1, R2 and R5–R7
-> wait for the user, nothing is built. The user's brief: as simple and lightweight as possible, and as secure as that
+> Draft, 2026-10-27: R1–R4 decided the same day (R3 trust, R4 hosting is the operator's choice); R5–R7 wait for
+> the user, nothing is built. The user's brief: as simple and lightweight as possible, and as secure as that
 > allows. Follows [PLAN-push.md](PLAN-push.md), whose catch-up notifications were removed in 1.6.3 because Instagram's
 > web push hardly ever arrived. Account names are the fictional stand-ins (`tamoveska` personal, `kivostudio`
 > professional).
@@ -36,8 +36,8 @@ Each has a recommendation. R1–R4 are needed before step 1; the rest before ste
 
 | # | Question | Recommendation |
 |---|---|---|
-| R1 | **The relay's source: its own live Instagram connection** (assumed from 2026-10-27: web push measured unreliable, the dummy rerun declined) | **Go ahead**, gated on step 1: an always-on web session from the relay's host for several days on the dummies, with no checkpoint or forced logout. Android's A8 is measuring the same question for its foreground service; share the results. |
-| R2 | **Which session the relay uses** | **Its own:** a second login by hand in Ferry's web view ("Turn on notifications for @handle"), whose cookies go straight to the relay over TLS and are never stored on the phone. Not a copy of the phone's session: Instagram rotates cookies mid-session (C3), so two clients on one session would drift apart. It shows as one more web session in Instagram's "Where you're logged in". |
+| R1 | **The relay's source: its own live Instagram connection** (web push measured unreliable, the dummy rerun declined) | **Decided 2026-10-27: go ahead**, gated on step 1: an always-on web session from the relay's host for several days on the dummies, with no checkpoint or forced logout. Android's A8 is measuring the same question for its foreground service; share the results. |
+| R2 | **Which session the relay uses** | **Decided 2026-10-27: its own:** a second login by hand in Ferry's web view ("Turn on notifications for @handle"), whose cookies go straight to the relay over TLS and are never stored on the phone. Not a copy of the phone's session: Instagram rotates cookies mid-session (C3), so two clients on one session would drift apart. It shows as one more web session in Instagram's "Where you're logged in". |
 | R3 | **Who uses a relay, and whom they trust** | **Decided 2026-10-27: trust in whoever builds and runs the relay is what counts;** no hardware enclave (weeks of work and a cloud machine, for friends' scale). Your accounts first; friends on ad hoc installs later, each told when they turn notifications on that whoever runs the relay could read their DMs; self-builders run their own relay with their own APNs key (the app takes any relay address). |
 | R4 | **Where a relay runs, and how phones reach it** | **Decided 2026-10-27: the operator's choice.** The relay only needs a public HTTPS address the phones can reach (a name on the operator's own domain, say), and Ferry takes any address; where and how to host it is up to whoever runs it (§3: principles and the VPS-or-home trade-off, nothing prescribed). Your own setup is in your private notes, `docs/local/relay-setup.md` (gitignored). |
 | R5 | **What a notification carries** | **A plain alert:** title the sender's `@handle` (a group's name), subtitle "To <account>" with two or more accounts, body the text or Instagram's line for media, one stack per chat. iOS's "Show Previews" hides the text as usual. Apple sees the text in transit, as it does for Instagram's own app's notifications; encrypting it for the phone would add a Notification Service Extension target and a shared Keychain group, which isn't worth it while the relay's operator can read the messages anyway (R3). |
