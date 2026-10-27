@@ -47,7 +47,7 @@ final class PushNotifications {
             if !state.isEmpty, let drained = try? await IGCore.pushDrain(state: state, since: .max) {
                 state = drained.state
                 #if DEBUG
-                Self.log("opened, \(drained.pushes.count) pushes taken without notifying")
+                Self.log("opened, \(drained.pushes.count) pushes taken without notifying \(Self.byAccount(drained.pushes))")
                 #endif
             }
             if let made = try? await IGCore.pushSetup(state: state, accounts: accounts) {
@@ -60,9 +60,14 @@ final class PushNotifications {
     /// An account connected: its channel is registered with Instagram if the engine's rule says so (one request).
     func connected(_ account: String) {
         enqueue {
-            guard await Self.allowed(), let state = Keychain.pushState(),
-                  let registered = try? await IGCore.registerPush(account, state: state) else { return }
-            Keychain.savePushState(registered)
+            guard await Self.allowed(), let state = Keychain.pushState() else { return }
+            do {
+                Keychain.savePushState(try await IGCore.registerPush(account, state: state))
+            } catch {
+                #if DEBUG
+                Self.log("register \(account) failed: \(error.localizedDescription)")  // never the state or cookies
+                #endif
+            }
         }
     }
 
@@ -104,7 +109,7 @@ final class PushNotifications {
                 return
             }
             #if DEBUG
-            Self.log("\(drained.pushes.count) pushes, \(drained.pushes.filter(\.notify).count) to notify")
+            Self.log("\(drained.pushes.count) pushes, \(drained.pushes.filter(\.notify).count) to notify \(Self.byAccount(drained.pushes))")
             #endif
             Keychain.savePushState(drained.state)
             let names = AccountIdentity.load()
@@ -123,6 +128,11 @@ final class PushNotifications {
     /// 'subsystem == "<bundle ID>" AND category == "push"'`, on the phone with Console.
     private static func log(_ line: String) {
         Logger(subsystem: Bundle.main.bundleIdentifier ?? "ferry", category: "push").notice("wake: \(line, privacy: .public)")
+    }
+
+    /// Pushes per account (`[id: count]`): which accounts Instagram pushes for.
+    private static func byAccount(_ pushes: [IG.Push]) -> String {
+        Dictionary(grouping: pushes, by: \.account).mapValues(\.count).description
     }
     #endif
 
