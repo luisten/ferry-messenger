@@ -30,7 +30,7 @@ t test -only-testing:FerryTests              # 300 unit tests, ~3 s
 (cd core && go test ./...)                    # core/chat on P0's captures; -update in ./chat rewrites the golden files
 t test -only-testing:FerryUITests            # UI tests on made-up data (live ones opt-in: docs/DEVELOPMENT.md)
 t build-for-testing                           # all 3 targets
-core/build.sh                                 # Go core -> build/IGCore.xcframework (needs Go 1.27.1 on PATH)
+core/build.sh                                 # Go core -> build/IGCore.xcframework (needs Go 1.27.3 on PATH)
 git ls-files | xargs grep -nE 'syt_[A-Za-z0-9_]{8,}|"sessionid"\s*:\s*"[^"]{12,}'   # secret scan: expect nothing
 xcrun simctl spawn $SIM log show --last 10m --predicate "subsystem == \"$APP\" AND category == \"instagram\"" | grep requests  # C6 counts
 ```
@@ -85,7 +85,7 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
 **Code**
 
 - **Dependencies:** none in Swift. The one exception is `core/`: `go.mau.fi/mautrix-meta` pinned to an exact tag in
-  `core/go.mod` with `go.sum`, built with Go 1.27.1 (its `toolchain` line). Bump either only on purpose, after
+  `core/go.mod` with `go.sum`, built with Go 1.27.3 (its `toolchain` line). Bump either only on purpose, after
   reading upstream's changelog; say what changes before pulling it.
 - **`core/` has a second consumer, the Android app** (ferry-messenger-android, PLAN-android stage 3), which pins a
   commit of it. Its JNI bridge is `core/cmd/igcore/jni_android.c` (E6), one function per export, compiled only for

@@ -37,7 +37,7 @@ code comments refer to their numbers (D6, #17, …).
 
 ## Build and test
 
-You need **Xcode 27** and **Go 1.27.1** ([go.dev/dl](https://go.dev/dl/), on `PATH`). Build the core once, and again
+You need **Xcode 27** and **Go 1.27.3** ([go.dev/dl](https://go.dev/dl/), on `PATH`). Build the core once, and again
 whenever `core/` changes (about 15 s):
 
 ```sh
@@ -236,5 +236,5 @@ git -c gpg.ssh.allowedSignersFile=/tmp/allowed_signers tag -v v1.0
 
 `.github/workflows/ci.yml` runs on pull requests to `main`, pushes to `main`, and by hand. It uses no secrets and
 never talks to Instagram: shellcheck, actionlint and the secret and home-path scans on Ubuntu, then on GitHub's
-`xcode-27` macOS runner `core/build.sh` (Go 1.27.1, pinned and checksummed) and the unit tests. Actions are pinned by
+`xcode-27` macOS runner `core/build.sh` (Go 1.27.3, pinned and checksummed) and the unit tests. Actions are pinned by
 commit SHA (Dependabot keeps them fresh); downloaded tools by version and SHA-256.
