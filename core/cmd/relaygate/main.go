@@ -6,8 +6,8 @@
 //
 //	relaygate-login | relaygate add   a new account (one index load to learn which)
 //	caffeinate -s relaygate run       listen until stopped (Ctrl-C)
-//	relaygate report                  per day: hourly checks connected, drops, messages, worst delay, trouble, requests
-//	relaygate remove <id|@handle>     forget an account; end its session in Instagram's "Where you're logged in"
+//	relaygate report                  per day: hourly checks connected, drops, messages, worst delay, requests, notes
+//	relaygate remove <id|@handle>     log the session out at Instagram, prove it, then forget it (stop run first)
 //
 // State and log live in ~/Library/Application Support/FerryRelayGate (or -dir), readable by this user only.
 package main
@@ -23,6 +23,7 @@ import (
 	"maps"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -126,22 +127,97 @@ func add(in *os.File) error {
 }
 
 func remove(which string) error {
+	if running() {
+		return errors.New("stop relaygate run first (Ctrl-C): it would log the logout as trouble")
+	}
 	s, err := load()
 	if err != nil {
 		return err
 	}
 	for id, a := range s.Accounts {
-		if which == id || strings.TrimPrefix(which, "@") == a.Username {
-			delete(s.Accounts, id)
-			if err := save(s); err != nil {
-				return err
-			}
-			record(id, "removed", nil)
-			fmt.Printf("Forgot @%s. Its session still works until you end it in Instagram's \"Where you're logged in\".\n", a.Username)
-			return nil
+		if which != id && strings.TrimPrefix(which, "@") != a.Username {
+			continue
 		}
+		result, via := logOut(id, a.Cookies)
+		record(id, "logout", map[string]any{"result": result, "via": via})
+		delete(s.Accounts, id)
+		if err := save(s); err != nil {
+			return err
+		}
+		if result == "ended" {
+			fmt.Printf("Logged @%s out at Instagram (its session no longer works: checked) and forgot it.\n", a.Username)
+		} else {
+			fmt.Printf("Forgot @%s here, but Instagram may still accept its session (%s): end it in Instagram's \"Where you're logged in\".\n", a.Username, result)
+		}
+		return nil
 	}
 	return fmt.Errorf("no account %q", which)
+}
+
+// The web logout isn't documented: the website's current path first, then its older one.
+var logoutPaths = []string{"/api/v1/web/accounts/logout/ajax/", "/accounts/logout/ajax/"}
+
+// logOut sends instagram.com's own logout for this session, as the website's Log out does (the library has none),
+// and returns "ended", "still open" or "unknown" with the path that ended it. One index load first gives the request
+// the website's headers (the CSRF token among them).
+func logOut(id string, raw map[cookies.MetaCookieName]string) (result, via string) {
+	ctx := context.Background()
+	noop := func(context.Context, slidetypes.ClientEvent) error { return nil }
+	cli, c, n := client(raw, noop)
+	defer func() { record(id, "requests", map[string]any{"counts": n.take()}) }()
+	if _, _, err := cli.LoadIndex(ctx); err != nil {
+		if errors.Is(err, httpclient.ErrTokenInvalidated) {
+			return "ended", "already"
+		}
+		reason, _ := classify(err)
+		return "unknown (" + reason + ")", ""
+	}
+	post := func(path string) {
+		h := cli.GetHTTP()
+		headers := h.BuildHeaders(true, false)
+		headers.Set("x-requested-with", "XMLHttpRequest")
+		headers.Set("referer", "https://www.instagram.com/")
+		form := url.Values{"one_tap_app_login": {"0"}, "user_id": {c.Get(cookies.IGCookieDSUserID)}}
+		_, _, _ = h.MakeRequest(ctx, "https://www.instagram.com"+path, http.MethodPost, headers, []byte(form.Encode()), types.FORM)
+	}
+	// The proof: a fresh client on the original cookies, as a copy of them would be used. The first client's own jar
+	// may have dropped them on the logout's answer, which proves nothing about Instagram's side.
+	alive := func() (bool, error) {
+		fresh, _, m := client(raw, noop)
+		_, _, err := fresh.LoadIndex(ctx)
+		n.add(m.take())
+		if errors.Is(err, httpclient.ErrTokenInvalidated) {
+			return false, nil
+		}
+		return err == nil, err
+	}
+	return endSession(post, alive)
+}
+
+// endSession tries each logout until the session itself says it's over: Instagram refusing it as logged out is the
+// only answer that counts, whatever the logout request answered.
+func endSession(post func(path string), alive func() (bool, error)) (result, via string) {
+	result = "still open"
+	for _, path := range logoutPaths {
+		post(path)
+		switch ok, err := alive(); {
+		case !ok && err == nil:
+			return "ended", path
+		case err != nil:
+			result = "unknown"
+		}
+	}
+	return result, ""
+}
+
+// running says whether a `relaygate run` is going (its pid file names a live process).
+func running() bool {
+	b, err := os.ReadFile(filepath.Join(dir, "run.pid"))
+	if err != nil {
+		return false
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(b)))
+	return err == nil && syscall.Kill(pid, 0) == nil
 }
 
 // A client on these cookies with nothing logged (the library's logs can carry what Instagram sent), counting every
@@ -176,6 +252,14 @@ func run() error {
 	if len(s.Accounts) == 0 {
 		return errors.New("no accounts yet: relaygate-login | relaygate add")
 	}
+	if running() {
+		return errors.New("relaygate run is already going")
+	}
+	pidFile := filepath.Join(dir, "run.pid")
+	if err := os.WriteFile(pidFile, []byte(strconv.Itoa(os.Getpid())), 0o600); err != nil {
+		return err
+	}
+	defer os.Remove(pidFile)
 	var all []*listener
 	for id, a := range s.Accounts {
 		l := &listener{id: id, username: a.Username}
@@ -471,7 +555,7 @@ func report(out io.Writer) error {
 	s, _ := load()
 	days := summarize(f)
 	keys := slices.Sorted(maps.Keys(days))
-	fmt.Fprintf(out, "%-10s  %-18s  %8s  %5s  %8s  %9s  %8s  %s\n", "day", "account", "checks", "drops", "messages", "worst", "requests", "trouble")
+	fmt.Fprintf(out, "%-10s  %-18s  %8s  %5s  %8s  %9s  %8s  %s\n", "day", "account", "checks", "drops", "messages", "worst", "requests", "notes")
 	for _, k := range keys {
 		d := days[k]
 		name := d.account
@@ -479,7 +563,7 @@ func report(out io.Writer) error {
 			name = "@" + s.Accounts[d.account].Username
 		}
 		fmt.Fprintf(out, "%-10s  %-18s  %3d of %-2d  %5d  %3d (+%d)  %8s  %8d  %s\n", d.day, name, d.connectedChecks, d.checks,
-			d.drops, d.messages, d.own, time.Duration(d.worstMS)*time.Millisecond, d.requests, strings.Join(d.trouble, ", "))
+			d.drops, d.messages, d.own, time.Duration(d.worstMS)*time.Millisecond, d.requests, strings.Join(d.notes, ", "))
 	}
 	fmt.Fprintln(out, "\nchecks: hourly checks that found the socket connected, of those logged (a gap means the gate wasn't")
 	fmt.Fprintln(out, "running or the Mac slept). messages: incoming (+ the account's own, sent from elsewhere). worst: the")
@@ -492,7 +576,7 @@ type day struct {
 	checks, connectedChecks, drops, own, requests int
 	messages                                      int
 	worstMS                                       int64
-	trouble                                       []string
+	notes                                         []string
 }
 
 func summarize(r io.Reader) map[string]*day {
@@ -507,6 +591,8 @@ func summarize(r io.Reader) map[string]*day {
 			Own       bool           `json:"own"`
 			DelayMS   int64          `json:"delay_ms"`
 			Reason    string         `json:"reason"`
+			Result    string         `json:"result"`
+			Via       string         `json:"via"`
 			Counts    map[string]int `json:"counts"`
 		}
 		if json.Unmarshal(scan.Bytes(), &e) != nil {
@@ -534,9 +620,11 @@ func summarize(r io.Reader) map[string]*day {
 			}
 			d.worstMS = max(d.worstMS, e.DelayMS)
 		case "trouble", "start failed":
-			d.trouble = append(d.trouble, e.Event+": "+e.Reason)
+			d.notes = append(d.notes, e.Event+": "+e.Reason)
 		case "resnapshot":
-			d.trouble = append(d.trouble, "resnapshot")
+			d.notes = append(d.notes, "resnapshot")
+		case "logout":
+			d.notes = append(d.notes, "logout: "+e.Result+" "+e.Via)
 		case "requests":
 			for _, n := range e.Counts {
 				d.requests += n

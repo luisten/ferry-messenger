@@ -68,7 +68,8 @@ per day in its log.
 - Dropping an account ends its session for good, in this order: the socket closes, the session is logged out at
   Instagram, its cookies are deleted; the answer says which happened. The library has no logout (upstream's bridge
   leaves it a `TODO`), so the relay sends instagram.com's own web logout request with that session, as the website's
-  Log out does: confirmed on the dummies in step 3 (the session must vanish from "Where you're logged in").
+  Log out does: first tried at the end of step 1 (`relaygate remove`), confirmed in step 3. Only the session itself
+  proves it: a fresh client on the original cookies must be refused as logged out, whatever the logout answered.
 - Per account, the engine's updates through R6's rules into APNs pushes (`apns-push-type: alert`, `thread-id` per
   chat, the room ID `!ig-<account>-<thread>` in the payload for the tap). APNs' "unregistered" drops the token.
 - TLS, the operator's pick: a certificate the relay gets and renews itself from Let's Encrypt when given a domain
@@ -178,7 +179,7 @@ Live steps use the dummies only until step 5, with the Android session's LOCK/OK
 | Step | What | Who | Estimate |
 |---|---|---|---|
 | 0 | The paid team in Xcode (a reinstall and new logins if the team changes the Keychain group), an APNs key, your relay's host set up your way (`docs/local/relay-setup.md`) with its public HTTPS address (needed from step 3; step 1 needs neither). | You | — |
-| 1 | **Gate: does Instagram tolerate an always-on web session from the relay's host?** A throwaway listener on the relay's host, which opens no port: `core/cmd/relaygate` (built 2026-10-27; `build.sh` makes both programs for Macs with either chip), with `relaygate-login` for the logins by hand, piping each session straight into it with a new web session for each dummy, logging connects, reconnects, messages received and any checkpoint, for 5–7 days, a few messages a day from your other phone. **If Instagram signs a session out or asks for a checkpoint, stop:** back to you. | Me, then days elapsed | ½ d + a week |
+| 1 | **Gate: does Instagram tolerate an always-on web session from the relay's host?** A throwaway listener on the relay's host, which opens no port: `core/cmd/relaygate` (built 2026-10-27; `build.sh` makes both programs for Macs with either chip), with `relaygate-login` for the logins by hand, piping each session straight into it with a new web session for each dummy, logging connects, reconnects, messages received and any checkpoint, for 5–7 days, a few messages a day from your other phone. At the end, `relaygate remove` logs each session out and proves it (R10's logout, tried here first). **If Instagram signs a session out or asks for a checkpoint, stop:** back to you. | Me, then days elapsed | ½ d + a week |
 | 2 | `core/engine` out of `cmd/igcore`, no behaviour change; Go tests and both apps' builds green. | Me | 1–1½ d |
 | 3 | The relay: API, store, R6's rules, APNs sender, ending a session (R10: the web logout confirmed on the dummies); tests against a fake APNs (`httptest`) and recorded socket events (`core/testdata`). | Me | 1½–2 d |
 | 4 | The app: the build settings (R8, R9), the Accounts design and §4's wording, pairing, the switches with off ending the relay's session (R10), token, tap, foreground rule, Remove Account; unit and UI tests on the demo. | Me (UX agent for the design) | 2 d |
