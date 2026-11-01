@@ -271,8 +271,8 @@ struct MessageRow: View {
         return linked
     }
 
-    /// Made once (it compiles a pattern); matching is thread-safe.
-    nonisolated(unsafe) private static let links = try! NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+    /// Made once: it compiles a pattern.
+    nonisolated private static let links = try! NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
 
     /// 1–3 emoji and nothing else.
     static func isEmojiOnly(_ text: String) -> Bool {
