@@ -224,10 +224,10 @@ struct MessageRow: View {
         if Self.isEmojiOnly(text) {
             Text(text).font(.system(size: 48)).menu(message, actions)  // DESIGN §6.1: no bubble
         } else {
-            Text(text)
+            LinkedText(text: text)
                 .font(.body)
                 .foregroundStyle(own ? Color.white : Color.primary)
-                .tint(own ? .white : nil)
+                .tint(own ? .white : .primary)  // links are the text's colour, underlined: colour means account (DESIGN §3.6)
                 .padding(.horizontal, 12).padding(.vertical, 8)
                 .background(fill, in: Self.shape(row.position, own: own))
                 .contentShape(.contextMenuPreview, Self.shape(row.position, own: own))
@@ -257,6 +257,22 @@ struct MessageRow: View {
             ? UnevenRoundedRectangle(topLeadingRadius: 20, bottomLeadingRadius: 20, bottomTrailingRadius: bottom, topTrailingRadius: top)
             : UnevenRoundedRectangle(topLeadingRadius: top, bottomLeadingRadius: bottom, bottomTrailingRadius: 20, topTrailingRadius: 20)
     }
+
+    /// The text with its web links tappable ("https://…", "www.…", a bare domain), underlined so they read as links on
+    /// either bubble. Only http(s): nothing else a detector finds (a phone number, an address) opens anything.
+    nonisolated static func linked(_ text: String) -> AttributedString {
+        var linked = AttributedString(text)
+        for match in links.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+            guard let url = match.url, ["http", "https"].contains(url.scheme?.lowercased()),
+                  let found = Range(match.range, in: text), let range = Range(found, in: linked) else { continue }
+            linked[range].link = url
+            linked[range].underlineStyle = Text.LineStyle.single
+        }
+        return linked
+    }
+
+    /// Made once (it compiles a pattern); matching is thread-safe.
+    nonisolated(unsafe) private static let links = try! NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
 
     /// 1–3 emoji and nothing else.
     static func isEmojiOnly(_ text: String) -> Bool {
@@ -406,6 +422,27 @@ struct TapOrHoldButtonStyle: PrimitiveButtonStyle {
 
 extension PrimitiveButtonStyle where Self == TapOrHoldButtonStyle {
     static var tapOrHold: Self { Self() }
+}
+
+/// A message's text with its links (`MessageRow.linked`). A link takes the touch as a Button does, so holding one opened
+/// it instead of the bubble's sheet: the hold comes first here, as in `TapOrHoldButtonStyle`. VoiceOver reads the bubble
+/// as one label, with no links in it, so each link is also one of its actions.
+struct LinkedText: View {
+    let text: String
+    @Environment(\.messageHold) private var messageHold
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        let linked = MessageRow.linked(text)
+        let urls = linked.runs.compactMap(\.link)
+        Text(linked)
+            .highPriorityGesture(LongPressGesture(minimumDuration: TapOrHoldButtonStyle.hold).onEnded { _ in messageHold?.open() })
+            .accessibilityActions {
+                ForEach(urls.indices, id: \.self) { i in
+                    Button("Open \(urls[i].host() ?? urls[i].absoluteString)") { openURL(urls[i]) }
+                }
+            }
+    }
 }
 
 /// The long press (2026-10-21, the user's call over the stock context menu, whose palette iOS draws small): one line

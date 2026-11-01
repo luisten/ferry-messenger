@@ -110,7 +110,9 @@ recipient, no groups.
   (design v3: the tag was unreadable over media). ⋯ menu: Chat Info, Open in Instagram (when the contact's handle is
   known), Archive/Unarchive.
 - **Timeline:** bubbles in the account color (ours) or grey (theirs), grouped runs, time labels, reply quotes (fetched
-  if outside the window), reactions (one per person), "Edited", "You unsent a message" tombstones, typing bubble. **Chat
+  if outside the window), reactions (one per person), "Edited", "You unsent a message" tombstones, typing bubble. Web
+  links in a text ("https://…", "www.…", a bare domain; http(s) only) are underlined in the bubble's text colour and open
+  on a tap; a hold is still the bubble's, and VoiceOver offers each as an action ("Open example.org"). **Chat
   events** are a line across the thread (`.footnote`, grey, centred; no bubble, menu or status): Instagram's own ("Sam
   named the group Weekend", "… left the group", calls), and anything the app can't show, "Sam sent a message Ferry can't
   show. Open Instagram to see it." ("a poll" when Instagram's content type says so). In the inbox the event as it is, or
@@ -123,7 +125,7 @@ recipient, no groups.
   semibold), "@handle" in a DM (when known) or "N members" in a group, the AccountTag, 22 pt above and 20 pt below;
   "You're messaging from X." only while the chat has no messages (otherwise the composer says it). Opens on the newest
   message (also the first open after launch) and stays on it as rows, the keyboard or the typing bubble change its size,
-  until you scroll up. When what's new overflows the screen by more than a quarter of it, it opens with the "New
+  until you scroll up; a chat shorter than the screen sits at its bottom. When what's new overflows the screen by more than a quarter of it, it opens with the "New
   messages" line near the top instead, under the last message you'd read, and holds it there the same way until you scroll, reply, attach or tap a quote; by
   less, it opens at the end (the line goes under the header), so the newest message is never cut off by the composer.
   A **jump-to-newest button** (44 pt glass circle, `chevron.down`, never the account's colour; "Jump to newest

@@ -86,29 +86,35 @@ struct ThreadView: View {
 
         return ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 0) {
-                    top(room, identity: identity, isEmpty: messages.isEmpty)
-                    ForEach(rows) { row in
-                        MessageRow(row: row, me: me, identity: identity, name: name, member: member, showsStatus: row.id == lastOwn,
-                                   seenLine: row.id == seen?.id ? seenLine : nil, isGroup: isGroup,
-                                   highlighted: highlighted == row.id, actions: actions)
-                            .padding(.top, row.spacing)
-                            .background(highlighted == row.id ? Color.secondary.opacity(0.15) : .clear)
-                            .id(row.id)
-                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { pin.heights[row.id] = $0 }
-                            // New messages rise into place; under Reduce Motion they fade in (DESIGN §9).
-                            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                // A chat shorter than the screen fills it, its messages at the bottom by layout. Left to the scroll view's
+                // own bottom alignment, a new chat opened with its profile and message under the composer, and the
+                // keyboard covered the newest message (2026-11-01).
+                ZStack(alignment: .bottom) {
+                    Color.clear.containerRelativeFrame(.vertical)
+                    LazyVStack(spacing: 0) {
+                        top(room, identity: identity, isEmpty: messages.isEmpty)
+                        ForEach(rows) { row in
+                            MessageRow(row: row, me: me, identity: identity, name: name, member: member, showsStatus: row.id == lastOwn,
+                                       seenLine: row.id == seen?.id ? seenLine : nil, isGroup: isGroup,
+                                       highlighted: highlighted == row.id, actions: actions)
+                                .padding(.top, row.spacing)
+                                .background(highlighted == row.id ? Color.secondary.opacity(0.15) : .clear)
+                                .id(row.id)
+                                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { pin.heights[row.id] = $0 }
+                                // New messages rise into place; under Reduce Motion they fade in (DESIGN §9).
+                                .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                        }
+                        if typing { TypingBubble().padding(.top, 10).padding(.leading, isGroup ? MessageRow.groupIndent : 0) }
+                        // The list's bottom margin, so a scroll to the end shows it: as a 1 pt marker above an 8 pt padding,
+                        // the newest message sat flush on the composer after every open (QA 2026-10-20).
+                        Color.clear.frame(height: 9).id(Self.bottom)
                     }
-                    if typing { TypingBubble().padding(.top, 10).padding(.leading, isGroup ? MessageRow.groupIndent : 0) }
-                    // The list's bottom margin, so a scroll to the end shows it: as a 1 pt marker above an 8 pt padding,
-                    // the newest message sat flush on the composer after every open (QA 2026-10-20).
-                    Color.clear.frame(height: 9).id(Self.bottom)
+                    .environment(\.autoplaysGIFs, !Inbox.isRequest(room))
+                    .padding(.horizontal, 12)
+                    // Only the newest message animates. An older page (loaded on every open while the top spinner shows)
+                    // bounced the whole thread when it arrived just after the push.
+                    .animation(reduceMotion ? .easeInOut(duration: 0.2) : .bouncy(duration: 0.45, extraBounce: 0.05), value: messages.last?.id)
                 }
-                .environment(\.autoplaysGIFs, !Inbox.isRequest(room))
-                .padding(.horizontal, 12)
-                // Only the newest message animates. An older page (loaded on every open while the top spinner shows)
-                // bounced the whole thread when it arrived just after the push.
-                .animation(reduceMotion ? .easeInOut(duration: 0.2) : .bouncy(duration: 0.45, extraBounce: 0.05), value: messages.last?.id)
             }
             .defaultScrollAnchor(.bottom)
             .defaultScrollAnchor(.bottom, for: .sizeChanges)  // meant for prepends; at the end the re-pin below does it

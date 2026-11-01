@@ -26,7 +26,7 @@ SIM=$(xcrun simctl list devices booted | grep -oE '[0-9A-F-]{36}' | head -1)
 t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
-t test -only-testing:FerryTests              # 294 unit tests, ~3 s
+t test -only-testing:FerryTests              # 295 unit tests, ~3 s
 (cd core && go test ./...)                    # core/chat on P0's captures; -update in ./chat rewrites the golden files
 t test -only-testing:FerryUITests            # UI tests on made-up data (live ones opt-in: docs/DEVELOPMENT.md)
 t build-for-testing                           # all 3 targets
@@ -300,6 +300,15 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   `.sizeChanges` roles (same logged geometry). So the thread stays at opacity 0 until `ScrollEdge.restsAtEnd` (insets in
   place, within 20 pt of the end) has held for 100 ms with no page loading (1 s cap; a touch shows it), and only the
   last message ID animates. Logged with a temporary `os.Logger` in the geometry action: the fastest way to see this.
+- **A thread shorter than the screen fills it** (`ThreadView`: a `ZStack` over `Color.clear.containerRelativeFrame(.vertical)`),
+  its messages bottom-aligned by layout. Left to `.defaultScrollAnchor(.bottom)`'s own alignment of short content, a new
+  chat opened with its start block and message below the composer, and the keyboard covered the newest message
+  (2026-11-01, on the phone and the iOS 27.2 simulator once its on-screen keyboard had come up; never on 26.4 with the
+  Mac's keyboard). `containerRelativeFrame` is the visible height, the bars' and keyboard's insets taken off.
+  `testShortChatOpensAboveTheComposer` fails without it there.
+- **A link in a `Text` takes the touch as a `Button` does:** holding it opened the link, not the bubble's sheet.
+  `LinkedText` gives the hold `highPriorityGesture` (a quick tap still opens the link, double-tap still hearts). XCUITest
+  and VoiceOver see no link inside a bubble with its own label, so each link is also an accessibility action.
 - **No XCUITest query after scrolling a thread up from its end** (`swipeDown`, then any element lookup): the full
   accessibility snapshot sends the thread's LazyVStack into a layout loop (content height flips every frame, 100% CPU)
   and the simulator usually dies with it (backboardd). Idle without the query; also on the pre-#17 code (FOLLOWUPS #39).

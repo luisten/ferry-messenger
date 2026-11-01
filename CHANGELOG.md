@@ -7,6 +7,18 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+## [1.6.4] - 2026-11-01
+
+### Added
+
+- Links in messages, yours and theirs, are underlined and open when tapped. Holding a message with a link still opens
+  its menu, and with VoiceOver each link is one of the message's actions.
+
+### Fixed
+
+- A chat with only a message or two, such as one just started with someone new, could open with the person and the
+  messages pushed down out of sight under the message field.
+
 ## [1.6.3] - 2026-10-27
 
 ### Removed
@@ -148,7 +160,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 - First public release: your Instagram direct messages, from all your accounts in one inbox, talking to Instagram
   straight from your iPhone.
 
-[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.6.3...HEAD
+[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.6.4...HEAD
+[1.6.4]: https://github.com/luisten/ferry-messenger/compare/v1.6.3...v1.6.4
 [1.6.3]: https://github.com/luisten/ferry-messenger/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/luisten/ferry-messenger/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/luisten/ferry-messenger/compare/v1.6...v1.6.1

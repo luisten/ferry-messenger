@@ -91,6 +91,21 @@ final class SmokeUITests: XCTestCase {
         }
     }
 
+    /// A chat shorter than the screen (a new contact's) opens with its start and newest message between the header and
+    /// the composer: the scroll view's own bottom alignment had put both under the composer (2026-11-01; the iOS 27.2
+    /// simulator showed it once its on-screen keyboard had come up, 26.4 with the Mac's keyboard never did).
+    @MainActor
+    func testShortChatOpensAboveTheComposer() throws {
+        let app = launch()
+        try openReadChat(app, named: "Jonas Berg,")
+        Thread.sleep(forTimeInterval: 1.5)  // past the reveal
+        attachScreenshot(app, "short-chat")
+        let start = app.descendants(matching: .any)["thread.start"]
+        XCTAssertTrue(start.exists)
+        XCTAssertGreaterThanOrEqual(start.frame.minY, app.descendants(matching: .any)["thread.header"].firstMatch.frame.maxY)
+        XCTAssertLessThanOrEqual(threadBottom(app), app.descendants(matching: .any)["composer.field"].frame.minY)
+    }
+
     /// The mic (DESIGN §6.9), with every send and upload blocked in the app (`FERRY_DEBUG_BLOCK_SENDS`) and a voice file
     /// that doesn't exist standing in for the microphone (`FERRY_DEBUG_VOICE_FILE`), so even a misfire sends nothing: a
     /// tap only says "Hold to record" (the field's placeholder for 2 s); holding records, and sliding left cancels.
