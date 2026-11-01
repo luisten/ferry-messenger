@@ -47,6 +47,23 @@ The app's "Check core/" build phase (`core/build.sh --check`) stops the build wi
 has changed since, e.g. after a pull. A build with no `build/IGCore.xcframework` at all fails with "There is no
 XCFramework found" and Xcode remembers that: after the first `core/build.sh`, Clean Build Folder (⇧⌘K) once.
 
+### After a pull
+
+Usually nothing: build as before. Two exceptions:
+
+- **The build stops with "run core/build.sh":** `core/` changed. Run `core/build.sh`, then build again.
+- **`git pull` refuses because of local changes to `Ferry.xcodeproj/project.pbxproj`:** Xcode made them, by itself or
+  through "Update to recommended settings". Unless you changed the project on purpose, drop them and pull again:
+
+  ```sh
+  git restore Ferry.xcodeproj/project.pbxproj
+  ```
+
+Don't accept "Update to recommended settings" from a checkout of `main`. The project is already current for Xcode
+27.2. When a newer Xcode offers it again, take it on a branch, so it's done once for everyone: keep the Ferry target's
+`ENABLE_USER_SCRIPT_SANDBOXING = NO` and commit the rest. The "Check core/" phase reads every Go file in `core/`, which
+a sandboxed script can't, so with sandboxing on the build fails with `Sandbox: bash … deny … core/build.sh` (1.6.4).
+
 Your Apple team ID and bundle ID prefix go in `Config/Local.xcconfig` (gitignored). Without it the app builds for the
 simulator as `com.example.ferry-messenger`; a phone needs your team:
 
@@ -62,7 +79,7 @@ t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
 
-t test -only-testing:FerryTests           # unit tests (293), on real captured Instagram data
+t test -only-testing:FerryTests           # unit tests (296), on real captured Instagram data
 t test -only-testing:FerryUITests         # UI tests on made-up data (below)
 ```
 

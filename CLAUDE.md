@@ -228,6 +228,12 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
 - **zsh doesn't word-split `$T`.** Use the `t()` function above, not `T="xcodebuild …"; $T test`.
 - **Hand-written project with file-system-synchronized groups (objectVersion 77), no generator.** Add files by dropping
   them into `Ferry/`, `FerryTests/`, `FerryUITests/`. `Config/Info.plist` must stay outside them.
+- **Script sandboxing stays off for the Ferry target** (`ENABLE_USER_SCRIPT_SANDBOXING = NO`): "Check core/" runs
+  `core/build.sh --check`, which reads every Go file in `core/`. Xcode's "Update to recommended settings" turns
+  sandboxing on at the project level, and the build then fails with `Sandbox: bash … deny … core/build.sh` (the
+  user's checkout after 1.6.4); the target's NO wins over that. Declaring `core/` as the phase's input doesn't help: a
+  folder grants nothing inside it. When a new Xcode offers the upgrade, take it on a branch and bump
+  `LastUpgradeCheck`, so no checkout is left to accept it (docs/DEVELOPMENT.md "After a pull").
 - **Rebuild before installing after any temporary source change** (e.g. a mutation check): `t test` leaves its build
   of the app in DerivedData, and `simctl install` happily installs that one.
 - **The app's data container moves between `xcodebuild test` installs**, so a file put in it beforehand is gone.
