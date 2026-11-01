@@ -267,6 +267,18 @@ final class MediaKindTests: XCTestCase {
         XCTAssertNil(LinkPreview(content: empty))
     }
 
+    /// A text's web links are tappable, sentence punctuation left out; nothing else the detector finds is.
+    func testLinkedText() {
+        let text = "See https://lowtide.band/annex?day=14, www.example.org. Mail sam@example.com or call +1 555 0100"
+        let linked = MessageRow.linked(text)
+        let links = linked.runs.compactMap { run in run.link.map { (String(linked[run.range].characters), $0.absoluteString) } }
+        XCTAssertEqual(links.map(\.0), ["https://lowtide.band/annex?day=14", "www.example.org"])
+        XCTAssertEqual(links.first?.1, "https://lowtide.band/annex?day=14")
+        XCTAssertTrue(links.last?.1.hasSuffix("://www.example.org") == true)  // https on iOS 27.2
+        XCTAssertEqual(String(linked.characters), text)
+        XCTAssertTrue(MessageRow.linked("No links here.").runs.allSatisfy { $0.link == nil })
+    }
+
     // MARK: Caption (DESIGN §16 Q1; `wrapXMACaption`, every part optional)
 
     func testCaptionPartsAndUnescaping() {

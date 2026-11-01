@@ -471,7 +471,7 @@ struct LinkBubble: View {
     var body: some View {
         let preview = LinkPreview(content: message.content)
         VStack(alignment: .leading, spacing: 0) {
-            Text(message.body).padding(.horizontal, 12).padding(.vertical, 8)
+            LinkedText(text: message.body).padding(.horizontal, 12).padding(.vertical, 8)
             if let preview {
                 Link(destination: preview.url) {
                     VStack(alignment: .leading, spacing: 0) {
