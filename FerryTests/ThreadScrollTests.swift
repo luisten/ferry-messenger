@@ -80,6 +80,16 @@ final class ThreadRevealTests: XCTestCase {
         // Held under the last message read (70 pt) for context: 207 pt below, of which 137 is new, opens at the end.
         XCTAssertTrue(edge(offset: 564.67, content: 1554, container: 666, insets: bars).endIsNear(above: 70))
     }
+
+    /// FOLLOWUPS #64: held on the line, the scroll view's estimate of the rows below the screen ran ~70 pt high on some
+    /// opens (`FERRY_DEBUG_GROUP_EXTRA=7`: 268 pt below with a 56 pt context row, where 196 is right), so the line held.
+    /// What's new as laid out decides: 137 pt over the screen opens at the end, 212 would hold.
+    func testHeldLineGivesWayByWhatsNewAsLaidOut() {
+        let held = edge(offset: 558, content: 1608, container: 666, insets: bars)
+        XCTAssertFalse(held.endIsNear(above: 56))  // the estimate
+        XCTAssertTrue(held.endIsNear(new: 666 + 137))
+        XCTAssertFalse(held.endIsNear(new: 666 + 212))
+    }
 }
 
 /// Only a send from this device takes the thread to its end (`Message.isLocalEcho`): our own message sent from

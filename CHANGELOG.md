@@ -18,6 +18,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 - A chat with only a message or two, such as one just started with someone new, could open with the person and the
   messages pushed down out of sight under the message field.
+- On iOS 27, a chat with many unread messages could open at its newest message instead of at "New messages", below
+  everything you hadn't read yet, and a tap on the arrow to the newest message could leave it where it was.
 
 ## [1.6.3] - 2026-10-27
 
