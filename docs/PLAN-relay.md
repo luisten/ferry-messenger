@@ -185,6 +185,12 @@ Live steps use the dummies only until step 5, with the Android session's LOCK/OK
 | 4 | The app: the build settings (R8, R9), the Accounts design and §4's wording, pairing, the switches with off ending the relay's session (R10), token, tap, foreground rule, Remove Account; unit and UI tests on the demo. | Me (UX agent for the design) | 2 d |
 | 5 | **A week on your phone:** dummies first, then your accounts. Then README and DEVELOPMENT.md as §4 says, CHANGELOG, specs, CLAUDE.md (the relay's invariants). | You use it, I check | a week, elapsed |
 
+**Step 1 running since 2026-11-03 13:34:** on a home Mac (Intel, macOS 14, the home IP), both dummies added by hand;
+`relaygate run` under `caffeinate`, driven over SSH from the dev Mac with a key limited to its Tailscale address. A
+text goes between the dummies three times a day from Ferry in the simulator (`testSendText`: whichever of their chats
+has nothing unread, so no "Seen"; about 14 requests a launch). The first one reached the listener in 0.5 s, and the
+sender's own echo in 0.2 s. Ends 2026-11-09 with `relaygate remove` for both and the report.
+
 About 5–6 days of work plus two weeks of soak; a guess, and step 1 decides whether it's worth it.
 
 ## 6. Risks
