@@ -177,6 +177,43 @@ final class SmokeUITests: XCTestCase {
         attachScreenshot(app, "voice-sent")
     }
 
+    /// One text in the first chat, of those whose row labels start with the `|`-separated names in
+    /// `TEST_RUNNER_FERRY_UITEST_SEND_CHAT`, that has nothing unread (no "Seen"): docs/PLAN-relay.md step 1 sends these
+    /// between the dummies for its listener to count. One Instagram message, so it only runs with
+    /// `TEST_RUNNER_FERRY_UITEST_SEND=1`. The inbox is attached as a screenshot, and HOME comes at the end, sent or not,
+    /// so the launch's C6 counts are logged.
+    @MainActor
+    func testSendText() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard env["FERRY_UITEST_SEND"] == "1", let chats = env["FERRY_UITEST_SEND_CHAT"], !chats.isEmpty else {
+            throw XCTSkip("Sends a text to Instagram; set TEST_RUNNER_FERRY_UITEST_SEND=1 and TEST_RUNNER_FERRY_UITEST_SEND_CHAT to run it.")
+        }
+        let app = try launchLive()
+        defer {
+            XCUIDevice.shared.press(.home)
+            Thread.sleep(forTimeInterval: 3)
+        }
+        let rows = app.descendants(matching: .any).matching(identifier: "inbox.row")
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 15))
+        attachScreenshot(app, "inbox")
+        let read = { (name: String) in
+            rows.matching(NSPredicate(format: "label BEGINSWITH %@ AND NOT (label CONTAINS ' unread')", name)).firstMatch.exists
+        }
+        guard let chat = chats.split(separator: "|").map(String.init).first(where: read) else {
+            throw XCTSkip("None of those chats is read: opening one would send \"Seen\".")
+        }
+        try openReadChat(app, named: chat)
+        let text = "Relay gate check, \(Date.now.formatted(date: .abbreviated, time: .shortened))"
+        let field = app.descendants(matching: .any)["composer.field"]
+        field.tap()
+        field.typeText(text)
+        app.buttons["composer.send"].tap()
+        // Our echo first: until it's there, the status line under our previous message would pass for this one's.
+        let echo = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+        XCTAssertTrue(echo.waitForExistence(timeout: 15), "no echo")
+        XCTAssertTrue(waitForSent(app), "the text didn't end Sent")
+    }
+
     @MainActor
     private func count(_ app: XCUIApplication, _ predicate: NSPredicate) -> Int {
         app.descendants(matching: .any).matching(predicate).count
