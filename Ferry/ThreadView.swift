@@ -383,7 +383,7 @@ struct ThreadView: View {
     /// The top of the list: a spinner that pages back while visible, or the start block (DESIGN T1): content, not a
     /// second header, so bigger than the toolbar's name and set apart from the first timestamp.
     @ViewBuilder private func top(_ room: Room, identity: AccountIdentity?, isEmpty: Bool) -> some View {
-        if room.reachedStart {
+        if room.reachedStart, shownFrom == nil {  // the last page held back keeps the spinner, as its rows wait under it
             let block = Inbox.startBlock(isGroup: room.bridge?.roomType == .group, members: Inbox.memberCount(of: room),
                                          handle: model.contactHandle(of: room), account: identity?.name, isEmpty: isEmpty)
             VStack(spacing: 4) {

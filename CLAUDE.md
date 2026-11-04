@@ -312,7 +312,8 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   (`shownFrom`) until the scroll is idle (a scroll made mid-fling is dropped), lets it in, and once it's laid out (a
   `scrollTo` made before that finds the row already in place) scrolls the second row back to exactly where it was: by
   ID with a computed anchor (`showOlder`), as a scroll by the content's growth ended 600 pt off (the page's rows are
-  estimates). The spinner waits 100 ms and loads only if it's still there. Check it by hand with
+  estimates). The spinner waits 100 ms and loads only if it's still there, and stays while the last page is held back
+(the start block in its place dropped the rows 150 pt). Check it by hand with
   `FERRY_DEBUG_GROUP_OLDER` (a UI test can't query after scrolling up, #39): `simctl io recordVideo`, then ffmpeg's
   `mpdecimate`, shows every frame that changes.
 - **A thread shorter than the screen fills it** (`ThreadView`: a `ZStack` over `Color.clear.containerRelativeFrame(.vertical)`),
