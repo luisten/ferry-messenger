@@ -1,10 +1,10 @@
 # Ferry Messenger: notifications through a relay (plan)
 
 > Draft, 2026-10-27: R1–R4 decided the same day (R3 trust, R4 hosting is the operator's choice); R8–R11 (what people
-> are told, §4) on 2026-10-29; R5–R7 wait for the user. Built: step 1's gate. The user's brief: as simple and
-> lightweight as possible, and as secure as that allows. Follows [PLAN-push.md](PLAN-push.md), whose catch-up
-> notifications were removed in 1.6.3 because Instagram's web push hardly ever arrived. Account names are the
-> fictional stand-ins (`tamoveska` personal, `kivostudio` professional).
+> are told, §4) on 2026-10-29; R5–R7 wait for the user. Built: step 1's gate; step 2's `core/engine` (2026-11-05).
+> The user's brief: as simple and lightweight as possible, and as secure as that allows. Follows
+> [PLAN-push.md](PLAN-push.md), whose catch-up notifications were removed in 1.6.3 because Instagram's web push hardly
+> ever arrived. Account names are the fictional stand-ins (`tamoveska` personal, `kivostudio` professional).
 
 **Goal:** a notification within seconds for each new Instagram message while Ferry is closed or the phone is locked:
 who sent it, what it says, which account it's for, and a tap opens the chat. When the relay is down or not set up,

@@ -1,4 +1,4 @@
-package main
+package engine
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"go.mau.fi/mautrix-meta/pkg/messagix/dgw"
 )
 
-// What IGPause and IGUnpause rely on in the library: a socket whose context ends dials again on the next Connect,
+// What Pause and Unpause rely on in the library: a socket whose context ends dials again on the next Connect,
 // while one stopped with Disconnect never does (Connect returns at once, as if closed cleanly). 1.6.0 paused with
 // Disconnect, so after the app's first return no message, typing or echo arrived until a relaunch.
 func TestASocketReconnectsAfterItsContextEnds(t *testing.T) {
@@ -61,13 +61,13 @@ func TestASocketReconnectsAfterItsContextEnds(t *testing.T) {
 	sock.Disconnect()
 	<-done
 	if err := <-connect(context.Background()); err != nil || dials.Load() != 2 {
-		t.Fatalf("after Disconnect: err %v, %d dials; if it reconnects now, IGPause could use it again", err, dials.Load())
+		t.Fatalf("after Disconnect: err %v, %d dials; if it reconnects now, Pause could use it again", err, dials.Load())
 	}
 	pause()
 }
 
-// A retry that comes due in the background waits for the app: IGUnpause starts it again 30 s on, so the app's own
-// connect on return (IGResume, whose stopRetry cancels it) goes first. A removed account never retries.
+// A retry that comes due in the background waits for the app: Unpause starts it again 30 s on, so the app's own
+// connect on return (Resume, whose stopRetry cancels it) goes first. A removed account never retries.
 func TestARetryWaitsForTheAppToComeBack(t *testing.T) {
 	offline := &net.OpError{Op: "dial", Err: errors.New("no network")}
 	started := func(id string) (kept, running bool) {
@@ -83,15 +83,15 @@ func TestARetryWaitsForTheAppToComeBack(t *testing.T) {
 	if kept, running := started("1"); !kept || running {
 		t.Fatalf("in the background: kept %v, started %v", kept, running)
 	}
-	IGUnpause()
+	Unpause()
 	if _, running := started("1"); !running {
 		t.Fatal("back in the app: not started")
 	}
-	IGPause()
+	Pause()
 	if kept, running := started("1"); !kept || running {
 		t.Fatalf("in the background again: kept %v, started %v", kept, running)
 	}
-	stopRetry("1") // IGResume, first thing
+	stopRetry("1") // Resume, first thing
 	if kept, _ := started("1"); kept {
 		t.Fatal("the app's connect didn't cancel it")
 	}

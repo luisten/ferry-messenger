@@ -20,7 +20,8 @@ Instagram behaves): [CLAUDE.md](../CLAUDE.md).
   the `//export`s in `core/cmd/igcore/main.go`, each with its comment ([PLAN-android.md](PLAN-android.md) §3 has the
   envelope its updates come in): `core/chat` turns
   Instagram's answers into Matrix-shaped chat updates (pure Go; `cd core && go test ./...`, on the captures in
-  `core/testdata`), `cmd/igcore` is the C API around it.
+  `core/testdata`), `core/engine` runs the clients and Instagram's rules on it (shared with the relay, PLAN-relay.md),
+  and `cmd/igcore` is the C API around that.
 - **The app** (SwiftUI, no third-party Swift packages) links it through `Ferry/IGCore.swift` and applies the engine's
   updates to the chat model the views show (`Room`, `Timeline`, `Inbox`). `core/chat`'s tests write what it makes of
   each capture to `FerryTests/Fixtures/engine_*.json` (`go test ./chat -update`), which the app's `EngineTests` read.
