@@ -322,6 +322,26 @@ final class SmokeUITests: XCTestCase {
         XCTAssertFalse(app.buttons["thread.jump"].exists)
     }
 
+    /// The same group as Instagram's mailbox has it (`FERRY_DEBUG_GROUP_OLDER`): its newest five messages, all unread,
+    /// as after a busy day (2026-11-04). The top spinner still pages back until the "New messages" line has its place
+    /// (two pages), and the thread holds it. What that day's fix is for, a scroll up to the spinner loading one page
+    /// and keeping the user's place, can't be queried (#39), and rows above the screen aren't in the tree: check it by
+    /// hand with `FERRY_DEBUG_GROUP_OLDER` (CLAUDE.md).
+    @MainActor
+    func testUnreadGroupPagesBackToItsLine() throws {
+        let app = launch(["FERRY_DEBUG_GROUP_EXTRA": "14", "FERRY_DEBUG_GROUP_OLDER": "3"])
+        let row = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier == 'inbox.row' AND label BEGINSWITH 'Saturday Climbs'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15))
+        row.tap()
+        XCTAssertTrue(app.buttons["thread.jump"].waitForExistence(timeout: 10))  // held on the line
+        Thread.sleep(forTimeInterval: 2)  // pages land half a second apart
+        XCTAssertTrue(app.descendants(matching: .any)["thread.unreadLine"].isHittable)
+        let labels = app.descendants(matching: .any).matching(identifier: "thread.bubble").allElementsBoundByIndex.map(\.label)
+        XCTAssertTrue(labels.contains("From Sam Lee, I can drive, 3 seats"), "\(labels)")  // the last one read, above the line
+        XCTAssertTrue(labels.contains("From Theo Park, Who's in for Saturday?"), "\(labels)")  // from the second page
+    }
+
     /// Design-pass screenshots (`TEST_RUNNER_FERRY_UITEST_TOUR=<folder>`, e.g. the gitignored `docs/verification`;
     /// `TEST_RUNNER_FERRY_UITEST_TOUR_SUFFIX=light|dark` to match `simctl ui appearance`), all on the made-up data, so
     /// they're safe to share. Never taps Add, Log in, Connect or anything that sends. The group scrolled to its start

@@ -7,6 +7,12 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+### Fixed
+
+- Scrolling up to the oldest loaded message of a chat could keep loading older messages, page after page, back to
+  the start of the chat, and leave you there. Older messages now load one page at a time above where you are, and you
+  stay where you were. A group with lots of unread messages also opens at "New messages" more steadily.
+
 ## [1.6.4] - 2026-11-01
 
 ### Added

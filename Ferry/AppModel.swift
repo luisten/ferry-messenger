@@ -27,6 +27,10 @@ final class AppModel {
     private(set) var syncFailures = 0
     /// Rooms with a back-pagination request in flight (the thread shows a spinner at the top).
     private(set) var paginating: Set<String> = []
+    #if DEBUG
+    /// What the made-up group's top spinner has still to load, oldest first (`FERRY_DEBUG_GROUP_OLDER`).
+    private var debugOlder: [Event] = []
+    #endif
     /// The last action that failed, for an alert.
     var actionError: String?
     /// A short confirmation shown over the app ("Accepted. This chat is now in Studio.").
@@ -322,6 +326,7 @@ final class AppModel {
             let group = DebugFixtures.groupRoom(receiver: receiver, me: me)
             if rooms[group.id] == nil {
                 rooms[group.id] = group
+                if DebugFixtures.groupOlder > 0 { debugOlder = DebugFixtures.mailboxCopy(of: group) }
                 if DebugFixtures.groupIncoming > 0 {
                     Task {
                         for i in 0... {
@@ -422,6 +427,20 @@ final class AppModel {
     func loadOlder(_ room: Room) {
         guard let cursor = room.prevBatch, !room.reachedStart, !paginating.contains(room.id) else { return }
         if cursor == IGAdapter.startToken { return room.prepend(MessagesPage(chunk: []), from: cursor) }
+        #if DEBUG
+        if cursor.hasPrefix("debug-older") {  // FERRY_DEBUG_GROUP_OLDER
+            let chunk = Array(debugOlder.suffix(20).reversed())
+            debugOlder.removeLast(chunk.count)
+            let page = MessagesPage(chunk: chunk, end: debugOlder.isEmpty ? nil : "debug-older-\(debugOlder.count)")
+            paginating.insert(room.id)
+            Task {
+                defer { paginating.remove(room.id) }
+                try? await Task.sleep(for: .milliseconds(500))
+                room.prepend(page, from: cursor)
+            }
+            return
+        }
+        #endif
         guard hasThread(room) else { return }
         paginating.insert(room.id)
         Task {

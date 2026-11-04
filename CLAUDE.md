@@ -104,7 +104,7 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
 - **Colors live in `Tokens.swift`.** Small text: `.inkSecondary` (not `.secondary`, 3.4:1), and on an incoming-bubble
   card `.inkSecondaryOnBubble` (inkSecondary is 4.30 on #E9E9EB); status text `.statusOK/.statusWarn/.statusError`
   (not system green/orange/red, 2.2–3.5:1 on white).
-- DEBUG switches live in `DebugFixtures.swift` (docs/DEVELOPMENT.md): fake request rooms and a fake group (`FERRY_DEBUG_GROUP`; `FERRY_DEBUG_GROUP_EXTRA=<n>` more unread in it, `…_INCOMING=<s>` one arriving every s seconds), an
+- DEBUG switches live in `DebugFixtures.swift` (docs/DEVELOPMENT.md): fake request rooms and a fake group (`FERRY_DEBUG_GROUP`; `FERRY_DEBUG_GROUP_EXTRA=<n>` more unread in it, `…_INCOMING=<s>` one arriving every s seconds, `…_OLDER=<n>` opening from a five-message mailbox copy with older pages to load), an
   account state override, a real chat shown as a request (the engine treats it as one, `IGCore.setDebug`; its sends
   are held back, "Seen" and typing aren't, so the request rule itself keeps them back), onboarding at a given step over the real accounts, made-up data only (`FERRY_DEBUG_DEMO`: two made-up
   accounts stand in for the Keychain's and never connect, identities in memory only; screenshots and the UI tests),
@@ -306,6 +306,15 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   `.sizeChanges` roles (same logged geometry). So the thread stays at opacity 0 until `ScrollEdge.restsAtEnd` (insets in
   place, within 20 pt of the end) has held for 100 ms with no page loading (1 s cap; a touch shows it), and only the
   last message ID animates. Logged with a temporary `os.Logger` in the geometry action: the fastest way to see this.
+- **An older page doesn't keep the user's place** (2026-11-04): `.defaultScrollAnchor(.bottom, for: .sizeChanges)`
+  leaves the offset where it was, so the thread showed the page's start, the top spinner stayed in view, and its
+  `.task(id: prevBatch)` loaded the next page, and the next, to the start of the chat. `ThreadView` holds a page back
+  (`shownFrom`) until the scroll is idle (a scroll made mid-fling is dropped), lets it in, and once it's laid out (a
+  `scrollTo` made before that finds the row already in place) scrolls the second row back to exactly where it was: by
+  ID with a computed anchor (`showOlder`), as a scroll by the content's growth ended 600 pt off (the page's rows are
+  estimates). The spinner waits 100 ms and loads only if it's still there. Check it by hand with
+  `FERRY_DEBUG_GROUP_OLDER` (a UI test can't query after scrolling up, #39): `simctl io recordVideo`, then ffmpeg's
+  `mpdecimate`, shows every frame that changes.
 - **A thread shorter than the screen fills it** (`ThreadView`: a `ZStack` over `Color.clear.containerRelativeFrame(.vertical)`),
   its messages bottom-aligned by layout. Left to `.defaultScrollAnchor(.bottom)`'s own alignment of short content, a new
   chat opened with its start block and message below the composer, and the keyboard covered the newest message

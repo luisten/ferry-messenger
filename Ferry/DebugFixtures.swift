@@ -8,7 +8,9 @@ import Foundation
 ///   exists on the dummies (FOLLOWUPS #24).
 ///   `FERRY_DEBUG_GROUP_EXTRA=<n>` adds n more unread messages to it, so what's new overflows the screen (where the
 ///   thread opens, its jump-to-newest button); `FERRY_DEBUG_GROUP_INCOMING=<seconds>` makes one more arrive that
-///   often while the app runs (the button's count, nothing scrolling while you're up the thread).
+///   often while the app runs (the button's count, nothing scrolling while you're up the thread);
+///   `FERRY_DEBUG_GROUP_OLDER=<n>` opens it as Instagram's mailbox has it, its newest five messages, and the top
+///   spinner loads the rest, then n pages of 20 made-up older ones, a page each half second (`AppModel.loadOlder`).
 ///   Fixture rooms (`!debug-…`) aren't real: the engine refuses rooms it didn't make, `AppModel.hasThread` skips them
 ///   and `AppModel.checkSend` refuses them, so nothing about them leaves the app.
 /// - `FERRY_DEBUG_AS_REQUEST=<room id>`: treats one real room as a request, for the "opening a request sends nothing"
@@ -41,6 +43,7 @@ nonisolated enum DebugFixtures {
     static let addsGroup = env["FERRY_DEBUG_GROUP"] == "1" || demo
     static let groupExtra = Int(env["FERRY_DEBUG_GROUP_EXTRA"] ?? "") ?? 0
     static let groupIncoming = Double(env["FERRY_DEBUG_GROUP_INCOMING"] ?? "") ?? 0
+    static let groupOlder = Int(env["FERRY_DEBUG_GROUP_OLDER"] ?? "") ?? 0
     static let demo = env["FERRY_DEBUG_DEMO"] == "1"
     static let onboardingStep = env["FERRY_DEBUG_ONBOARDING"].flatMap { $0.isEmpty ? nil : $0 }
     static let forcedRequestRoom = env["FERRY_DEBUG_AS_REQUEST"].flatMap { $0.isEmpty ? nil : $0 }
@@ -249,6 +252,20 @@ nonisolated enum DebugFixtures {
                               unreadNotifications: .init(notificationCount: 1, highlightCount: 0)))
         room.prepend(MessagesPage(chunk: []), from: "debug-start")  // the start of the chat: "You're messaging from X."
         return room
+    }
+
+    /// `FERRY_DEBUG_GROUP_OLDER`: the group as Instagram's mailbox has it, its newest five messages (a fresh window, so
+    /// its state stays), and what its top spinner has still to load, oldest first: `groupOlder` pages of 20 made-up
+    /// messages a minute apart, then the rest of the group.
+    static func mailboxCopy(of group: Room) -> [Event] {
+        let timeline = group.events.filter { $0.stateKey == nil }.sorted { ($0.originServerTS ?? 0) < ($1.originServerTS ?? 0) }
+        let first = timeline.first?.originServerTS ?? 0
+        let older = (0..<groupOlder * 20).reversed().map { n in
+            Event(type: "m.room.message", content: ["msgtype": "m.text", "body": .string("Older message \(n + 1)")],
+                  eventID: "$debug-group-older-\(n)", sender: [theo, maya, sam][n % 3], originServerTS: first - Int64(n + 1) * 60_000)
+        }
+        group.apply(JoinedRoom(timeline: .init(events: Array(timeline.suffix(5)), limited: true, prevBatch: "debug-older")))
+        return older + timeline.dropLast(5)
     }
 
     /// `FERRY_DEBUG_GROUP_INCOMING`: the i-th made-up message to arrive in the group while the app runs, as now.
