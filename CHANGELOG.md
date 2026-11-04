@@ -7,6 +7,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+## [1.6.5] - 2026-11-05
+
 ### Fixed
 
 - Scrolling up to the oldest loaded message of a chat could keep loading older messages, page after page, back to
@@ -168,7 +170,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 - First public release: your Instagram direct messages, from all your accounts in one inbox, talking to Instagram
   straight from your iPhone.
 
-[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.6.4...HEAD
+[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.6.5...HEAD
+[1.6.5]: https://github.com/luisten/ferry-messenger/compare/v1.6.4...v1.6.5
 [1.6.4]: https://github.com/luisten/ferry-messenger/compare/v1.6.3...v1.6.4
 [1.6.3]: https://github.com/luisten/ferry-messenger/compare/c708bb0...v1.6.3
 [1.6.2]: https://github.com/luisten/ferry-messenger/compare/v1.6.1...c708bb0
