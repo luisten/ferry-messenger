@@ -46,6 +46,9 @@ struct ThreadView: View {
     /// "New messages" line goes after it (`Timeline.layout`).
     @State private var unreadAfter: Int64?
     @State private var opened = false
+    /// While an older page loads, the thread shows from the row that was first: the page waits above it until the user's
+    /// scroll has ended, then appears with the scroll that keeps what they're reading in place (`showOlder`).
+    @State private var shownFrom: String?
     @State private var sheet: ThreadSheet?
     @FocusState private var composerFocused: Bool
 
@@ -72,7 +75,9 @@ struct ThreadView: View {
             (name: room.displayName(of: user, profile: profiles[user]), avatarURL: room.avatarURL(of: user, profile: profiles[user]))
         }
         let actions = actions(room)
-        let rows = Timeline.layout(messages, isGroup: isGroup, unreadAfter: unreadAfter)
+        // Laid out without the waiting page, or the first row's spacing and time label would change under the user.
+        let shown = shownFrom.flatMap { id in messages.firstIndex { $0.id == id } }.map { Array(messages[$0...]) } ?? messages
+        let rows = Timeline.layout(shown, isGroup: isGroup, unreadAfter: unreadAfter)
         // Held at the top: the last message read, then the "New messages" line, for context (the user's call, 2026-10-21).
         let lineIndex = rows.firstIndex(where: \.startsUnread)
         let unreadLine = lineIndex.map { rows[max($0 - 1, 0)].id }
@@ -141,7 +146,9 @@ struct ThreadView: View {
                         return
                     }
                 }
+                pin.scrolling = phase != .idle
                 pin.followsEnd = phase == .idle && ScrollEdge(context.geometry).distanceFromEnd < 60
+                if phase == .idle, shown.count < messages.count { showOlder(rows) }
                 if phase == .idle { updateJump(ScrollEdge(context.geometry), atRest: true) }
             }
             .onScrollGeometryChange(for: ScrollEdge.self) { ScrollEdge($0) } action: { _, new in
@@ -150,6 +157,12 @@ struct ThreadView: View {
                 // messages" line was never scrolled to (FOLLOWUPS #64).
                 let old = pin.edge
                 pin.edge = new
+                // The older page `showOlder` let in is laid out now: the scroll that keeps the user's place (made before
+                // the layout, it found the row already there).
+                if let (id, anchor) = pin.restore, new.content != old?.content {
+                    pin.restore = nil
+                    proxy.scrollTo(id, anchor: anchor)
+                }
                 // A chat that opened unread holds its "New messages" line at the top instead, until the user scrolls;
                 // when what's new fits, the line can't reach the top and this lands on the end anyway.
                 let line = pin.holdsLine ? unreadLine : nil
@@ -212,6 +225,13 @@ struct ThreadView: View {
                 pin.holdsLine = false
                 pin.followsEnd = true
                 withAnimation { proxy.scrollTo(Self.bottom, anchor: .bottom) }
+            }
+            .onChange(of: model.paginating.contains(roomID)) { _, loading in
+                if loading { shownFrom = messages.first?.id } else if messages.first?.id == shownFrom { shownFrom = nil }  // nothing came
+            }
+            .onChange(of: messages.first?.id) { _, _ in
+                // Mid-scroll (a fling bouncing off the top) a scroll made now is dropped: the page waits for it to end.
+                if shown.count < messages.count, !pin.scrolling { showOlder(rows) }
             }
             .onChange(of: attachment != nil) { _, shown in
                 // The bar grows the bottom inset (M7b). Added when the re-pin above never ran; not re-checked since.
@@ -363,7 +383,7 @@ struct ThreadView: View {
     /// The top of the list: a spinner that pages back while visible, or the start block (DESIGN T1): content, not a
     /// second header, so bigger than the toolbar's name and set apart from the first timestamp.
     @ViewBuilder private func top(_ room: Room, identity: AccountIdentity?, isEmpty: Bool) -> some View {
-        if room.reachedStart {
+        if room.reachedStart, shownFrom == nil {  // the last page held back keeps the spinner, as its rows wait under it
             let block = Inbox.startBlock(isGroup: room.bridge?.roomType == .group, members: Inbox.memberCount(of: room),
                                          handle: model.contactHandle(of: room), account: identity?.name, isEmpty: isEmpty)
             VStack(spacing: 4) {
@@ -382,8 +402,15 @@ struct ThreadView: View {
             // Re-runs whenever a page lands while it's still on screen, until the screen is full or history ends.
             ProgressView()
                 .opacity(model.paginating.contains(room.id) ? 1 : 0.4)
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .task(id: room.prevBatch) { model.loadOlder(room) }
+                .frame(maxWidth: .infinity)
+                .frame(height: Self.spinnerHeight)
+                .task(id: room.prevBatch) {
+                    // A page that lands while this shows moves it off screen (`showOlder`, at once or when the scroll
+                    // ends): only if it's still here then does the next one load.
+                    try? await Task.sleep(for: .milliseconds(100))
+                    guard !Task.isCancelled, shownFrom == nil else { return }
+                    model.loadOlder(room)
+                }
         }
     }
 
@@ -569,6 +596,7 @@ struct ThreadView: View {
 
     private static let bottom = "thread.bottom"
     private static let bottomMargin: CGFloat = 9
+    private static let spinnerHeight: CGFloat = 44
 
     private final class BottomPin {
         var followsEnd = true
@@ -584,6 +612,10 @@ struct ThreadView: View {
         var jumping = false
         /// The latest geometry, for the 1 s reveal.
         var edge: ScrollEdge?
+        /// The user's scroll or its deceleration (not idle).
+        var scrolling = false
+        /// Where `showOlder` puts the row it keeps in place, once the page is laid out.
+        var restore: (id: String, anchor: UnitPoint)?
     }
 
     private enum ThreadSheet: Identifiable {
@@ -625,6 +657,22 @@ struct ThreadView: View {
             revealed = true
             updateJump(edge, atRest: false)
         }
+    }
+
+    /// Shows the older page waiting above `rows` (`shownFrom`). Held on the line or at the end, the re-pin takes it
+    /// from there. Otherwise the page went in above what the user is reading without moving the offset (the size-change
+    /// anchor doesn't), so the thread showed the page's start and its spinner paged on to the start of the chat
+    /// (2026-11-04): this scrolls the second row back to exactly where it is (the first row's spacing and time label
+    /// change). By ID, as the page's rows are only estimates until laid out (a scroll by the content's growth ended
+    /// 600 pt off), with the anchor that puts its top `top` below the bars: `scrollTo` lines up the same unit point of
+    /// the row and of what the bars and composer leave visible.
+    private func showOlder(_ rows: [Timeline.Row]) {
+        shownFrom = nil
+        guard !pin.holdsLine, !pin.followsEnd, let firstRow = rows.first else { return }
+        guard let edge = pin.edge, rows.count > 1, let first = pin.heights[firstRow.id], let height = pin.heights[rows[1].id],
+              height < edge.container else { pin.restore = (firstRow.id, .top); return }  // near enough
+        let top = Self.spinnerHeight + first - edge.offset - edge.topInset  // rows start under the spinner
+        pin.restore = (rows[1].id, UnitPoint(x: 0.5, y: top / (edge.container - height)))
     }
 
     /// DESIGN §5 T1's scroll-to-bottom button. It shows once the thread has appeared away from its end: held on the

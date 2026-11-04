@@ -137,6 +137,10 @@ recipient, no groups.
   badge; VoiceOver "3 new messages"); a chat that opens on the line starts with no count. The bubbles appear (a 0.15 s fade, none under Reduce
   Motion) only once the thread rests there under the bars with no older page loading, so the push never shows it
   jumping; at the latest after 1 s or on touch. Only a new last message animates; older pages land without animation.
+  The top spinner loads one older page each time it comes into view. The page appears once the scroll has stopped (a
+  fling's bounce shows the spinner until then) and goes in above what you're reading, which doesn't move: the spinner
+  leaves the screen and the next page waits for you to scroll up again. It pages on by itself only while it still
+  shows (a window shorter than the screen) or while the thread holds the "New messages" line it hasn't reached yet.
 - **Groups:** the sender's display name (`.caption`, grey: never an account
   colour) above the first bubble of each run of their messages, their avatar (28 pt, the initial without a picture)
   beside its last bubble, every incoming bubble indented for it (tombstones too, without either; chat events are
