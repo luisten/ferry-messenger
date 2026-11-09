@@ -33,11 +33,18 @@ type Chats struct {
 	drafts map[string]string
 	// DEBUG: a real chat shown as a request (`FERRY_DEBUG_AS_REQUEST`), so every request rule applies to it.
 	ForcedRequest string
+
+	// The relay's (notify.go): when it started listening (ms; 0 never notifies), the newest message seen in each room,
+	// and people's @handles, by user.
+	Since   int64
+	seen    map[string]int64
+	handles map[string]string
 }
 
 func New(account string) *Chats {
 	return &Chats{Account: account, rooms: map[string]*room{}, byLong: map[string]string{}, fbidByUserID: map[string]string{},
-		typingGen: map[string]int{}, readAt: map[string]int64{}, typingAt: map[string]int64{}, drafts: map[string]string{}}
+		typingGen: map[string]int{}, readAt: map[string]int64{}, typingAt: map[string]int64{}, drafts: map[string]string{},
+		seen: map[string]int64{}, handles: map[string]string{}}
 }
 
 // The state parts of `Room.apply` and `Room.prepend` (Room.swift), for the fields this engine reads.
@@ -248,6 +255,9 @@ func (c *Chats) Thread(t Thread) Envelope {
 	for _, u := range t.Users {
 		if u.ID != "" && u.FBID != "" {
 			c.fbidByUserID[u.ID] = u.FBID
+		}
+		if u.FBID != "" && u.Username != "" {
+			c.handles[User(u.FBID)] = u.Username
 		}
 	}
 	return env

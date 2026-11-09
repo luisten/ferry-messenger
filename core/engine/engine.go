@@ -92,7 +92,29 @@ var (
 
 	captureDir atomic.Value // string; set only by DEBUG builds (SetCapture)
 	captureSeq atomic.Int64
+
+	listenOnly atomic.Bool // the relay's (ListenOnly): for good
 )
+
+// ListenOnly is the relay's mode (docs/PLAN-relay.md §2), for good: every call that would act as the account (send,
+// "Seen", typing, reaction, edit, unsend, accept, delete, upload, "Load video") is refused before Instagram, a login
+// loads the first mailbox page only (no folder paging), the library logs nothing, and the queue carries only account
+// events and `{"kind": "Notify", "account", "room", "from", "group", "body", "at"}`, R6's (core/chat/notify.go), in
+// place of room updates.
+func ListenOnly() { listenOnly.Store(true) }
+
+func listening() error {
+	if listenOnly.Load() {
+		return errors.New("listen-only: the relay never acts as an account")
+	}
+	return nil
+}
+
+type notifyEvent struct {
+	Account string `json:"account"`
+	Kind    string `json:"kind"`
+	chat.Notification
+}
 
 // C6: every HTTP request to Instagram, by GraphQL operation name (else method and path), per account.
 type counter struct {
@@ -185,7 +207,14 @@ func (a *account) do(f func(c *chat.Chats) []chat.Envelope) int64 {
 	a.chats.Lock()
 	defer a.chats.Unlock()
 	var events []any
-	for _, e := range f(a.chats.Chats) {
+	out := f(a.chats.Chats)
+	if listenOnly.Load() {
+		for _, n := range a.chats.Notifications(out) {
+			events = append(events, &notifyEvent{Account: a.id, Kind: "Notify", Notification: n})
+		}
+		return push(events...)
+	}
+	for _, e := range out {
 		events = append(events, &roomEvent{Account: a.id, Envelope: e})
 	}
 	return push(events...)
@@ -282,6 +311,9 @@ func currentSeq() int64 {
 // blocked refuses what DEBUG builds hold back: every send under FERRY_DEBUG_BLOCK_SENDS, and sends to the chat shown
 // as a request.
 func blocked(room string) error {
+	if err := listening(); err != nil {
+		return err
+	}
 	debugMu.Lock()
 	defer debugMu.Unlock()
 	if debugBlockSends || room != "" && room == debugRequestRoom {
@@ -434,6 +466,9 @@ func login(cookiesJSON string) (map[string]any, error) {
 		return nil, fmt.Errorf("missing cookies: %v", missing)
 	}
 	log := zerolog.New(os.Stderr).Level(zerolog.WarnLevel).With().Timestamp().Logger()
+	if listenOnly.Load() {
+		log = zerolog.Nop() // the library's logs can carry what Instagram sent
+	}
 	a := &account{count: &counter{n: map[string]int{}}}
 	cli := instameow.NewClient(instameow.ClientParams{
 		Cookies: c, Log: log,
@@ -463,6 +498,9 @@ func login(cookiesJSON string) (map[string]any, error) {
 		a.chats = old.chats
 	} else {
 		a.chats = &book{Chats: chat.New(id)}
+		if listenOnly.Load() {
+			a.chats.Since = now() // R6: nothing older notifies
+		}
 	}
 	a.id = id
 	accounts[id] = a
@@ -502,7 +540,9 @@ func login(cookiesJSON string) (map[string]any, error) {
 		a.connect() // after the chats are in: its live changes apply to them
 	}
 	mu.Unlock()
-	go a.loadFolders(next, v.IsProfessionalAccount)
+	if !listenOnly.Load() {
+		go a.loadFolders(next, v.IsProfessionalAccount)
+	}
 	return map[string]any{"account": id, "viewer": shown, "seq": n}, nil
 }
 
@@ -1009,6 +1049,9 @@ func Unsend(room, message string) (any, error) {
 // so the next open tries again. `{seq}`.
 func MarkRead(room string) (any, error) {
 	return roomCall(room, func(a *account, r ids) (any, error) {
+		if err := listening(); err != nil {
+			return nil, err
+		}
 		var long, id string
 		var ms int64
 		var err error
@@ -1037,6 +1080,9 @@ func MarkRead(room string) (any, error) {
 // hears "typing" at most once per 20 s and "stopped" only after it, never in a request. `{sent}`.
 func Typing(room string, on bool) (any, error) {
 	return roomCall(room, func(a *account, r ids) (any, error) {
+		if err := listening(); err != nil {
+			return nil, err
+		}
 		if blocked("") != nil { // the chat shown as a request is held back by the request rule, as a real one is
 			return map[string]bool{"sent": false}, nil
 		}
