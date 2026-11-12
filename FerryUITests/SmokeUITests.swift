@@ -201,6 +201,79 @@ final class SmokeUITests: XCTestCase {
             .firstMatch.waitForExistence(timeout: 90)
     }
 
+    /// Two photos copied (as Photos' Copy does) show the composer's Paste button; pasting puts both above the field as a
+    /// set, each with its ✕. Nothing is sent.
+    @MainActor
+    func testPastingTwoPhotosMakesASet() throws {
+        let app = launch()
+        try openReadChat(app, named: "Jonas Berg,")
+        let image = { (color: UIColor) in
+            UIGraphicsImageRenderer(size: CGSize(width: 40, height: 30)).image { color.setFill(); $0.fill(CGRect(x: 0, y: 0, width: 40, height: 30)) }
+        }
+        UIPasteboard.general.images = [image(.systemTeal), image(.systemOrange)]
+        defer { UIPasteboard.general.items = [] }
+        app.descendants(matching: .any)["composer.field"].tap()
+        let paste = app.buttons["composer.paste"]
+        XCTAssertTrue(paste.waitForExistence(timeout: 5))
+        paste.tap()
+        let set = app.descendants(matching: .any)["composer.attachments"]
+        XCTAssertTrue(set.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["2 photos"].waitForExistence(timeout: 10))
+        if let folder = ProcessInfo.processInfo.environment["FERRY_UITEST_TOUR"], !folder.isEmpty {  // the design pass's
+            try XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(folder)/v3-pasted-set.png"))
+        }
+        XCTAssertFalse(paste.exists)  // pasted once: gone until something new is copied
+        app.buttons["Remove photo 2"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["composer.attachment"].waitForExistence(timeout: 3))  // one left: the single bar
+    }
+
+    /// Hold a read chat: Mark as Unread gives it the dot (this device only); opening it reads it again.
+    @MainActor
+    func testMarkAsUnreadFromTheInbox() throws {
+        let app = launch()
+        let row = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier == 'inbox.row' AND label BEGINSWITH 'Jonas Berg,'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15))
+        XCTAssertFalse(row.label.contains(" unread"), row.label)
+        row.press(forDuration: 1)
+        let mark = app.buttons["row.markUnread"]
+        XCTAssertTrue(mark.waitForExistence(timeout: 5))
+        mark.tap()
+        XCTAssertTrue(poll(5) { row.label.contains(" unread") }, row.label)
+        row.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["composer.field"].waitForExistence(timeout: 10))
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(poll(5) { !row.label.contains(" unread") }, row.label)
+    }
+
+    /// Swiping a message left past the threshold replies to it; a short swipe springs back and doesn't.
+    @MainActor
+    func testSwipingAMessageLeftReplies() throws {
+        let app = launch()
+        try openReadChat(app, named: "Jonas Berg,")
+        Thread.sleep(forTimeInterval: 1.5)  // the thread appears once it rests at its end
+        let bubble = try XCTUnwrap(app.descendants(matching: .any).matching(identifier: "thread.bubble")
+            .allElementsBoundByIndex.last { $0.isHittable })
+        let mode = app.descendants(matching: .any)["composer.cancelMode"]
+        let start = bubble.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5))
+        start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: -30, dy: 0)))
+        XCTAssertFalse(mode.waitForExistence(timeout: 1))
+        start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: -160, dy: 0)))
+        XCTAssertTrue(mode.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["Replying to Jonas"].exists)
+        bubble.press(forDuration: 0.5)  // the text's hold still opens the sheet
+        XCTAssertTrue(app.descendants(matching: .any)["sheet.reactions"].waitForExistence(timeout: 3))
+
+        // A photo card too: its own tap and hold don't take the swipe.
+        let other = launch()
+        try openReadChat(other, named: "Elena Rossi,")
+        let photo = other.descendants(matching: .any).matching(NSPredicate(format: "identifier == 'thread.media' AND label BEGINSWITH 'Photo'")).firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 5))
+        let from = photo.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5))
+        from.press(forDuration: 0.05, thenDragTo: from.withOffset(CGVector(dx: -160, dy: 0)))
+        XCTAssertTrue(other.descendants(matching: .any)["composer.cancelMode"].waitForExistence(timeout: 3))
+    }
+
     /// Opens the first chat with nothing unread (opening an unread one sends "Seen" to Instagram), optionally the one
     /// whose row label starts with `prefix`.
     @MainActor
@@ -273,9 +346,10 @@ final class SmokeUITests: XCTestCase {
         XCTAssertTrue(bubbles.firstMatch.waitForExistence(timeout: 10))
         Thread.sleep(forTimeInterval: 1.5)  // the thread appears once it rests at its end
         let labels = bubbles.allElementsBoundByIndex.map(\.label)
-        XCTAssertTrue(labels.contains("From Theo Park, Thinking the north wall at 9"), "\(labels)")
-        XCTAssertTrue(labels.contains("From Priya Nair, Can't this week, have fun"), "\(labels)")
-        XCTAssertTrue(labels.contains("You: Count me in"), "\(labels)")
+        XCTAssertTrue(labels.contains { $0.hasPrefix("From Theo Park, Thinking the north wall at 9, ") }, "\(labels)")
+        XCTAssertTrue(labels.contains { $0.hasPrefix("From Priya Nair, Can't this week, have fun, ") }, "\(labels)")
+        XCTAssertTrue(labels.contains { $0.hasPrefix("You: Count me in, ") }, "\(labels)")
+        XCTAssertEqual(labels.filter { $0.hasPrefix("You: Count me in, ") }.count, 1, "the time is no element of its own")
         let lines = app.descendants(matching: .any).matching(identifier: "thread.event").allElementsBoundByIndex.map(\.label)
         XCTAssertEqual(lines, ["Priya left the group", "Sam sent a poll. Open Instagram to see it."])
         attachScreenshot(app, "group-thread")
@@ -317,7 +391,7 @@ final class SmokeUITests: XCTestCase {
         jump.tap()
         XCTAssertTrue(jump.waitForNonExistence(timeout: 5))
 
-        app = launch(["FERRY_DEBUG_GROUP_EXTRA": "7"])
+        app = launch(["FERRY_DEBUG_GROUP_EXTRA": "6"])
         openGroup(app)
         XCTAssertFalse(app.buttons["thread.jump"].exists)
     }
@@ -338,8 +412,8 @@ final class SmokeUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 2)  // pages land half a second apart
         XCTAssertTrue(app.descendants(matching: .any)["thread.unreadLine"].isHittable)
         let labels = app.descendants(matching: .any).matching(identifier: "thread.bubble").allElementsBoundByIndex.map(\.label)
-        XCTAssertTrue(labels.contains("From Sam Lee, I can drive, 3 seats"), "\(labels)")  // the last one read, above the line
-        XCTAssertTrue(labels.contains("From Theo Park, Who's in for Saturday?"), "\(labels)")  // from the second page
+        XCTAssertTrue(labels.contains { $0.hasPrefix("From Sam Lee, I can drive, 3 seats, ") }, "\(labels)")  // the last one read, above the line
+        XCTAssertTrue(labels.contains { $0.hasPrefix("From Theo Park, Who's in for Saturday?, ") }, "\(labels)")  // from the second page
     }
 
     /// Design-pass screenshots (`TEST_RUNNER_FERRY_UITEST_TOUR=<folder>`, e.g. the gitignored `docs/verification`;

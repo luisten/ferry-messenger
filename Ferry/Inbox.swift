@@ -23,6 +23,9 @@ nonisolated enum Inbox {
 
     /// The room tag that archives a chat in this app (Matrix-side only; Instagram never hears of it).
     static let archivedTag = "u.archived"
+    /// The room tag of a chat marked unread here (the user's call, 2026-11-12): this device only, like Archive.
+    /// Instagram's web API has no request for it (its web app only reads the mark its phone apps set, live 2026-11-12).
+    static let markedUnreadTag = "u.unread"
     /// Key inside the `u.archived` tag content holding when the chat was archived (ms).
     static let archivedAtKey = "com.igmessenger.archived_at"
 

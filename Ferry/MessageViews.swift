@@ -29,7 +29,7 @@ struct MessageActions {
     var readOnly = false
 }
 
-/// One thread row (DESIGN §6.1–6.2): optional time label, reply quote, the bubble with its reactions, then
+/// One thread row (DESIGN §6.1–6.2): optional day chip, reply quote, the bubble with its reactions, then
 /// "Edited" and the status line.
 struct MessageRow: View {
     let row: Timeline.Row
@@ -57,10 +57,13 @@ struct MessageRow: View {
     private var own: Bool { message.isOwn }
     private var alignment: Alignment { own ? .trailing : .leading }
     private var indent: CGFloat { row.groupSender == nil ? 0 : Self.groupIndent }
-    private var reactionsInset: CGFloat { message.reactions.isEmpty ? 0 : 14 }
+    /// How far the pills hang below the bubble: low enough to leave its time readable (WhatsApp's, 2026-11-11).
+    static let pillDrop: CGFloat = 22
+    private var reactionsInset: CGFloat { message.reactions.isEmpty ? 0 : Self.pillDrop }
 
     var body: some View {
         VStack(spacing: 0) {
+            if row.startsDay { DayChip(ts: message.ts).padding(.bottom, 12) }
             if row.startsUnread { unreadLine }
             if message.kind.isChatEvent { eventLine } else { bubbleRow }
         }
@@ -80,9 +83,15 @@ struct MessageRow: View {
         .accessibilityIdentifier("thread.unreadLine")
     }
 
+    /// What the sheet's Reply needs: something Instagram can take a reply to.
+    private var canReply: Bool { !actions.readOnly && message.eventID != nil && message.kind != .unsent }
+
     private var bubbleRow: some View {
+        bubbleColumn.modifier(SwipeToReply(enabled: canReply) { actions.reply(message) })
+    }
+
+    private var bubbleColumn: some View {
         VStack(alignment: own ? .trailing : .leading, spacing: 3) {
-            if row.showsTime { time }
             if row.groupSender?.showsName == true, message.reply == nil {  // a reply's caption names the sender instead
                 // Neutral, never coloured: colour means account (DESIGN §3.6). The bubble says it to VoiceOver.
                 Text(member(message.sender).name).font(.caption).foregroundStyle(.inkSecondary).lineLimit(1)
@@ -131,15 +140,9 @@ struct MessageRow: View {
         }
     }
 
-    private var time: some View {
-        Text(Self.timeLabel(message.ts)).font(.caption).foregroundStyle(.inkSecondary)
-            .frame(maxWidth: .infinity).padding(.bottom, 6)
-    }
-
     /// Instagram's own lines and what the app can't show: small centred text across the thread, no bubble or menu.
     private var eventLine: some View {
         VStack(spacing: 3) {
-            if row.showsTime { time }
             Text(eventText).font(.footnote).foregroundStyle(.inkSecondary).multilineTextAlignment(.center)
                 .padding(.horizontal, 24).frame(maxWidth: .infinity)
                 .accessibilityIdentifier("thread.event")
@@ -172,7 +175,7 @@ struct MessageRow: View {
             PillPlacement(own: own) {
                 ReactionPills(reactions: message.reactions, me: me, face: isGroup ? member : nil, show: { actions.showReactions(message) })
             }
-            .offset(y: 14)
+            .offset(y: Self.pillDrop)
         }
     }
 
@@ -207,12 +210,14 @@ struct MessageRow: View {
         case .link:
             LinkBubble(message: message, own: own)
                 .background(fill)
+                .overlay(alignment: .bottomTrailing) { cardTime }
                 .clipShape(Self.shape(row.position, own: own))
                 .contentShape(.contextMenuPreview, Self.shape(row.position, own: own))
                 .menu(message, actions)
                 .accessibilityIdentifier("thread.bubble")
         default:
             MediaCard(message: message, own: own, sender: name(message.sender), fill: fill, actions: actions)
+                .overlay(alignment: .bottomTrailing) { cardTime }
                 .clipShape(Self.shape(row.position, own: own))
                 .contentShape(.contextMenuPreview, Self.shape(row.position, own: own))
                 .menu(message, actions)
@@ -222,9 +227,13 @@ struct MessageRow: View {
 
     @ViewBuilder private func textBubble(_ text: String) -> some View {
         if Self.isEmojiOnly(text) {
-            Text(text).font(.system(size: 48)).menu(message, actions)  // DESIGN §6.1: no bubble
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
+                if own { Text(clock).font(.caption2).foregroundStyle(.inkSecondary) }
+                Text(text).font(.system(size: 48)).menu(message, actions)  // DESIGN §6.1: no bubble
+                if !own { Text(clock).font(.caption2).foregroundStyle(.inkSecondary) }
+            }
         } else {
-            LinkedText(text: text)
+            LinkedText(text: text, time: clock)
                 .font(.body)
                 .foregroundStyle(own ? Color.white : Color.primary)
                 .tint(own ? .white : .primary)  // links are the text's colour, underlined: colour means account (DESIGN §3.6)
@@ -234,19 +243,40 @@ struct MessageRow: View {
                 .menu(message, actions)
                 .accessibilityLabel(spoken(text))
                 .accessibilityIdentifier("thread.bubble")
+                // Over the room LinkedText leaves after the last word. After the label: under it, the label applied to
+                // the time too, a second element reading the whole message (live check, 2026-11-11).
+                .overlay(alignment: .bottomTrailing) {
+                    Text(clock).font(.caption2).monospacedDigit()
+                        .foregroundStyle(own ? Color.white.opacity(0.8) : .inkSecondaryOnBubble)
+                        .padding(.trailing, 12).padding(.bottom, 6)
+                        .accessibilityHidden(true)
+                }
         }
     }
 
     private var fill: Color { own ? (identity?.color.fill ?? .accentColor) : .bubbleIncoming }
 
-    /// VoiceOver names the sender where a run of bubbles starts, and the account at the top of a time block
+    /// The time in every bubble (WhatsApp's place for it, the user's call 2026-11-10): "9:41".
+    private var clock: String { message.date.formatted(.dateTime.hour().minute()) }  // as the inbox's "08:54"
+
+    /// A photo, video, voice note or link card: the time on a dark capsule in its corner, readable over any picture.
+    private var cardTime: some View {
+        Text(clock).font(.caption2).monospacedDigit().foregroundStyle(.white)
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(.black.opacity(0.45), in: .capsule)
+            .padding(6)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    /// VoiceOver names the sender where a run of bubbles starts, and the account at the top of a day
     /// ("From you, as Tamo"); inside a run it's just the text (DESIGN §11: less noise). In a group every incoming
     /// bubble names its sender instead (`SpokenSender`).
     private func spoken(_ text: String) -> String {
-        guard row.position == .single || row.position == .first, row.groupSender == nil else { return text }
-        let who = own ? (row.showsTime ? "From you, as \(identity?.name ?? "you")" : "You")
-            : (row.showsTime ? "From \(name(message.sender))" : name(message.sender))
-        return "\(who): \(text)"
+        guard row.position == .single || row.position == .first, row.groupSender == nil else { return "\(text), \(clock)" }
+        let who = own ? (row.startsDay ? "From you, as \(identity?.name ?? "you")" : "You")
+            : (row.startsDay ? "From \(name(message.sender))" : name(message.sender))
+        return "\(who): \(text), \(clock)"
     }
 
     /// DESIGN §6.1: radius 20; corners on the sender's side shrink to 6 where the bubble joins its neighbour.
@@ -429,14 +459,26 @@ extension PrimitiveButtonStyle where Self == TapOrHoldButtonStyle {
 /// as one label, with no links in it, so each link is also one of its actions.
 struct LinkedText: View {
     let text: String
+    /// Leaves room after the last word for the bubble's time, which its caller lays over it (WhatsApp's bubble): on the
+    /// last line when it fits, on a line of its own when it doesn't.
+    var time: String?
     @Environment(\.messageHold) private var messageHold
     @Environment(\.openURL) private var openURL
 
     var body: some View {
         let linked = MessageRow.linked(text)
         let urls = linked.runs.compactMap(\.link)
-        Text(linked)
-            .highPriorityGesture(LongPressGesture(minimumDuration: TapOrHoldButtonStyle.hold).onEnded { _ in messageHold?.open() })
+        Group {
+            if let time {
+                Text("\(Text(linked))\(Text("  " + time).font(.caption2).monospacedDigit().foregroundStyle(.clear))")
+            } else {
+                Text(linked)
+            }
+        }
+            // Only over a link, which takes the touch as a Button does: a high-priority gesture here also outranks the
+            // thread's scroll and the row's swipe, so a drag starting on a long text stuck (2026-11-12).
+            .highPriorityGesture(LongPressGesture(minimumDuration: TapOrHoldButtonStyle.hold).onEnded { _ in messageHold?.open() },
+                                 including: urls.isEmpty ? .subviews : .all)
             .accessibilityActions {
                 ForEach(urls.indices, id: \.self) { i in
                     Button("Open \(urls[i].host() ?? urls[i].absoluteString)") { openURL(urls[i]) }
@@ -745,3 +787,98 @@ struct TypingBubble: View {
     }
 }
 
+
+/// Where a day starts in the thread, and the copy that floats at the top while it scrolls (WhatsApp's, the user's call
+/// 2026-11-10): "Today", "Yesterday", "Monday", "Mon 3 Nov". Glass in both places, one object (the design review,
+/// 2026-11-12): the incoming bubbles' grey made it read as a tiny message.
+struct DayChip: View {
+    let ts: Int64
+    var floating = false
+
+    var body: some View {
+        let chip = Text(Timeline.dayLabel(ts)).font(.caption.weight(.semibold)).foregroundStyle(Color.primary)
+            .padding(.horizontal, 12).padding(.vertical, 5)
+            .glassEffect(.regular, in: .capsule)
+            .frame(maxWidth: .infinity)
+        if floating {
+            chip.accessibilityHidden(true)  // the inline chip already tells VoiceOver the day
+                .accessibilityIdentifier("thread.floatingDay")
+        } else {
+            chip.accessibilityAddTraits(.isHeader)  // VoiceOver's headings rotor goes day by day
+                .accessibilityIdentifier("thread.day")
+        }
+    }
+}
+
+/// Swipe a message left, past `threshold`, to reply to it (the user's call 2026-11-10: any message, ours too). The row
+/// follows the finger, the reply arrow comes in from the edge and a tap of haptics says it will fire.
+struct SwipeToReply: ViewModifier {
+    let enabled: Bool
+    let reply: () -> Void
+    static let threshold: CGFloat = 60
+    @State private var offset: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        if enabled {
+            let past = offset <= -Self.threshold
+            content
+                .contentShape(Rectangle())
+                .offset(x: offset)
+                .overlay(alignment: .trailing) {
+                    Image(systemName: "arrowshape.turn.up.left.fill")
+                        .font(.body.weight(.semibold)).foregroundStyle(.inkSecondary)
+                        .scaleEffect(past ? 1 : 0.7)
+                        .opacity(Double(min(1, -offset / Self.threshold)))
+                        .offset(x: offset + 40)
+                        .animation(.snappy(duration: 0.15), value: past)
+                        .accessibilityHidden(true)
+                }
+                .gesture(LeftPan { dx in
+                    // Past the threshold it drags at a third of the finger's pace.
+                    let x = min(0, dx)
+                    offset = x > -Self.threshold ? x : -Self.threshold + (x + Self.threshold) / 3
+                } ended: {
+                    if offset <= -Self.threshold { reply() }
+                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { offset = 0 }
+                })
+                .sensoryFeedback(.impact(weight: .medium), trigger: past) { _, new in new }
+                .accessibilityAction(named: "Reply", reply)
+        } else {
+            content
+        }
+    }
+
+    /// UIKit's pan, measured in the window: a SwiftUI drag on the row measured the finger against the row it was moving,
+    /// so the offset fought itself and the swipe stuttered, and one inside the text outranked the thread's scroll
+    /// (2026-11-12). It begins only on a mostly leftward move, so every other drag stays the scroll view's.
+    private struct LeftPan: UIGestureRecognizerRepresentable {
+        let changed: (CGFloat) -> Void
+        let ended: () -> Void
+
+        func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+            let pan = UIPanGestureRecognizer()
+            pan.delegate = context.coordinator
+            return pan
+        }
+
+        func handleUIGestureRecognizerAction(_ pan: UIPanGestureRecognizer, context: Context) {
+            switch pan.state {
+            case .changed: changed(pan.translation(in: nil).x)
+            case .ended, .cancelled, .failed: ended()
+            default: break
+            }
+        }
+
+        func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
+
+        final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+            func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
+                guard let pan = gesture as? UIPanGestureRecognizer else { return false }
+                let v = pan.velocity(in: nil), t = pan.translation(in: nil)
+                let dx = v.x != 0 ? v.x : t.x, dy = v.x != 0 ? v.y : t.y
+                return dx < 0 && abs(dx) > abs(dy) * 2
+            }
+        }
+    }
+}

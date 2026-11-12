@@ -15,7 +15,7 @@ DESIGN.md's. Why it differs from the design: PLAN §7 and [m7-design-diff.md](do
 | Instagram credentials never touch the app | Login happens on instagram.com in a throwaway web view; the app keeps only the session's cookies, in the Keychain (one item per account). |
 | Live only while open | Each account's socket runs while the app is active. In the background every socket closes and nothing retries or pages (`IGPause`); on return they reconnect and Instagram's client catches up, with no index reload (`IGUnpause`). No push (D6; 1.6's catch-up notifications were removed, [docs/PLAN-push.md](docs/PLAN-push.md)). No local store beyond Keychain + `UserDefaults` (D8): every launch reloads the inboxes from Instagram. |
 | Media on tap | Thumbnails load as rows appear; full media downloads only when tapped, to `Caches/media`, and plays from that file. The folder stays under 500 MB: past that, the least recently opened files go first, down to 400 MB. |
-| Order and unread | Newest **message** first (not newest event). A chat is unread while its newest message is incoming and newer than our "Seen", or it's marked unread on Instagram. Requests, archived and General chats don't count toward the main list's or chips' unread. |
+| Order and unread | Newest **message** first (not newest event). A reaction to your message counts as one, as in Instagram (checked live 2026-11-11): the chat comes to the top, unread, previewed "Liked a message" (❤) or "Reacted 😂 to your message", and goes back when they remove it; it's no row in the thread, and your own reactions don't move the chat. A chat is unread while its newest message is incoming and newer than our "Seen", or it's marked unread on Instagram. Requests, archived and General chats don't count toward the main list's or chips' unread. |
 | Primary/General | Business and creator accounts (`is_professional_account`) have Instagram's two tabs: their main list is **Primary**, and chats in **General** on Instagram sit in General (Folders menu), from the start and as Instagram reports moves. Moving chats is done in Instagram. |
 | Read receipts | Opening an unread chat (and each new incoming message while it's open and the app is active) sends "Seen" on the newest incoming message, and the chat reads as read at once. A re-read of the thread that Instagram answered before that "Seen" arrived can't make it unread again (only "marked unread" can). Typing is sent at most once per 20 s. |
 
@@ -67,8 +67,10 @@ With an account stored, the app opens on the inbox.
   grey disc, never its name's initial), name, time ("9:41", "Yesterday", weekday, date), two-line preview
   ("You: …", "You sent a reel by @author", media symbols; a story reply or reaction shows what was sent after the
   story's symbol; in groups the sender's first name, "Theo: …", or no name
-  when the thread doesn't name them, never an ID), "typing…", unread dot. Swipe or
-  long-press: Archive.
+  when the thread doesn't name them, never an ID), "typing…", unread dot. Swipe left or
+  long-press: Archive. Swipe right or long-press: Mark as Unread on a read chat (the dot and the counts, VoiceOver
+  "marked unread"), Mark as Read on one marked so; opening it reads it. This iPhone only, like Archive: Instagram's
+  web API has no request for it (2026-11-12), so Instagram's apps still show it read, and opening it sends no "Seen".
 - **Banner** (one at a time, most fundamental first): "Can't reach Instagram" (2 failed connects in a row with no
   account connected), one account signed out ("Log in" → A3) or erroring, a reconnect lasting over 2 min, "N
   accounts need attention" ("Open" → Accounts). Layout: the account's avatar, then the title and body at full width,
@@ -109,7 +111,7 @@ recipient, no groups.
   thread's scroll edge under the toolbar is **hard**, so photos and our coloured bubbles don't show through behind it
   (design v3: the tag was unreadable over media). ⋯ menu: Chat Info, Open in Instagram (when the contact's handle is
   known), Archive/Unarchive.
-- **Timeline:** bubbles in the account color (ours) or grey (theirs), grouped runs, time labels, reply quotes (fetched
+- **Timeline:** bubbles in the account color (ours) or grey (theirs), grouped runs, the time in each bubble (a dark capsule on photos, videos and cards; beside an emoji alone), a day chip where each day starts ("Today", "Yesterday", the weekday within a week, then "Mon 3 Nov"; a glass capsule, never a bubble's grey; a new day starts a new run) and the same chip floating at the top while the user scrolls (not while that day's own chip is at the top; hidden from VoiceOver), gone 1 s after the scroll stops, reply quotes (fetched
   if outside the window), reactions (one per person), "Edited", "You unsent a message" tombstones, typing bubble. Web
   links in a text ("https://…", "www.…", a bare domain; http(s) only) are underlined in the bubble's text colour and open
   on a tap; a hold is still the bubble's, and VoiceOver offers each as an action ("Open example.org"). **Chat
@@ -163,12 +165,18 @@ recipient, no groups.
   removes ours, and "❤" counts as "❤️" (Instagram drops the variation selector). No reactions in a request or on ours
   still sending. Then the actions: Reply, Copy, Edit (own text, within 15 min, at most 5 edits), Share All ("3 photos": photos sent together; downloads them all,
   then the share sheet, whose "Save 3 Images" asks for Photos access once), Open in Instagram (shares), Unsend (own;
-  confirmation, removed for everyone), Delete (a failed send that never reached Instagram). Double-tap = ❤️.
+  confirmation, removed for everyone), Delete (a failed send that never reached Instagram). Double-tap = ❤️. **Swipe left** on any message (ours too, not in a request, a tombstone or one still sending) to reply: the row follows the finger with the reply arrow coming in from the edge, a haptic at 60 pt says it will fire, and letting go past it opens the reply bar (VoiceOver: a "Reply" action). A vertical drag stays the thread's scroll.
 - **Composer:** account avatar (tap: "This chat belongs to X. Replies always come from this account."), "Message as
   X", counter from 900 characters, Send off past 1000. Reply and edit modes show a bar with ✕. With the field empty
   the mic sits where Send is.
-- **Photos and videos:** `+` opens the photo picker (one image or video). The item waits above the field ("Video ·
-  0:12" with its thumbnail), then sends with an upload ring (tap cancels; a failure says "Not sent. Tap to retry.");
+- **Photos and videos:** `+` opens a menu, Take Photo or Video (iOS's own camera, full screen; what it takes waits
+  above the field like a picked item) and Choose from Library (the photo picker: up to 10 images and videos, in the
+  order picked); without a camera (the simulator) it opens the picker straight away. Copied
+  ones paste: while the field is focused and the clipboard holds a photo or video not yet pasted, the system's Paste
+  button shows above it (no "Allow Paste" prompt; a plain text field offers Paste only for text). One item waits above
+  the field ("Video · 0:12" with its thumbnail); several wait as a row of thumbnails, each with its ✕, and go one
+  message each, in their order, one upload after another (Instagram's web send takes one attachment per message, so
+  not as Instagram's own set). Each sends with an upload ring (tap cancels; a failure says "Not sent. Tap to retry.");
   text typed with it goes as its own message (Instagram drops captions). Photos go as a JPEG (≤ 2048 px, ≤ 8 MB, no
   metadata). Videos stay files: an mp4/mov within 25 MB (25,000,000 bytes, the bridge's limit, kept) is only
   remuxed to drop its location, anything else is re-encoded to H.264 MP4 at 1280×720, then 960×540, then 640×480
@@ -275,6 +283,6 @@ docs/DEVELOPMENT.md "DEBUG switches". None of it exists in Release builds.
 
 ## Not in v1
 
-Moving chats between Primary and General, account-type labels in Accounts, notifications and an icon badge (D6), a GIF search, a camera in `+`, "slide up to lock" a recording, mute/pin/mark unread, message
-search, new groups and group management (members are read-only; no "Start a chat" from a member yet), inline reel autoplay, swipe to reply, real waveforms, a media size cap,
+Moving chats between Primary and General, account-type labels in Accounts, notifications and an icon badge (D6), a GIF search, "slide up to lock" a recording, mute/pin, marking a chat unread on Instagram (it stays on this iPhone), message
+search, new groups and group management (members are read-only; no "Start a chat" from a member yet), inline reel autoplay, real waveforms, a media size cap,
 identity sync across devices, a verified run on the iPhone, E2EE chats (the library can't show them).

@@ -27,6 +27,7 @@ const (
 	protocolID     = "instagramgo"
 	inboxFolderKey = "fi.mau.instagram.inbox_folder" // BridgeInfo.inboxFolderKey
 	eventKey       = "fi.ferry.event"                // MessageKind.eventKey
+	reactionLogKey = "fi.ferry.reactionLog"          // MessageKind.reactionLogKey
 	unsupportedKey = "fi.ferry.unsupported"          // MessageKind.unsupportedKey
 	shareTextKey   = "fi.ferry.share_text"           // MessageKind.shareTextKey
 	stickerKey     = "fi.ferry.sticker"              // MessageKind.stickerKey
@@ -122,8 +123,26 @@ type Message struct {
 
 func (m Message) ms() int64 { return parseMS(m.TimestampMS) }
 
-// Instagram's "Reacted 😂 to your message" log entry repeats a reaction the message itself shows: not a row.
-func (m Message) isShown() bool { return m.ContentType != "REACTION_LOG_XMAT" }
+// Instagram's "Reacted 😂 to your message" log entry repeats a reaction the message itself shows, so it's no row
+// (`reactionLogKey`). It is the thread's newest message for Instagram, though: it brings the chat to the top, unread,
+// with its words as the preview (option B, the user's call 2026-11-10).
+func (m Message) isReactionLog() bool { return m.ContentType == "REACTION_LOG_XMAT" }
+
+// A live reaction's own log entry is `<log_message_id>~log`: the reaction itself has that ID.
+const logSuffix = "~log"
+
+// reactionLogLine is a live reaction's log entry in Instagram's words, as its inbox shows them to the person whose
+// message it was (live 2026-11-11): "Liked a message" for ❤, "Reacted 😂 to your message" for anything else.
+// ponytail: "to a message" (someone else's, in a group) is a guess; no group on the dummies.
+func reactionLogLine(emoji string, toUs bool) string {
+	switch {
+	case strings.TrimSuffix(emoji, "\ufe0f") == "❤":
+		return "Liked a message"
+	case toUs:
+		return "Reacted " + emoji + " to your message"
+	}
+	return "Reacted " + emoji + " to a message"
+}
 
 // Reaction is a message's (`reaction`, `sender_fbid`) or a delta's, whose log entry ID is how a later delete names
 // it (the delete carries nothing else, P0).
@@ -368,10 +387,14 @@ func snapshot(t Thread, account, myName, myAvatar string, readUpTo int64) Envelo
 		profiles[User(p.FBID)] = Profile{Name: p.FullName, AvatarURL: p.ProfilePic, Handle: p.Username}
 	}
 
-	var messages []Message // oldest first, as rooms keep them
+	var messages, shown []Message // oldest first, as rooms keep them; shown: the rows, without reaction logs
 	for _, m := range slices.Backward(t.SlideMessages.nodes()) {
-		if m.isShown() {
-			messages = append(messages, m)
+		if m.isReactionLog() && m.SenderFBID == account { // our own reaction leaves our inbox as it was (live 2026-11-11)
+			continue
+		}
+		messages = append(messages, m)
+		if !m.isReactionLog() {
+			shown = append(shown, m)
 		}
 	}
 	mine := readUpTo
@@ -398,7 +421,7 @@ func snapshot(t Thread, account, myName, myAvatar string, readUpTo int64) Envelo
 		Timeline:            &Timeline{Events: nonNil(events), Limited: true, PrevBatch: nonEmpty(t.SlideMessages.Next(), StartToken)},
 		UnreadNotifications: &Unread{NotificationCount: count(unread)},
 	}
-	if r := readReceipts(t.ReadReceipts, account, messages); r != nil {
+	if r := readReceipts(t.ReadReceipts, account, shown); r != nil {
 		joined.Ephemeral = &EventList{[]Event{*r}}
 	}
 	return Envelope{Kind: "Room", Room: RoomID(account, t.ID), Update: &joined, Profiles: profiles, Related: related}
@@ -411,9 +434,10 @@ func page(t *Thread, account string) MessagesPage {
 		return MessagesPage{Chunk: []Event{}}
 	}
 	for _, m := range slices.Backward(t.SlideMessages.nodes()) { // oldest first, then the whole chunk reversed
-		if m.isShown() {
-			events = append(events, messageEvents(m, account)...)
+		if m.isReactionLog() && m.SenderFBID == account {
+			continue
 		}
+		events = append(events, messageEvents(m, account)...)
 	}
 	slices.Reverse(events)
 	return MessagesPage{Chunk: nonNil(events), End: t.SlideMessages.Next()}
@@ -481,6 +505,15 @@ func relatedEvent(m Message, account string) *Event {
 func content(m Message) map[string]any {
 	c := m.Content
 	switch {
+	case m.isReactionLog():
+		// ponytail: its words are a guess at its shape (an admin line, as upstream's other `…_XMAT`); never captured.
+		line := ""
+		for _, f := range arr(c["text_fragments"]) {
+			if s, ok := obj(f)["plaintext"].(string); ok {
+				line += s
+			}
+		}
+		return map[string]any{"msgtype": "m.notice", "body": nonEmpty(line, m.IGDSnippet, m.TextBody, "Reacted to your message"), reactionLogKey: true}
 	case m.ContentType == "TEXT":
 		return text(m.TextBody)
 	case m.ContentType == "AUDIOS":

@@ -361,7 +361,8 @@
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Ferry Messenger";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Ferry records voice messages only while you hold the mic button.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Ferry uses the camera only when you take a photo or video to send in a chat.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Ferry uses the microphone only while you record a voice message, or a video with the camera.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Ferry saves photos and videos to your library only when you choose Save.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -369,7 +370,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.5;
+				MARKETING_VERSION = 1.7;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lresolv",
@@ -393,7 +394,8 @@
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Ferry Messenger";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Ferry records voice messages only while you hold the mic button.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Ferry uses the camera only when you take a photo or video to send in a chat.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Ferry uses the microphone only while you record a voice message, or a video with the camera.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Ferry saves photos and videos to your library only when you choose Save.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -401,7 +403,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.5;
+				MARKETING_VERSION = 1.7;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lresolv",

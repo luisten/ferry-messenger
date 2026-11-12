@@ -89,10 +89,15 @@ final class AppModel {
     /// own photo, video or voice note opens without a download).
     @ObservationIgnored private var sending: [String: OutgoingMedia] = [:]
     @ObservationIgnored private var uploadTasks: [String: Task<Void, Never>] = [:]
+    /// Each room's newest upload: the next waits for it, so photos picked together reach Instagram in their order.
+    @ObservationIgnored private var lastUpload: [String: Task<Void, Never>] = [:]
     /// Archived chats, this device only (Instagram isn't told): room ID → when (ms). `Inbox.folder(of:)` reads it as the
     /// room's `u.archived` tag, so a new message still brings a chat back.
     @ObservationIgnored private var archived = UserDefaults.standard.dictionary(forKey: AppModel.archiveKey) as? [String: Int64] ?? [:]
     private static let archiveKey = "archived"
+    /// Chats marked unread on this device (`Inbox.markedUnreadTag`), by room ID, until opened.
+    @ObservationIgnored private var markedUnread = Set(UserDefaults.standard.stringArray(forKey: AppModel.unreadKey) ?? [])
+    private static let unreadKey = "markedUnread"
 
     init() {
         sessions = Keychain.accounts()
@@ -254,7 +259,10 @@ final class AppModel {
         }
         IGAdapter.apply(update, to: room)
         if let ms = archived[id], room.tags[Inbox.archivedTag] == nil {
-            room.setTags([Inbox.archivedTag: [Inbox.archivedAtKey: .number(Double(ms))]])
+            room.setTags(room.tags.merging([Inbox.archivedTag: [Inbox.archivedAtKey: .number(Double(ms))]]) { _, new in new })
+        }
+        if markedUnread.contains(id), !room.isMarkedUnread {
+            room.setTags(room.tags.merging([Inbox.markedUnreadTag: [:]]) { _, new in new })
         }
         if let people = update.profiles { profiles.merge(people) { _, new in new } }
         // Our media's echo: its file goes into the cache under Instagram's link.
@@ -418,6 +426,7 @@ final class AppModel {
     /// The chat opened, or a new message in it while it shows: "Seen" on their newest message, which the engine sends
     /// only when the chat is unread and isn't a request (C7), reading it here at once.
     func markRead(_ room: Room) {
+        if room.isMarkedUnread { setMarkedUnread(false, room) }  // ours: nothing to tell Instagram
         guard hasThread(room) else { return }
         Task { try? await IGCore.markRead(room.id) }
     }
@@ -531,9 +540,12 @@ final class AppModel {
     private func startUpload(_ txnID: String, in room: Room, replyTo: String?) {
         guard let item = sending[txnID] else { return }
         uploads[txnID] = 0
-        uploadTasks[txnID] = Task {
+        let previous = lastUpload[room.id]
+        let task = Task {
             defer { uploads[txnID] = nil; uploadTasks[txnID] = nil }
+            await previous?.value
             do {
+                try Task.checkCancellation()
                 try checkSend(room)
                 let file = try item.fileToSend(txnID)
                 try await IGCore.sendMedia(room.id, file: file, mimetype: item.mimetype, voice: item.isVoice, replyTo: replyTo, otid: txnID)
@@ -542,6 +554,8 @@ final class AppModel {
                 if !Task.isCancelled { room.updatePending(txnID, .failed(error.localizedDescription)) }
             }
         }
+        uploadTasks[txnID] = task
+        lastUpload[room.id] = task
     }
 
     /// Our media's echo arrived: its file goes into the cache under Instagram's link.
@@ -725,6 +739,16 @@ final class AppModel {
         self.archived[room.id] = archived ? tags[Inbox.archivedTag]?[Inbox.archivedAtKey]?.int64 : nil
         UserDefaults.standard.set(self.archived, forKey: Self.archiveKey)
         if archived { toast = "Archived. New messages bring it back." }
+    }
+
+    /// Mark as Unread / Read from the inbox: this device only, as Archive. Opening the chat reads it (`markRead`), and
+    /// sends Instagram nothing it wouldn't have: the engine's "Seen" goes only when Instagram had it unread.
+    func setMarkedUnread(_ unread: Bool, _ room: Room) {
+        var tags = room.tags
+        tags[Inbox.markedUnreadTag] = unread ? [:] : nil
+        room.setTags(tags)
+        if unread { markedUnread.insert(room.id) } else { markedUnread.remove(room.id) }
+        UserDefaults.standard.set(Array(markedUnread), forKey: Self.unreadKey)
     }
 
     // MARK: Accounts (A1/A2)

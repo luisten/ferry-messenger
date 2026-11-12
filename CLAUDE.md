@@ -197,8 +197,10 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   catch-up notifications built on it were removed in 1.6.3 (2026-10-27); notifications come back only as a relay to APNs, and
   only once web push proves reliable. A phone's log: `sudo log collect --device-udid <UDID> --last 3d`, then
   `/usr/bin/log show --archive …` (zsh's own `log` builtin shadows it).
-- **Several photos sent at once** are one `IMAGES` message with every attachment (live 2026-10-18,
-  `ig_message_photos_tamo`); `core/chat`'s `album` keeps the first as the content and all of them under `fi.ferry.album`
+- **Several photos sent at once** (from Instagram's apps) are one `IMAGES` message with every attachment (live 2026-10-18,
+  `ig_message_photos_tamo`), but the web's media send can't make one: it takes one `attachment_fbid`, ignored an
+  `attachment_fbids` list (only the first photo went) and refused a comma-joined one (`noncoercible_argument_value`)
+  (live 2026-11-11), so the app sends a set as one message each, in order (`AppModel.lastUpload`); `core/chat`'s `album` keeps the first as the content and all of them under `fi.ferry.album`
   (`MediaInfo.album`), which `AlbumStack` shows as a pile that unfolds in place: one message, so one menu, reaction
   row, reply target and unsend. Ferry showed the first only. The share sheet hides "Save Images" without
   `NSPhotoLibraryAddUsageDescription` (build settings, with the microphone's), so Share All and the viewer's Share
@@ -209,8 +211,19 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   photos."), so anything unknown is `MessageKind.unsupported` ("… sent a message Ferry can't show"), never its
   snippet, or it would read differently after a relaunch; "a poll" is a guess at Instagram's content type until a poll
   is captured.
+- **Reactions** (live 2026-11-11): Instagram logs each one as a message, `REACTION_LOG_XMAT` (`is_reaction_action_log`,
+  its words in `text_fragments`: "Liked a message" for ❤, "Reacted 😂 to your message" otherwise), and its inbox shows
+  it to the person reacted to as the chat's newest message, unread; the reactor's inbox doesn't change, and removing the
+  reaction removes the entry. Only a thread read has it: live, the socket sends `SlideUQPPCreateReaction` alone (with
+  `reacted_to_message_sender_fbid`). `core/chat` mirrors that (the user's call, 2026-11-10): someone else's log entry is
+  a hidden notice (`fi.ferry.reactionLog`), read from the thread or made from the live reaction (`<log_message_id>~log`,
+  `reactionLogLine`), and counts toward unread, inbox order and the preview; ours are left out; a removal redacts it.
+  `Timeline.reduce` drops it, so it's never a row (Android's must too: [PLAN-android §7b](docs/PLAN-android.md)). A
+  live reaction's ID is its `log_message_id`, which a read gives its log entry: find a reaction by ID *and* type.
 - **Archive** is this device's (`UserDefaults` `archived`, room ID → ms), read as the room's `u.archived` tag; Instagram
-  isn't told.
+  isn't told. So is **Mark as Unread** (`markedUnread`, the `u.unread` tag, `Room.isMarkedUnread`, cleared by
+  `AppModel.markRead`): the web API has no request for it. The logged-in inbox's 410 scripts (2026-11-12) have only
+  `SlideUQPPIGMarkThreadUnread`, the delta Instagram's phone apps cause, which `core/chat` already reads.
 
 **Signing and bundle ID:** the team ID and the bundle ID prefix (`FERRY_BUNDLE_PREFIX`) live in `Config/Local.xcconfig`
 (gitignored), included by `Config/Base.xcconfig`, the project's base configuration. Never put them back in

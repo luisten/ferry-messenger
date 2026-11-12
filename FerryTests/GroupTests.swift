@@ -48,18 +48,20 @@ final class GroupTests: XCTestCase {
         }
     }
 
-    /// Hand-made: runs break where the layout already breaks them (over 3 minutes, and the hour gap with a time label),
-    /// so the name shows again.
+    /// Hand-made: runs break where the layout already breaks them (over 3 minutes, and a new day under its chip), so
+    /// the name shows again.
     func testTimeGapsStartANewLabelledRun() {
         let events = [
             Event.message("$1", ts: 0, sender: theo),
             Event.message("$2", ts: 4 * minute, sender: theo),  // 4 min: a new run
-            Event.message("$3", ts: 70 * minute, sender: theo),  // over an hour: a new run under a time label
+            Event.message("$3", ts: 70 * minute + 86_400_000, sender: theo),  // the next day: a new run under a day chip
         ]
-        let rows = Timeline.layout(Timeline.reduce(events, me: me), isGroup: true)
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = .gmt
+        let rows = Timeline.layout(Timeline.reduce(events, me: me), isGroup: true, calendar: utc)
         XCTAssertEqual(rows.map(\.position), [.single, .single, .single])
         XCTAssertEqual(rows.map { $0.groupSender?.showsName }, [true, true, true])
-        XCTAssertEqual(rows.map(\.showsTime), [true, false, true])
+        XCTAssertEqual(rows.map(\.startsDay), [true, false, true])
     }
 
     /// Hand-made: a tombstone ("Theo unsent a message") already names its sender, so it gets neither label, but it's

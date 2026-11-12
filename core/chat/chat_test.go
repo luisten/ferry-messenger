@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -389,18 +390,74 @@ func TestTheThreadReducesToItsMessages(t *testing.T) {
 	}
 }
 
-// "Reacted 😂 to your message" is a log entry for a reaction the message already shows: no row, no unread.
-func TestReactionLogEntriesAreNotRows(t *testing.T) {
+// "Reacted 😂 to your message" is a log entry for a reaction the message already shows: no row (the app hides it by
+// its key), but the thread's newest message, so the chat is unread and its words are the preview, as in Instagram.
+func TestReactionLogEntriesMakeTheChatUnread(t *testing.T) {
 	th := thread(t)
 	log := th.SlideMessages.Edges[0]
 	log.Node.ID, log.Node.ContentType, log.Node.SenderFBID, log.Node.TimestampMS = "mid.reactionlog", "REACTION_LOG_XMAT", kivo, "1792172900000"
+	log.Node.Content = map[string]any{"is_reaction_action_log": true, // as captured live, 2026-11-11
+		"text_fragments": []any{map[string]any{"plaintext": "Reacted 😂 to your message", "link_fragment": nil}}}
 	th.SlideMessages.Edges = slices.Insert(slices.Clone(th.SlideMessages.Edges), 0, log) // newest first
 	env := New(tamo).Thread(th)
-	if slices.ContainsFunc(env.Update.Timeline.Events, func(e Event) bool { return e.EventID == "mid.reactionlog" }) {
-		t.Error("the log entry is a row")
+	events := env.Update.Timeline.Events
+	last := bases(events)[len(bases(events))-1]
+	if last.EventID != "mid.reactionlog" || last.Content[reactionLogKey] != true || last.Content["body"] != "Reacted 😂 to your message" {
+		t.Errorf("newest %v", last)
 	}
-	if env.Update.UnreadNotifications.NotificationCount != 0 {
-		t.Error("unread")
+	if env.Update.UnreadNotifications.NotificationCount != 1 {
+		t.Error("read")
+	}
+	if r := env.Update.Ephemeral; r != nil && strings.Contains(fmt.Sprint(r.Events), "mid.reactionlog") {
+		t.Error("a receipt on the log entry")
+	}
+	// Our own reaction's log entry: no change to the chat, as in Instagram's inbox.
+	th.SlideMessages.Edges[0].Node.SenderFBID = tamo
+	env = New(tamo).Thread(th)
+	if slices.ContainsFunc(env.Update.Timeline.Events, func(e Event) bool { return e.EventID == "mid.reactionlog" }) {
+		t.Error("our own log entry is the chat's newest")
+	}
+}
+
+// Live, a reaction comes as `SlideUQPPCreateReaction` alone (2026-11-11): theirs on our message makes its log entry
+// in Instagram's words, newest and unread; its removal takes both away. Shapes as captured, with the stand-ins' IDs.
+func TestLiveReactionMakesItsLogEntry(t *testing.T) {
+	c := New(tamo)
+	snap := c.Thread(thread(t))
+	r := c.rooms[snap.Room]
+	target := r.lastMessage().EventID
+	reaction := func(kind, emoji string) []byte {
+		b, _ := json.Marshal(map[string]any{"__typename": kind, "thread_fbid": "1700000000000301", "message_id": target,
+			"reacted_to_message_sender_fbid": tamo, "reaction": map[string]any{"log_message_id": "mid.$log1",
+				"reaction": emoji, "reaction_timestamp_ms": "1792172900000", "sender_fbid": kivo}})
+		return b
+	}
+	if _, reread := c.Delta(reaction("SlideUQPPCreateReaction", "😂")); reread != "" {
+		t.Fatal("re-reads")
+	}
+	log := r.lastMessage()
+	if r.unread != 1 || log.EventID != "mid.$log1~log" || log.Content["body"] != "Reacted 😂 to your message" || log.OriginServerTS != 1792172900000 {
+		t.Errorf("unread %d, newest %v", r.unread, log)
+	}
+	if reactionLogLine("❤", true) != "Liked a message" || reactionLogLine("❤\ufe0f", false) != "Liked a message" {
+		t.Error("a heart is a like")
+	}
+	b, _ := json.Marshal(map[string]any{"__typename": "SlideUQPPDeleteReaction", "thread_fbid": "1700000000000301",
+		"message_id": target, "reaction": map[string]any{"log_message_id": "mid.$log1"}})
+	if _, reread := c.Delta(b); reread != "" {
+		t.Fatal("re-reads")
+	}
+	if r.lastMessage().EventID != target {
+		t.Errorf("the log entry stayed: %v", r.lastMessage())
+	}
+	// Ours leaves the chat where it was, as Instagram's inbox does.
+	c = New(kivo)
+	snap = c.Thread(thread(t))
+	r = c.rooms[snap.Room]
+	before, unread := r.lastMessage().EventID, r.unread
+	c.Delta(reaction("SlideUQPPCreateReaction", "❤"))
+	if r.lastMessage().EventID != before || r.unread != unread {
+		t.Errorf("our own reaction moved the chat from %s: %v, unread %d", before, r.lastMessage(), r.unread)
 	}
 }
 

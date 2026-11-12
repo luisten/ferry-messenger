@@ -42,8 +42,12 @@ struct AccountsView: View {
         .sheet(item: $relogin) { ReloginSheet(loginID: $0.id) }
     }
 
-    /// "Ferry Messenger 1.0" (DESIGN A1 footer; no server any more).
-    private static let appVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String).map { "Ferry Messenger \($0)" }
+    /// "Ferry Messenger 1.0" (DESIGN A1 footer; no server any more), "Ferry Messenger 1.7-RC1" for a release candidate
+    /// (`FERRY_PRERELEASE`, Config/Base.xcconfig).
+    private static let appVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String).map { version in
+        let candidate = Bundle.main.object(forInfoDictionaryKey: "FerryPrerelease") as? String ?? ""
+        return "Ferry Messenger \(version)\(candidate.isEmpty ? "" : "-\(candidate)")"
+    }
 }
 
 /// One account: avatar, name, @handle and a status line with its glyph (DESIGN §7.1). "Log in" sits inline when the

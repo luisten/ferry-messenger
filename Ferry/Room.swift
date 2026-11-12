@@ -164,7 +164,9 @@ nonisolated final class Room: Identifiable {
         return bridge?.avatarURL
     }
 
-    var isUnread: Bool { notificationCount > 0 || highlightCount > 0 }
+    /// Instagram's unread, or marked unread on this device (`Inbox.markedUnreadTag`).
+    var isUnread: Bool { notificationCount > 0 || highlightCount > 0 || isMarkedUnread }
+    var isMarkedUnread: Bool { tags[Inbox.markedUnreadTag] != nil }
 
     func memberName(_ userID: String) -> String? {
         stateEvent("m.room.member", userID)?.content["displayname"]?.string
