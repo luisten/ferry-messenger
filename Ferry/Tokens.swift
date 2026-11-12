@@ -24,6 +24,8 @@ extension ShapeStyle where Self == Color {
     static var reactionBackground: Color { dynamic(light: 0xFFFFFF, dark: 0x2C2C2E) }
     /// The mockups' `--sw-a`: the Archive swipe action (neutral, DESIGN I1).
     static var swipeArchive: Color { dynamic(light: 0x1C1C1E, dark: 0x3A3A3C) }
+    /// The Mark as Unread swipe action: neutral too (colour means account), set apart from Archive's.
+    static var swipeUnread: Color { dynamic(light: 0x48484A, dark: 0x636366) }
 }
 
 /// Brand: scenery only (DESIGN §8.1 "Brand: the sea", principle 10). The sea of O1's picture; the icon and the launch

@@ -7,6 +7,24 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+## [1.7] - 2026-11-12
+
+### Added
+
+- Swipe a message left to reply to it.
+- Take a photo or video with the camera straight from `+` in a chat.
+- Mark a chat as unread from the chat list: swipe right on it, or touch and hold it. This stays on your iPhone;
+  Instagram's own app still shows the chat as read.
+- Paste photos and videos into a chat, and pick several at once with `+`. They're sent one after another, in the order
+  you picked them.
+- When someone reacts to your message, the chat moves to the top of your inbox, unread, and says "Liked a message" or
+  "Reacted 😂 to your message", as in Instagram.
+
+### Changed
+
+- Every message shows its time in the bubble, and each day starts with a chip ("Today", "Yesterday", "Mon 3 Nov"). While
+  you scroll, the day floats at the top and goes a second after you stop.
+
 ## [1.6.5] - 2026-11-05
 
 ### Fixed
@@ -170,7 +188,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 - First public release: your Instagram direct messages, from all your accounts in one inbox, talking to Instagram
   straight from your iPhone.
 
-[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.6.5...HEAD
+[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.7...HEAD
+[1.7]: https://github.com/luisten/ferry-messenger/compare/v1.6.5...v1.7
 [1.6.5]: https://github.com/luisten/ferry-messenger/compare/v1.6.4...v1.6.5
 [1.6.4]: https://github.com/luisten/ferry-messenger/compare/v1.6.3...v1.6.4
 [1.6.3]: https://github.com/luisten/ferry-messenger/compare/c708bb0...v1.6.3

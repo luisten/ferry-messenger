@@ -5,4 +5,8 @@
 FERRY_BUNDLE_PREFIX = com.example
 DEVELOPMENT_TEAM =
 
+// A release candidate's label, shown after the version in Accounts ("Ferry Messenger 1.7-RC1"). MARKETING_VERSION
+// stays numbers only, as iOS requires. CI refuses it on main: empty it before merging.
+FERRY_PRERELEASE =
+
 #include? "Local.xcconfig"

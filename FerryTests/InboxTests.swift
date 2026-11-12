@@ -490,6 +490,29 @@ final class InboxTests: XCTestCase {
         XCTAssertNil(Inbox.preview(of: Room(id: "!empty"), me: Fixture.me))
     }
 
+    /// Marked unread on this device: unread for the dot and the counts while Instagram has it read.
+    func testMarkedUnreadCountsAsUnread() throws {
+        let room = try Self.portal("!p", receiver: Fixture.tamoLogin)
+        XCTAssertFalse(room.isUnread)
+        room.setTags([Inbox.markedUnreadTag: [:]])
+        XCTAssertTrue(room.isUnread)
+        XCTAssertTrue(room.isMarkedUnread)
+    }
+
+    /// A reaction to our message (`core/chat`'s reaction log entry): no row in the thread, but the chat's newest message,
+    /// so it moves the chat up and is the preview, as in Instagram (option B, 2026-11-10).
+    func testReactionLogIsThePreviewButNoRow() throws {
+        let room = try Self.portal("!p", receiver: Fixture.tamoLogin)
+        room.apply(JoinedRoom(timeline: .init(events: [
+            Event.message("$1", ts: 9, sender: Fixture.me, body: "see you there"),
+            Event.message("$log", ts: 20, sender: Fixture.kivoGhost, body: "Reacted 😂 to your message", msgtype: "m.notice",
+                          extra: [MessageKind.reactionLogKey: true]),
+        ], limited: false)))
+        XCTAssertEqual(Inbox.preview(of: room, me: Fixture.me)?.text, "Reacted 😂 to your message")
+        XCTAssertEqual(room.lastActivity, 20)
+        XCTAssertEqual(Timeline.reduce(room, me: Fixture.me).last?.id, "$1")
+    }
+
     /// M3 had its own media wording and showed reply fallbacks ("> <@…> …") verbatim; it now shares the thread's
     /// classifier and body.
     func testReplyPreviewStripsTheFallback() throws {

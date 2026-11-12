@@ -440,7 +440,7 @@ func (c *Chats) Delta(raw []byte) (out []Envelope, reread string) {
 		return append(out, c.Remove(id)...), ""
 	case "SlideUQPPNewMessage":
 		m := d.Message
-		if m == nil || !m.isShown() {
+		if m == nil { // a reaction log too: no row, but the chat's newest message (`isReactionLog`)
 			break
 		}
 		j := timeline(messageEvents(*m, c.Account)...)
@@ -471,6 +471,7 @@ type delta struct {
 	// Reactions, edits and unsends: the message they're about.
 	MessageID             string    `json:"message_id"`
 	Reaction              *Reaction `json:"reaction"`
+	ReactedToSenderFBID   string    `json:"reacted_to_message_sender_fbid"`
 	TextBody              *string   `json:"text_body"`
 	SlideEditHistoryEntry struct {
 		TimestampMS string `json:"timestamp_ms"`
@@ -491,14 +492,15 @@ func change(d delta, account string, events []Event) (j *JoinedRoom, refresh boo
 		}
 		return 0
 	}
-	find := func(id string) *Event {
+	findType := func(id, kind string) *Event {
 		for i := range events {
-			if events[i].EventID == id {
+			if events[i].EventID == id && (kind == "" || events[i].Type == kind) {
 				return &events[i]
 			}
 		}
 		return nil
 	}
+	find := func(id string) *Event { return findType(id, "") }
 	if d.MessageID == "" {
 		return nil, false
 	}
@@ -510,14 +512,25 @@ func change(d delta, account string, events []Event) (j *JoinedRoom, refresh boo
 		if r == nil || r.Reaction == "" || r.LogID == "" {
 			return nil, false
 		}
-		return update(Event{Type: "m.reaction", Content: map[string]any{"m.relates_to": map[string]any{
+		sender, ms := senderID(r.SenderFBID, account), now(r.TimestampMS)
+		j := timeline(Event{Type: "m.reaction", Content: map[string]any{"m.relates_to": map[string]any{
 			"rel_type": "m.annotation", "event_id": d.MessageID, "key": r.Reaction,
-		}}, EventID: r.LogID, Sender: senderID(r.SenderFBID, account), OriginServerTS: now(r.TimestampMS)})
+		}}, EventID: r.LogID, Sender: sender, OriginServerTS: ms})
+		// Someone else's: its log entry comes only with a thread read (live 2026-11-11: the socket sends this delta
+		// alone), so it's made here as the read shows it (`isReactionLog`), the chat's newest message, unread. Ours
+		// leaves the chat where it was, as in Instagram's inbox.
+		if sender != Me {
+			j.Timeline.Events = append(j.Timeline.Events, Event{Type: "m.room.message", Content: map[string]any{
+				"msgtype": "m.notice", "body": reactionLogLine(r.Reaction, d.ReactedToSenderFBID == account), reactionLogKey: true,
+			}, EventID: r.LogID + logSuffix, Sender: sender, OriginServerTS: ms})
+			j.UnreadNotifications = &Unread{NotificationCount: 1}
+		}
+		return &j, false
 	case "SlideUQPPDeleteReaction":
 		if d.Reaction == nil || d.Reaction.LogID == "" {
 			return nil, true
 		}
-		reaction := find(d.Reaction.LogID)
+		reaction := findType(d.Reaction.LogID, "m.reaction") // a read's log entry has the same ID
 		if reaction == nil {
 			// One that came with the thread: a read names reactions by message and sender (`messageEvents`), the delete
 			// only by its log entry (P0), so a removal left it on screen (Android's A4 check, 2026-10-21; the re-read
@@ -529,7 +542,14 @@ func change(d delta, account string, events []Event) (j *JoinedRoom, refresh boo
 				return nil, true
 			}
 		}
-		return update(redaction(reaction.EventID, nonEmpty(reaction.Sender, Me), now("")))
+		j := timeline(redaction(reaction.EventID, nonEmpty(reaction.Sender, Me), now("")))
+		// Its log entry goes too, made live or read (live 2026-11-11: a read after the removal has none).
+		for _, id := range []string{d.Reaction.LogID, d.Reaction.LogID + logSuffix} {
+			if log := findType(id, "m.room.message"); log != nil {
+				j.Timeline.Events = append(j.Timeline.Events, redaction(log.EventID, log.Sender, now("")))
+			}
+		}
+		return &j, false
 	case "SlideUQPPEditMessage":
 		if target == nil || d.TextBody == nil {
 			return nil, true

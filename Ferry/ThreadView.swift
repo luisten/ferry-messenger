@@ -30,9 +30,9 @@ struct ThreadView: View {
     /// What a `MessageSheet` row does once the sheet is gone (Reply focuses the composer, Unsend confirms).
     @State private var afterSheet: (() -> Void)?
     /// The composer's `+`: what the picker returned, then the photo or video being prepared or ready to send.
-    @State private var photoItem: PhotosPickerItem?
-    @State private var attachment: Attachment?
-    @State private var preparing: Task<Void, Never>?
+    @State private var photoItems: [PhotosPickerItem] = []
+    @State private var attachments: [ComposerItem] = []
+    @State private var preparing: [UUID: Task<Void, Never>] = [:]
     /// The thread stays on its newest message until the user scrolls away from it (see the re-pin below). A plain
     /// object, not state: nothing on screen depends on it, and the geometry action reads it mid-layout.
     @State private var pin = BottomPin()
@@ -49,6 +49,12 @@ struct ThreadView: View {
     /// While an older page loads, the thread shows from the row that was first: the page waits above it until the user's
     /// scroll has ended, then appears with the scroll that keeps what they're reading in place (`showOlder`).
     @State private var shownFrom: String?
+    /// The floating day chip: the top row's time, shown while the user scrolls and for a second after (`dayShown`).
+    @State private var topDay: Int64?
+    /// The top row starts its day: its own chip is there, so the floating copy stays away (no two "Today"s).
+    @State private var topStartsDay = false
+    @State private var dayShown = false
+    @State private var scrollIdle = true
     @State private var sheet: ThreadSheet?
     @FocusState private var composerFocused: Bool
 
@@ -114,6 +120,7 @@ struct ThreadView: View {
                         // the newest message sat flush on the composer after every open (QA 2026-10-20).
                         Color.clear.frame(height: Self.bottomMargin).id(Self.bottom)
                     }
+                    .scrollTargetLayout()  // for the floating day chip's top row; no scroll target behaviour
                     .environment(\.autoplaysGIFs, !Inbox.isRequest(room))
                     .padding(.horizontal, 12)
                     // Only the newest message animates. An older page (loaded on every open while the top spinner shows)
@@ -131,8 +138,19 @@ struct ThreadView: View {
             // insets arrive (#17). So until the user scrolls away from the newest message, every size change pins it
             // again. Whether they have is decided when their scrolling stops: the action's `old` can already be the
             // jumped one.
+            .onScrollTargetVisibilityChange(idType: String.self) { visible in
+                let order = Dictionary(rows.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { a, _ in a })
+                // The day's start, not the row's time: state that changes only at a day, not with every row that
+                // scrolls past (each change re-rendered the whole thread mid-scroll, 2026-11-12).
+                let top = visible.compactMap { order[$0] }.min()
+                let day = top.map { Int64(Calendar.current.startOfDay(for: rows[$0].message.date).timeIntervalSince1970 * 1000) }
+                if day != topDay { topDay = day }
+                if let top, rows[top].startsDay != topStartsDay { topStartsDay = rows[top].startsDay }
+            }
             .onScrollPhaseChange { old, phase, context in
                 guard phase != old else { return }  // the first call, on appearing, is idle → idle
+                scrollIdle = phase == .idle
+                if [.tracking, .interacting, .decelerating].contains(phase) { dayShown = true }  // the user's, not ours
                 if phase == .tracking || phase == .interacting {
                     revealed = true
                     pin.holdsLine = false
@@ -177,6 +195,16 @@ struct ThreadView: View {
                 // Mid-push the scroll view can drop a scroll made in the same update (#17): repeat it after, unless the
                 // user has moved on meanwhile: a repeat back to the line ran after a tap on the jump button and undid it.
                 Task { if line != nil ? pin.holdsLine : pin.followsEnd { proxy.scrollTo(target, anchor: anchor) } }
+            }
+            .overlay(alignment: .top) {  // under the header, as WhatsApp's
+                if dayShown, !topStartsDay, let topDay {
+                    DayChip(ts: topDay, floating: true).padding(.top, 8).allowsHitTesting(false).transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: dayShown && !topStartsDay)
+            .task(id: scrollIdle) {  // gone a second after the scroll stops
+                guard scrollIdle, (try? await Task.sleep(for: .seconds(1))) != nil else { return }
+                dayShown = false
             }
             .overlay(alignment: .bottomTrailing) {  // above the composer (its inset) and the keyboard
                 VStack {
@@ -233,7 +261,7 @@ struct ThreadView: View {
                 // Mid-scroll (a fling bouncing off the top) a scroll made now is dropped: the page waits for it to end.
                 if shown.count < messages.count, !pin.scrolling { showOlder(rows) }
             }
-            .onChange(of: attachment != nil) { _, shown in
+            .onChange(of: !attachments.isEmpty) { _, shown in
                 // The bar grows the bottom inset (M7b). Added when the re-pin above never ran; not re-checked since.
                 guard shown else { return }
                 pin.holdsLine = false  // as a send does, or the next size change snaps back to the line
@@ -268,8 +296,10 @@ struct ThreadView: View {
                 Composer(draft: $draft, focused: $composerFocused, identity: identity, login: login,
                          replyingTo: replyingTo.map { (name($0.sender), $0.kind.media?.label ?? $0.body) },
                          isEditing: editing != nil, acceptsRequest: bar == .replyAccepts,
-                         photoItem: media ? $photoItem : nil,
-                         attachment: attachment, removeAttachment: removeAttachment,
+                         photoItems: media ? $photoItems : nil,
+                         attachments: attachments, removeAttachment: removeAttachment,
+                         paste: media ? { add($0.map(Self.pasted)) } : nil,
+                         capture: media ? { add([Self.captured($0)]) } : nil,
                          send: { send(in: room) }, cancel: cancelMode,
                          typing: { model.setTyping($0 && editing == nil, in: room) },
                          sendVoice: media ? { sendVoice($0, in: room) } : nil,
@@ -317,7 +347,11 @@ struct ThreadView: View {
             model.autoOpen = nil
             open(message, in: room)
         }
-        .onChange(of: photoItem) { _, item in if let item { prepare(item) } }
+        .onChange(of: photoItems) { _, items in
+            guard !items.isEmpty else { return }
+            photoItems = []  // so the same ones can be picked again
+            add(items.map(Self.picked))
+        }
         .task(id: room.id) {
             model.openThread(room)  // the whole thread: reactions, edits, reply targets
             if model.focusComposer == roomID {  // opened from New Message: ready to type (DESIGN N1)
@@ -469,22 +503,19 @@ struct ThreadView: View {
 
     private func send(in room: Room) {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        if attachment == nil, editing == nil, let link = PhotoMessage.gifLink(text) { return sendGIFLink(link, text: text, in: room) }
-        let media: (OutgoingMedia, UIImage?)? = switch attachment {
-        case .photo(let photo, let preview): (.photo(photo), preview)
-        case .video(let video, let preview): (.video(video), preview)
-        case .preparing, nil: nil
-        }
-        guard !text.isEmpty || media != nil, text.count <= Timeline.maxTextLength else { return }
+        if attachments.isEmpty, editing == nil, let link = PhotoMessage.gifLink(text) { return sendGIFLink(link, text: text, in: room) }
+        let media = attachments.compactMap(\.attachment.outgoing)
+        guard !text.isEmpty || !media.isEmpty, text.count <= Timeline.maxTextLength else { return }
         if let editing {
             if text != editing.body { model.edit(editing, to: text, in: room) }
         } else {
-            // The photo or video first, then the text as its own message (Instagram drops captions). A reply goes
-            // with the text when there is one.
-            if let (item, preview) = media {
-                model.sendMedia(item, preview: preview, replyTo: text.isEmpty ? replyingTo?.eventID : nil, in: room)
-                attachment = nil
+            // The photos and videos first, one message each in their order (Instagram's web send takes one
+            // attachment: it ignored `attachment_fbids` and refused a joined list, live 2026-11-11), then the text as its own message (Instagram drops captions). A reply goes with the text
+            // when there is one, else with the first.
+            for (i, (item, preview)) in media.enumerated() {
+                model.sendMedia(item, preview: preview, replyTo: text.isEmpty && i == 0 ? replyingTo?.eventID : nil, in: room)
             }
+            attachments = []
             if !text.isEmpty { model.send(text, replyTo: replyingTo?.eventID, in: room) }
             sent += 1
         }
@@ -500,15 +531,16 @@ struct ThreadView: View {
         let replyTo = replyingTo?.eventID
         draft = ""
         replyingTo = nil
-        attachment = .preparing(isVideo: false, gif: true)
-        preparing = Task {
+        let getting = ComposerItem(attachment: .preparing(isVideo: false, gif: true))
+        attachments = [getting]
+        preparing[getting.id] = Task {
             let gif = try? await Self.gif(from: link)
             if Task.isCancelled {
                 if draft.isEmpty { draft = text }
                 return
             }
-            attachment = nil
-            preparing = nil
+            attachments.removeAll { $0.id == getting.id }
+            preparing[getting.id] = nil
             if let (photo, preview) = gif { model.sendMedia(.photo(photo), preview: preview, replyTo: replyTo, in: room) }
             else { model.send(text, replyTo: replyTo, in: room) }
             sent += 1
@@ -521,45 +553,83 @@ struct ThreadView: View {
         replyingTo = nil
     }
 
-    /// Reads the picked photo (re-encoded) or video (as a file, made to fit) off the main actor; the composer shows it
-    /// once ready.
-    private func prepare(_ item: PhotosPickerItem) {
-        photoItem = nil  // so the same item can be picked again
-        removeAttachment()
-        let isVideo = item.supportedContentTypes.contains { $0.conforms(to: .movie) }
-        attachment = .preparing(isVideo: isVideo)
-        preparing = Task {
-            do {
-                let ready: Attachment
-                if isVideo {
-                    guard let movie = try await item.loadTransferable(type: PickedMovie.self) else { throw VideoMessage.Failure.unreadable }
-                    defer { try? FileManager.default.removeItem(at: movie.url) }
-                    let video = try await VideoMessage.prepare(movie.url)
-                    ready = .video(video, UIImage(data: video.thumbnail.data))
-                } else {
-                    guard let data = try await item.loadTransferable(type: Data.self) else { throw PhotoMessage.Failure.unreadable }
-                    let (photo, preview) = try await Self.encode(data)
-                    ready = .photo(photo, preview)
+    static let maxAttachments = 10
+
+    /// Photos and videos picked or pasted: each waits above the field while it's read and prepared (a photo
+    /// re-encoded, a video made to fit), up to `maxAttachments` at a time.
+    private func add(_ items: [(isVideo: Bool, load: () async throws -> Attachment)]) {
+        let room = Self.maxAttachments - attachments.count
+        if items.count > room { model.actionError = "You can send up to \(Self.maxAttachments) photos and videos at a time." }
+        for (isVideo, load) in items.prefix(max(room, 0)) {
+            let item = ComposerItem(attachment: .preparing(isVideo: isVideo))
+            attachments.append(item)
+            preparing[item.id] = Task {
+                defer { preparing[item.id] = nil }
+                do {
+                    let ready = try await load()
+                    guard !Task.isCancelled, let i = attachments.firstIndex(where: { $0.id == item.id }) else {  // removed meanwhile
+                        ready.removeFile()
+                        return
+                    }
+                    attachments[i].attachment = ready
+                } catch {
+                    guard !Task.isCancelled else { return }
+                    attachments.removeAll { $0.id == item.id }
+                    model.actionError = error.localizedDescription
                 }
-                guard !Task.isCancelled, case .preparing = attachment else {  // removed meanwhile
-                    if case .video(let video, _) = ready { try? FileManager.default.removeItem(at: video.file) }
-                    return
-                }
-                attachment = ready
-            } catch {
-                guard !Task.isCancelled else { return }
-                attachment = nil
-                model.actionError = error.localizedDescription
             }
         }
     }
 
-    /// The bar's ✕ (or a new pick): stops a video still being made to fit and drops its file.
-    private func removeAttachment() {
-        preparing?.cancel()
-        preparing = nil
-        if case .video(let video, _) = attachment { try? FileManager.default.removeItem(at: video.file) }
-        attachment = nil
+    private static func picked(_ item: PhotosPickerItem) -> (isVideo: Bool, load: () async throws -> Attachment) {
+        let isVideo = item.supportedContentTypes.contains { $0.conforms(to: .movie) }
+        return (isVideo, {
+            if isVideo {
+                guard let movie = try await item.loadTransferable(type: PickedMovie.self) else { throw VideoMessage.Failure.unreadable }
+                return try await ready(movie)
+            }
+            guard let data = try await item.loadTransferable(type: Data.self) else { throw PhotoMessage.Failure.unreadable }
+            return try await ready(data)
+        })
+    }
+
+    /// What the composer's Paste button gave (copied in Photos, Safari, Files…): the same as a pick.
+    private static func pasted(_ provider: NSItemProvider) -> (isVideo: Bool, load: () async throws -> Attachment) {
+        let isVideo = provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier)
+        return (isVideo, {
+            isVideo ? try await ready(provider.load(PickedMovie.self)) : try await ready(provider.load(Data.self))
+        })
+    }
+
+    /// The camera's photo or video, made ready as a picked one is (re-encoded, no metadata kept).
+    private static func captured(_ shot: CameraPicker.Shot) -> (isVideo: Bool, load: () async throws -> Attachment) {
+        switch shot {
+        case .video(let url): (true, { try await ready(PickedMovie(url: url)) })
+        case .photo(let image): (false, { try await ready(jpeg(image)) })
+        }
+    }
+
+    @concurrent private static func jpeg(_ image: UIImage) async throws -> Data {
+        guard let data = image.jpegData(compressionQuality: 1) else { throw PhotoMessage.Failure.unreadable }
+        return data
+    }
+
+    private static func ready(_ movie: PickedMovie) async throws -> Attachment {
+        defer { try? FileManager.default.removeItem(at: movie.url) }
+        let video = try await VideoMessage.prepare(movie.url)
+        return .video(video, UIImage(data: video.thumbnail.data))
+    }
+
+    private static func ready(_ data: Data) async throws -> Attachment {
+        let (photo, preview) = try await encode(data)
+        return .photo(photo, preview)
+    }
+
+    /// A ✕: stops a video still being made to fit and drops its file.
+    private func removeAttachment(_ id: UUID) {
+        preparing.removeValue(forKey: id)?.cancel()
+        attachments.first { $0.id == id }?.attachment.removeFile()
+        attachments.removeAll { $0.id == id }
     }
 
     /// JPEG (or an animated GIF as a GIF) plus a small decoded preview for the composer and the local echo.
@@ -775,9 +845,13 @@ private struct Composer: View {
     /// "Reply instead" in a request: sending accepts it (DESIGN T2).
     var acceptsRequest = false
     /// The `+` button's picker; nil hides it (editing, requests).
-    let photoItem: Binding<PhotosPickerItem?>?
-    let attachment: Attachment?
-    let removeAttachment: () -> Void
+    let photoItems: Binding<[PhotosPickerItem]>?
+    let attachments: [ComposerItem]
+    let removeAttachment: (UUID) -> Void
+    /// Copied photos and videos; nil hides the Paste button (editing, requests).
+    let paste: (([NSItemProvider]) -> Void)?
+    /// What the camera took; nil, like `paste`, where no media goes.
+    let capture: ((CameraPicker.Shot) -> Void)?
     let send: () -> Void
     let cancel: () -> Void
     let typing: (Bool) -> Void
@@ -785,18 +859,20 @@ private struct Composer: View {
     let sendVoice: ((VoiceMessage.Recorded) -> Void)?
     let stopPlayback: () -> Void
     @State private var showingLock = false
+    @State private var showingLibrary = false
+    @State private var showingCamera = false
+    /// The pasteboard holds a photo or video we haven't pasted yet (`UIPasteboard.changeCount`): reading only that
+    /// and its types never shows iOS's "pasted from" banner.
+    @State private var pasteable = false
+    @State private var pastedChange: Int?
     @State private var recorder = VoiceRecorder()
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.openURL) private var openURL
 
     private var count: Int { draft.trimmingCharacters(in: .whitespacesAndNewlines).count }
     private var accountName: String { identity?.name ?? login?.displayName ?? "this account" }
-    private var attachmentReady: Bool {
-        switch attachment {
-        case .photo, .video: true
-        case .preparing, nil: false
-        }
-    }
+    /// Every photo and video ready to go (none still being prepared).
+    private var attachmentReady: Bool { !attachments.isEmpty && attachments.allSatisfy { $0.attachment.outgoing != nil } }
     private var recording: Bool { recorder.state != .idle }
 
     var body: some View {
@@ -808,19 +884,52 @@ private struct Composer: View {
             } else if acceptsRequest {
                 modeBar(symbol: "person.crop.circle.badge.checkmark", title: "Replying accepts the request.", detail: nil)
             }
-            if let attachment { attachmentBar(attachment) }
+            if attachments.count == 1, let only = attachments.first { attachmentBar(only) } else if !attachments.isEmpty { setBar }
+            if let paste, pasteable, focused.wrappedValue, !recording, attachments.count < ThreadView.maxAttachments {
+                // A plain text field offers Paste only for text: copied media gets the system's own button, which
+                // pastes without asking (the user's call 2026-11-10).
+                PasteButton(supportedContentTypes: [.image, .movie]) { providers in
+                    pastedChange = UIPasteboard.general.changeCount
+                    pasteable = false
+                    paste(providers)
+                }
+                .buttonBorderShape(.capsule)
+                .labelStyle(.titleAndIcon)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("composer.paste")
+            }
             HStack(alignment: .bottom, spacing: 8) {
-                if let photoItem {
-                    // DESIGN §6.9 attachment button: photos and videos (no camera or GIF).
-                    PhotosPicker(selection: photoItem, matching: .any(of: [.images, .videos]), preferredItemEncoding: .current) {
-                        Image(systemName: "plus").font(.title3.weight(.medium)).foregroundStyle(Color.primary)
-                            .frame(width: 44, height: 44).contentShape(.circle)
+                if let photoItems {
+                    // DESIGN §6.9 attachment button: photos and videos (no GIF), several at once, in the order
+                    // they're picked; with a camera, a menu that also takes one (the user's call, 2026-11-11).
+                    let plus = Image(systemName: "plus").font(.title3.weight(.medium)).foregroundStyle(Color.primary)
+                        .frame(width: 44, height: 44).contentShape(.circle)
+                    let count = max(ThreadView.maxAttachments - attachments.count, 1)
+                    Group {
+                        if let capture, CameraPicker.isAvailable {
+                            Menu {
+                                Button("Take Photo or Video", systemImage: "camera") { showingCamera = true }
+                                Button("Choose from Library", systemImage: "photo.on.rectangle") { showingLibrary = true }
+                            } label: { plus }
+                            .photosPicker(isPresented: $showingLibrary, selection: photoItems, maxSelectionCount: count,
+                                          selectionBehavior: .ordered, matching: .any(of: [.images, .videos]), preferredItemEncoding: .current)
+                            .fullScreenCover(isPresented: $showingCamera) {
+                                CameraPicker { shot in
+                                    showingCamera = false
+                                    if let shot { capture(shot) }
+                                }
+                                .ignoresSafeArea()
+                            }
+                        } else {
+                            PhotosPicker(selection: photoItems, maxSelectionCount: count, selectionBehavior: .ordered,
+                                         matching: .any(of: [.images, .videos]), preferredItemEncoding: .current) { plus }
+                        }
                     }
                     .buttonStyle(.plain)
                     .glassEffect(.regular.interactive(), in: .circle)
                     .opacity(recording ? 0 : 1)
-                    .disabled(recording)
-                    .accessibilityLabel("Add photo or video")
+                    .disabled(recording || attachments.count >= ThreadView.maxAttachments)
+                    .accessibilityLabel("Add photos or videos")
                     .accessibilityIdentifier("composer.photo")
                 }
                 field
@@ -829,6 +938,10 @@ private struct Composer: View {
         .padding(.horizontal, 12)
         .padding(.bottom, 6)
         .onChange(of: draft) { _, text in typing(!text.isEmpty) }
+        .onAppear(perform: checkPasteboard)
+        .onChange(of: focused.wrappedValue) { checkPasteboard() }
+        .onChange(of: scenePhase) { _, phase in if phase == .active { checkPasteboard() } }  // copied in another app
+        .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in checkPasteboard() }
         .onChange(of: recorder.started) { stopPlayback() }
         .onChange(of: recorder.state) { old, _ in if old == .reviewing { stopPlayback() } }  // sent or binned while listening back
         .onChange(of: scenePhase) { _, phase in if phase != .active { recorder.abandon() } }
@@ -883,7 +996,7 @@ private struct Composer: View {
             // While recording the field stays (hidden, so the keyboard doesn't drop) under the recording strip.
             .opacity(recording ? 0 : 1)
             .overlay { if recording { RecordingStrip(recorder: recorder) } }
-            if let sendVoice, attachment == nil, count == 0 || recording {
+            if let sendVoice, attachments.isEmpty, count == 0 || recording {
                 MicButton(recorder: recorder, tint: identity?.color.fill ?? .accentColor, send: sendVoice)
             } else if count > 0 || attachmentReady {
                 Button(action: send) {
@@ -905,8 +1018,63 @@ private struct Composer: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 22))
     }
 
+    private func checkPasteboard() {
+        let board = UIPasteboard.general
+        pasteable = board.changeCount != pastedChange
+            && (board.hasImages || board.contains(pasteboardTypes: [UTType.movie, .mpeg4Movie, .quickTimeMovie].map(\.identifier)))
+    }
+
+    /// Several picked or pasted: a row of them, each with its ✕. They go one after another, in this order.
+    private var setBar: some View {
+        let videos = attachments.filter(\.attachment.isVideo).count
+        let photos = attachments.count - videos
+        let title = [photos > 0 ? "\(photos) photo\(photos == 1 ? "" : "s")" : nil, videos > 0 ? "\(videos) video\(videos == 1 ? "" : "s")" : nil]
+            .compactMap(\.self).joined(separator: ", ")
+        return VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title).font(.footnote.weight(.semibold))
+                Text(count > 0 && attachmentReady ? "Each is sent on its own, then your text." : "Each is sent on its own, in this order.")
+                    .font(.footnote).foregroundStyle(.inkSecondary)
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(Array(attachments.enumerated()), id: \.element.id) { i, item in
+                        thumbnail(item.attachment, size: 56)
+                            .overlay(alignment: .topTrailing) {
+                                Button("Remove \(item.attachment.isVideo ? "video" : "photo") \(i + 1)", systemImage: "xmark.circle.fill") {
+                                    removeAttachment(item.id)
+                                }
+                                .labelStyle(.iconOnly).font(.body).symbolRenderingMode(.palette)
+                                .foregroundStyle(.white, .black.opacity(0.6))
+                                .padding(4).contentShape(.rect)
+                            }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("composer.attachments")
+    }
+
+    private func thumbnail(_ attachment: Attachment, size: CGFloat) -> some View {
+        Group {
+            if let preview = attachment.preview {
+                Image(uiImage: preview).resizable().scaledToFill()
+                    .overlay { if attachment.isVideo { Image(systemName: "play.fill").font(.caption).foregroundStyle(.white) } }
+            } else {
+                ProgressView()
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(.rect(cornerRadius: 8))
+    }
+
     /// The picked photo or video above the field: no caption (Instagram drops them), so typed text goes on its own.
-    private func attachmentBar(_ attachment: Attachment) -> some View {
+    private func attachmentBar(_ item: ComposerItem) -> some View {
+        let attachment = item.attachment
         let (preview, title, isVideo): (UIImage?, String, Bool) = switch attachment {
         case .preparing(let isVideo, let gif): (nil, gif ? "Getting GIF…" : isVideo ? "Preparing video…" : "Preparing photo…", isVideo)
         case .photo(let photo, let preview): (preview, photo.isGIF ? "GIF" : "Photo", false)
@@ -930,7 +1098,7 @@ private struct Composer: View {
                 }
             }
             Spacer(minLength: 0)
-            Button(isVideo ? "Remove video" : "Remove photo", systemImage: "xmark", action: removeAttachment)
+            Button(isVideo ? "Remove video" : "Remove photo", systemImage: "xmark") { removeAttachment(item.id) }
                 .labelStyle(.iconOnly).foregroundStyle(.secondary)
                 .frame(width: 44, height: 44).contentShape(.rect)
                 .accessibilityIdentifier("composer.removePhoto")
@@ -1071,6 +1239,41 @@ enum Attachment {
     case preparing(isVideo: Bool, gif: Bool = false)
     case photo(PhotoMessage.Encoded, UIImage?)
     case video(VideoMessage.Video, UIImage?)
+
+    /// Ready to send: the media and its preview.
+    var outgoing: (OutgoingMedia, UIImage?)? {
+        switch self {
+        case .photo(let photo, let preview): (.photo(photo), preview)
+        case .video(let video, let preview): (.video(video), preview)
+        case .preparing: nil
+        }
+    }
+
+    var preview: UIImage? { outgoing?.1 }
+
+    var isVideo: Bool {
+        switch self {
+        case .preparing(let isVideo, _): isVideo
+        case .video: true
+        case .photo: false
+        }
+    }
+
+    /// A video made to fit is a file of ours until it's sent.
+    func removeFile() { if case .video(let video, _) = self { try? FileManager.default.removeItem(at: video.file) } }
+}
+
+/// One of the composer's attachments, so a ✕ removes that one.
+struct ComposerItem: Identifiable {
+    let id = UUID()
+    var attachment: Attachment
+}
+
+extension NSItemProvider {
+    /// `loadTransferable` without the callback.
+    nonisolated func load<T: Transferable & Sendable>(_ type: T.Type) async throws -> T {
+        try await withCheckedThrowingContinuation { done in _ = loadTransferable(type: type) { done.resume(with: $0) } }
+    }
 }
 
 /// Files for the share sheet ("Share All").
@@ -1087,4 +1290,43 @@ private struct ShareSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
+}
+
+/// iOS's own camera for `+` (photo or video), full screen. Its photo has no location; a video's file is copied out of
+/// the picker's, which iOS deletes, and `ready` removes the copy once it's prepared.
+struct CameraPicker: UIViewControllerRepresentable {
+    enum Shot { case photo(UIImage), video(URL) }
+    /// nil when cancelled.
+    let done: (Shot?) -> Void
+
+    static var isAvailable: Bool { UIImagePickerController.isSourceTypeAvailable(.camera) }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.mediaTypes = UIImagePickerController.availableMediaTypes(for: .camera) ?? [UTType.image.identifier]
+        picker.videoQuality = .typeHigh
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ picker: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(done: done) }
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let done: (Shot?) -> Void
+        init(done: @escaping (Shot?) -> Void) { self.done = done }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let url = info[.mediaURL] as? URL {
+                let copy = URL.temporaryDirectory.appending(path: "camera-\(UUID().uuidString).\(url.pathExtension)")
+                done((try? FileManager.default.copyItem(at: url, to: copy)).map { .video(copy) })
+            } else {
+                done((info[.originalImage] as? UIImage).map(Shot.photo))
+            }
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) { done(nil) }
+    }
 }

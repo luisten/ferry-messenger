@@ -250,6 +250,30 @@ count before each run; the baseline costs the same actions once more.
 - **Android unknowns:** Instagram's reaction to logins from Android's WebView (A0), to a connection that never
   sleeps (A8), and phone makers' battery savers (A8).
 
+## 7b. Engine changes the Android app must follow
+
+When Android moves its pin past one of these, the Kotlin side changes in the same step. Newest first.
+
+- **Reactions bump the chat (iOS 1.7, the user's call 2026-11-10, checked live 2026-11-11).** Instagram logs every
+  reaction as a message of its own, `REACTION_LOG_XMAT` ("Liked a message" for ❤, "Reacted 😂 to your message"
+  otherwise), and its inbox shows it to the person reacted to as the chat's newest message, unread; the reactor's inbox
+  doesn't change, and removing the reaction removes it. `core/chat` used to drop it; it now sends someone else's as an
+  ordinary `m.room.message`, an `m.notice` whose content carries `"fi.ferry.reactionLog": true`, in timeline order:
+  from a thread read, or made from the live `SlideUQPPCreateReaction` (ID `<log_message_id>~log`), unread; a removal
+  redacts it. It counts for unread and "Seen" (`IGMarkRead` marks it read). On Android:
+  1. **`Timeline.reduce` drops every base event whose content has `fi.ferry.reactionLog`**, before anything else
+     looks at it: no row, no "New messages" line, no jump count, no reply target, no grouping. Without this it shows
+     as a plain notice bubble in the thread. iOS: `Timeline.reduce`, the `bases.filter` above `messages`.
+  2. **The inbox keeps it:** `Room.lastMessage` (so `lastActivity`, the inbox order and an archived chat coming back)
+     and the preview use it as they would any notice: "Reacted 😂 to your message" in a DM, "Sam: Reacted…" in a group,
+     "You: …" for ours. Nothing to change if the preview treats an `m.notice` as text.
+  3. Unread needs nothing: it comes from the engine (`unread_notifications`).
+  4. Tests to port: `InboxTests.testReactionLogIsThePreviewButNoRow`. The engine's own: `TestReactionLogEntriesMakeTheChatUnread`,
+     `TestLiveReactionLogMakesTheChatUnread`.
+
+  Its words are the log's `text_fragments` (else its snippet, else its text); live, `reactionLogLine`. In a group,
+  "to a message" for someone else's message is still a guess (no group on the dummies).
+
 ## 8. Later, not decided
 
 - An Instagram-native chat model instead of the Matrix-style one, if the Matrix vocabulary ever gets in the way

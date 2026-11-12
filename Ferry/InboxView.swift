@@ -449,7 +449,7 @@ struct ChatRow: View {
     private func accessibilityText(identity: AccountIdentity?, typing: Bool, preview: String?, time: String) -> String {
         let multiAccount = (model.loginIDs?.count ?? model.identities.count) > 1
         let count = max(room.notificationCount, room.highlightCount)
-        return [room.name, multiAccount ? identity.map { "via \($0.name) account" } : nil, count > 0 ? "\(count) unread" : nil,
+        return [room.name, multiAccount ? identity.map { "via \($0.name) account" } : nil, count > 0 ? "\(count) unread" : room.isMarkedUnread ? "marked unread" : nil,
                 typing ? "typing" : preview, time].compactMap(\.self).filter { !$0.isEmpty }.joined(separator: ", ")
     }
 }
@@ -472,7 +472,24 @@ private struct ArchiveActions: ViewModifier {
         let archived = Inbox.folder(of: room) == .archived
         content
             .swipeActions(edge: .trailing, allowsFullSwipe: true) { button(archived: archived) }
-            .contextMenu { button(archived: archived) }
+            .swipeActions(edge: .leading, allowsFullSwipe: true) { unreadButton }
+            .contextMenu {
+                unreadButton
+                button(archived: archived)
+            }
+    }
+
+    /// Mark as Unread on a read chat, Mark as Read on one marked here; none on one Instagram has unread (opening it
+    /// reads it, and "Read" from here would have to send "Seen").
+    @ViewBuilder private var unreadButton: some View {
+        if !room.isUnread || room.isMarkedUnread {
+            let marked = room.isMarkedUnread
+            Button(marked ? "Mark as Read" : "Mark as Unread", systemImage: marked ? "envelope.open" : "envelope.badge") {
+                model.setMarkedUnread(!marked, room)
+            }
+            .tint(.swipeUnread)
+            .accessibilityIdentifier(marked ? "row.markRead" : "row.markUnread")
+        }
     }
 
     private func button(archived: Bool) -> some View {

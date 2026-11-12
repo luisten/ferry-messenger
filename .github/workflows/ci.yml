@@ -32,6 +32,12 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: No release candidate on main
+        run: |
+          # A branch may carry FERRY_PRERELEASE (an RC's label in Accounts); main never does. Empty it before merging.
+          label=$(sed -n 's/^FERRY_PRERELEASE *= *//p' Config/Base.xcconfig)
+          [ -z "$label" ] || { echo "::error file=Config/Base.xcconfig::FERRY_PRERELEASE is '$label': empty it before this reaches main."; exit 1; }
+
       - name: Install shellcheck and actionlint (pinned, checksum-verified)
         env:
           SHELLCHECK_VERSION: v0.11.0

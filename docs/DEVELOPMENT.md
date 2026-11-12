@@ -177,7 +177,7 @@ to the launch line above. They live in `Ferry/DebugFixtures.swift` and `Ferry/Ap
 | `FERRY_DEBUG_DEMO=1` | Made-up data only, for screenshots and the UI tests: two made-up accounts ("Tamo Veska", "Kivo Studio") stand in for the Keychain's and never connect, so nothing reaches Instagram; four made-up chats, a group and three requests. Identities are defaults kept in memory. With `FERRY_DEBUG_ONBOARDING=welcome` it gives a welcome screen with those accounts |
 | `FERRY_DEBUG_REQUESTS=1` | Three made-up message requests (they have no Instagram thread, and the app refuses sends to them). The Requests card shows only for requests newer than the last time Requests was opened (`requests.seen` in the app's `UserDefaults`); to see it again, run the snippet below first |
 | `FERRY_DEBUG_GROUP=1` | One made-up group, "Saturday Climbs", on the first account: four senders (one who left), a reply, a reaction. Nothing about it leaves the app |
-| `FERRY_DEBUG_GROUP_EXTRA=<n>` | n more unread messages in that group (with `FERRY_DEBUG_GROUP` or `FERRY_DEBUG_DEMO`), so what's new overflows the screen: where the thread opens and its jump-to-newest button. On an iPhone 17, 7 overflow by a little (139 pt: it opens at the end), 14 by a lot (807 pt: on the "New messages" line, with the button) |
+| `FERRY_DEBUG_GROUP_EXTRA=<n>` | n more unread messages in that group (with `FERRY_DEBUG_GROUP` or `FERRY_DEBUG_DEMO`), so what's new overflows the screen: where the thread opens and its jump-to-newest button. On an iPhone 17, 7 overflow by a little (139 pt: it opens at the end), 14 by a lot (807 pt: on the "New messages" line, with the button). Rows grew with the times in bubbles and lower reaction pills (2026-11-11): the UI test now uses 6 for "a little" (not re-measured) |
 | `FERRY_DEBUG_GROUP_INCOMING=<seconds>` | One more made-up message arrives in that group that often while the app runs: the jump-to-newest button's count, and that nothing scrolls while you're up the thread |
 | `FERRY_DEBUG_GROUP_OLDER=<n>` | That group opens as Instagram's mailbox has it, its newest five messages, and its top spinner loads the rest a page of 20 at a time (half a second each), then n pages of made-up older ones: back-pagination under the "New messages" line, and that scrolling to the top loads one page and stays where you were. With `FERRY_DEBUG_GROUP_EXTRA=14`, all five are unread, as after a busy day in a group |
 | `FERRY_DEBUG_LOGIN_STATE=<account id>=<STATE>[,…]` | Shows that account in another state (`BAD_CREDENTIALS`, `TRANSIENT_DISCONNECT`, `UNKNOWN_ERROR`); the real session is untouched |
@@ -200,6 +200,10 @@ xcrun simctl spawn $SIM launchctl stop com.apple.SpringBoard   # only if `simctl
 ```
 
 ## Releases
+
+**Release candidates** carry a label in `Config/Base.xcconfig` (`FERRY_PRERELEASE = RC1`), shown after the version in
+Accounts ("Ferry Messenger 1.7-RC1"); `MARKETING_VERSION` stays numbers only, as iOS requires. CI fails on main and
+the release workflow refuses a tag while it's set: empty it in the PR that goes to main.
 
 A release is a **signed tag** `vX.Y`. When one is pushed, `.github/workflows/release.yml` checks its signature
 against the publisher's key, checks that the app's version (`MARKETING_VERSION`) matches, builds the core and an

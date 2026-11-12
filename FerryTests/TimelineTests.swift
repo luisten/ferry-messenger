@@ -3,6 +3,7 @@ import XCTest
 
 /// PLAN §2.6, one test per rule with its counter-case. Real fixtures where they exist; hand-made events say so.
 final class TimelineTests: XCTestCase {
+    let utc = { var c = Calendar(identifier: .gregorian); c.timeZone = .gmt; return c }()
     private let me = Fixture.me
     private let ghost = Fixture.kivoGhost
 
@@ -463,12 +464,35 @@ final class TimelineTests: XCTestCase {
             Event.message("$3", ts: 2 * minute, sender: ghost),
             Event.message("$4", ts: 3 * minute, sender: me),
             Event.message("$5", ts: 7 * minute, sender: me),  // 4 min later: new group
-            Event.message("$6", ts: 70 * minute, sender: me),  // over an hour: new group with a time
+            Event.message("$6", ts: 70 * minute, sender: me),  // over an hour, same day: no chip
+            Event.message("$7", ts: 70 * minute + 86_400_000, sender: me),  // the next day: a chip
         ]
-        let rows = Timeline.layout(Timeline.reduce(events, me: me))
-        XCTAssertEqual(rows.map(\.position), [.first, .middle, .last, .single, .single, .single])
-        XCTAssertEqual(rows.map(\.showsTime), [true, false, false, false, false, true])
-        XCTAssertEqual(rows.map(\.spacing), [0, 2, 2, 10, 10, 16])
+        let rows = Timeline.layout(Timeline.reduce(events, me: me), calendar: utc)
+        XCTAssertEqual(rows.map(\.position), [.first, .middle, .last, .single, .single, .single, .single])
+        XCTAssertEqual(rows.map(\.startsDay), [true, false, false, false, false, false, true])
+        XCTAssertEqual(rows.map(\.spacing), [0, 2, 2, 10, 10, 10, 16])
+    }
+
+    /// A day chip breaks a run even inside three minutes: 23:59 then 00:01.
+    func testADayChipStartsANewRun() {
+        let midnight: Int64 = 86_400_000
+        let events = [Event.message("$1", ts: midnight - 60_000, sender: me), Event.message("$2", ts: midnight + 60_000, sender: me)]
+        let rows = Timeline.layout(Timeline.reduce(events, me: me), calendar: utc)
+        XCTAssertEqual(rows.map(\.position), [.single, .single])
+        XCTAssertEqual(rows.map(\.startsDay), [true, true])
+    }
+
+    func testDayLabels() {
+        let now = Date(timeIntervalSince1970: 1_794_300_000)  // Tue 10 Nov 2026, 08:40 UTC
+        func label(daysAgo: Double) -> String {
+            Timeline.dayLabel(Int64((now.timeIntervalSince1970 - daysAgo * 86_400) * 1000), now: now, calendar: utc)
+        }
+        XCTAssertEqual(label(daysAgo: 0), "Today")
+        XCTAssertEqual(label(daysAgo: 1), "Yesterday")
+        XCTAssertEqual(label(daysAgo: 3), Date(timeIntervalSince1970: now.timeIntervalSince1970 - 3 * 86_400)
+            .formatted(Date.FormatStyle(calendar: utc, timeZone: utc.timeZone).weekday(.wide)))
+        XCTAssertFalse(label(daysAgo: 8).contains("2026"))
+        XCTAssertTrue(label(daysAgo: 400).contains("2025"))
     }
 }
 

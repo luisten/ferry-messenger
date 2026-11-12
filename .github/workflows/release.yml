@@ -53,6 +53,8 @@ jobs:
           version=$(xcodebuild -project Ferry.xcodeproj -scheme Ferry -configuration Release -showBuildSettings 2>/dev/null \
             | sed -n 's/^ *MARKETING_VERSION = //p' | head -1)
           [ "v$version" = "$TAG" ] || { echo "::error::The tag is $TAG but MARKETING_VERSION is $version."; exit 1; }
+          label=$(sed -n 's/^FERRY_PRERELEASE *= *//p' Config/Base.xcconfig)
+          [ -z "$label" ] || { echo "::error::FERRY_PRERELEASE is '$label': a release candidate is never released."; exit 1; }
 
       - name: Build core/ (Go)
         env:

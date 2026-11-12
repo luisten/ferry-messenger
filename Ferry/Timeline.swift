@@ -23,6 +23,8 @@ nonisolated enum MessageKind: Equatable, Sendable {
     case unsupported(String)
 
     static let eventKey = "fi.ferry.event"
+    /// `core/chat`'s reaction log entry (`isReactionLog`).
+    static let reactionLogKey = "fi.ferry.reactionLog"
     static let unsupportedKey = "fi.ferry.unsupported"
     /// The text sent with a share (`IGAdapter.share`): a story reply, or a story reaction's emoji.
     static let shareTextKey = "fi.ferry.share_text"
@@ -279,6 +281,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable {
     var txnID: String?
     var sender: String
     var ts: Int64
+    var date: Date { Date(timeIntervalSince1970: Double(ts) / 1000) }
     var kind: MessageKind
     /// Text to show: the latest edit's body, reply fallback stripped. Empty for tombstones.
     var body: String
@@ -413,7 +416,9 @@ nonisolated enum Timeline {
             }
         }
 
-        var messages = bases.map { base -> Message in
+        // Instagram's "Reacted ❤️ to your message" entry is no row (the reaction is on the message); only the inbox
+        // reads it, as the chat's newest message.
+        var messages = bases.filter { $0.content[MessageKind.reactionLogKey] == nil }.map { base -> Message in
             let id = base.eventID ?? ""
             let sender = base.sender ?? ""
             if isRedacted(base) {
@@ -528,10 +533,10 @@ nonisolated enum Timeline {
     struct Row: Identifiable, Equatable, Sendable {
         var message: Message
         var position: GroupPosition
-        /// Points above the row: 2 inside a group, 10 between groups, 16 when a time label shows.
+        /// Points above the row: 2 inside a group, 10 between groups, 16 under a day chip.
         var spacing: Double
-        /// A time label above the row: the first row, and after a gap of more than an hour.
-        var showsTime: Bool
+        /// A day chip above the row ("Today", `dayLabel`): the first row, and the first of each day.
+        var startsDay: Bool
         /// Groups only, on someone else's message; nil in DMs and on ours.
         var groupSender: GroupSender?
         /// The "New messages" line goes above this row.
@@ -549,13 +554,17 @@ nonisolated enum Timeline {
     /// `unreadAfter`: how far we'd read when the chat opened (`Room.receipts[me]`, ms), nil when it opened read. The
     /// "New messages" line goes above the first message from someone else after it and after our own last message
     /// (we'd read what came before that), so it goes once we reply.
-    static func layout(_ messages: [Message], isGroup: Bool = false, unreadAfter: Int64? = nil) -> [Row] {
+    static func layout(_ messages: [Message], isGroup: Bool = false, unreadAfter: Int64? = nil,
+                       calendar: Calendar = .current) -> [Row] {
         let firstUnread = unreadAfter.flatMap { after in
             let from = max(after, messages.last(where: \.isOwn)?.ts ?? .min)
             return messages.firstIndex { !$0.isOwn && $0.ts > from }
         }
+        func startsDay(_ i: Int) -> Bool {
+            i == 0 || !calendar.isDate(messages[i].date, inSameDayAs: messages[i - 1].date)
+        }
         func joins(_ i: Int) -> Bool {
-            guard i > 0, i < messages.count, i != firstUnread else { return false }  // the line starts a new run
+            guard i > 0, i < messages.count, i != firstUnread, !startsDay(i) else { return false }  // the line and a day chip start a new run
             let (a, b) = (messages[i - 1], messages[i])
             return a.sender == b.sender && b.ts - a.ts < 180_000 && [a, b].allSatisfy { $0.kind != .unsent && !$0.kind.isChatEvent }
         }
@@ -566,16 +575,32 @@ nonisolated enum Timeline {
             case (true, true): .middle
             case (true, false): .last
             }
-            let showsTime = i == 0 || messages[i].ts - messages[i - 1].ts > 3_600_000
-            let spacing: Double = i == 0 ? 0 : joins(i) ? 2 : showsTime || i == firstUnread ? 16 : 10
+            let startsDay = startsDay(i)
+            let spacing: Double = i == 0 ? 0 : joins(i) ? 2 : startsDay || i == firstUnread ? 16 : 10
             let labelled = messages[i].kind != .unsent
             let sender = isGroup && !messages[i].isOwn && !messages[i].kind.isChatEvent  // a chat event spans the thread
                 ? GroupSender(showsName: labelled && (position == .single || position == .first),
                               showsAvatar: labelled && (position == .single || position == .last))
                 : nil
-            return Row(message: messages[i], position: position, spacing: spacing, showsTime: showsTime, groupSender: sender,
+            return Row(message: messages[i], position: position, spacing: spacing, startsDay: startsDay, groupSender: sender,
                        startsUnread: i == firstUnread)
         }
+    }
+
+    /// A day chip's words (WhatsApp's): "Today", "Yesterday", the weekday within a week, then "Mon 3 Nov", with the
+    /// year when it isn't this one.
+    static func dayLabel(_ ts: Int64, now: Date = .now, calendar: Calendar = .current) -> String {
+        let date = Date(timeIntervalSince1970: Double(ts) / 1000)
+        var style = Date.FormatStyle(calendar: calendar, timeZone: calendar.timeZone)
+        if calendar.isDate(date, inSameDayAs: now) { return "Today" }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(date, inSameDayAs: yesterday) {
+            return "Yesterday"
+        }
+        if let weekAgo = calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: now)), date >= weekAgo, date <= now {
+            return date.formatted(style.weekday(.wide))
+        }
+        style = style.weekday(.abbreviated).day().month(.abbreviated)
+        return date.formatted(calendar.component(.year, from: date) == calendar.component(.year, from: now) ? style : style.year())
     }
 
     // MARK: Helpers
