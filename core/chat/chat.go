@@ -630,6 +630,7 @@ func album(items []any, video *bool) map[string]any {
 // unsend.
 func share(xma map[string]any, snippet, sent string) map[string]any {
 	link, hasLink := xma["target_url"].(string)
+	link = unshim(link)
 	preview := obj(xma["preview_image"])
 	caption := ""
 	for _, k := range []string{"title_text", "caption_body_text", "subtitle_text"} {
@@ -719,6 +720,25 @@ func shareType(link string) string {
 		return "story"
 	}
 	return ""
+}
+
+// shimHosts are Meta's link shims: a link shared in a DM comes as `https://l.instagram.com/?u=<link>&e=…` or
+// `https://l.facebook.com/l.php?u=<link>&h=…` (2026-11-17: a card read "l.facebook.com" on the sender's side,
+// "l.instagram.com" on the receiver's). ponytail: these shapes and hosts are from knowledge, never captured. The
+// bridge unwraps only `/l.php` (msgconv `removeLPHP`), so not Instagram's.
+var shimHosts = map[string]bool{"l.instagram.com": true, "l.facebook.com": true, "lm.facebook.com": true, "l.messenger.com": true}
+
+// unshim is the link a shim leads to, else `link` as it is. Only an absolute http(s) link: the card opens it.
+func unshim(link string) string {
+	u, err := url.Parse(link)
+	if err != nil || !shimHosts[strings.ToLower(u.Hostname())] {
+		return link
+	}
+	target := u.Query().Get("u")
+	if t, err := url.Parse(target); err == nil && (t.Scheme == "https" || t.Scheme == "http") && t.Host != "" {
+		return target
+	}
+	return link
 }
 
 // resolvedEvent is "Load video" done: the share's media, as the hidden edit that swaps the card (the bridge's

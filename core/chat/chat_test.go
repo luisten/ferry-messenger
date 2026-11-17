@@ -960,6 +960,14 @@ func TestSharesBecomeTheBridgesShapes(t *testing.T) {
 	if p := obj(arr(link[0].Content["com.beeper.linkpreviews"])[0]); link[0].Content["msgtype"] != "m.text" || p["og:title"] != "An article" {
 		t.Errorf("link %v", link[0].Content)
 	}
+	// A link behind Meta's shim (2026-11-17: the card's host read "l.instagram.com"): the card and, sent without
+	// text, the body are the link itself.
+	shimmed := messageEvents(message(map[string]any{"title_text": "An article",
+		"target_url": "https://l.instagram.com/?u=https%3A%2F%2Fexample.com%2Farticle&e=AT0sample"}), tamo)
+	if c := shimmed[0].Content; obj(arr(c["com.beeper.linkpreviews"])[0])["matched_url"] != "https://example.com/article" ||
+		c["body"] != "https://example.com/article" {
+		t.Errorf("shimmed link %v", c)
+	}
 	expired := messageEvents(message(map[string]any{"caption_body_text": "Story unavailable", "eyebrow_text": "Shared a story"}), tamo)
 	if expired[0].Content["body"] != "Story unavailable" {
 		t.Errorf("expired %v", expired[0].Content)
@@ -988,6 +996,33 @@ func TestSharesBecomeTheBridgesShapes(t *testing.T) {
 		t.Error("loads again")
 	}
 	golden(t, "shares", map[string][]Event{"reel": reel, "post": post, "link": link, "expired": expired, "resolved": resolved})
+}
+
+// Meta's link shims (shapes from knowledge, not a capture) open the link itself: only an absolute http(s) one, as
+// the card's tap opens it.
+func TestShimmedLinksAreUnwrapped(t *testing.T) {
+	for _, step := range []struct{ in, want string }{
+		{"https://l.instagram.com/?u=https%3A%2F%2Fexample.com%2Fferry&e=AT0sample", "https://example.com/ferry"},
+		{"https://l.facebook.com/l.php?u=https%3A%2F%2Fexample.com%2Fferry&h=AT0sample", "https://example.com/ferry"},
+		{"https://lm.facebook.com/l.php?u=http%3A%2F%2Fexample.com%2F", "http://example.com/"},
+		{"https://L.Instagram.com/?u=HTTPS%3A%2F%2Fexample.com%2Fa", "HTTPS://example.com/a"},
+		// Its own query and fragment, percent-encoded inside `u`.
+		{"https://l.instagram.com/?u=https%3A%2F%2Fexample.com%2Fa%2520b%3Fq%3D1%26r%3D%25C3%25A9%23part&e=AT0sample",
+			"https://example.com/a%20b?q=1&r=%C3%A9#part"},
+		{"https://example.com/article?u=https%3A%2F%2Fexample.org%2F", "https://example.com/article?u=https%3A%2F%2Fexample.org%2F"},
+		{"https://www.instagram.com/reel/DSampleRl01/", "https://www.instagram.com/reel/DSampleRl01/"},
+		{"https://l.instagram.com/?e=AT0sample", "https://l.instagram.com/?e=AT0sample"},
+		{"https://l.facebook.com/l.php?u=javascript%3Aalert(1)", "https://l.facebook.com/l.php?u=javascript%3Aalert(1)"},
+		{"https://l.instagram.com/?u=intent%3A%2F%2Fexample.com%23Intent%3Bend", "https://l.instagram.com/?u=intent%3A%2F%2Fexample.com%23Intent%3Bend"},
+		{"https://l.instagram.com/?u=file%3A%2F%2F%2Fetc%2Fhosts", "https://l.instagram.com/?u=file%3A%2F%2F%2Fetc%2Fhosts"},
+		{"https://l.instagram.com/?u=%2Fferry", "https://l.instagram.com/?u=%2Fferry"},
+		{"https://l.instagram.com/?u=https%3A%2Fexample.com", "https://l.instagram.com/?u=https%3A%2Fexample.com"},
+		{"", ""},
+	} {
+		if got := unshim(step.in); got != step.want {
+			t.Errorf("%q: %q", step.in, got)
+		}
+	}
 }
 
 // A delete for a reaction this window never saw added (one from before this launch) re-reads the thread.

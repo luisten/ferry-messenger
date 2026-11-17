@@ -7,6 +7,12 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+### Fixed
+
+- A link's preview card showed l.instagram.com or l.facebook.com, Instagram's redirect, instead of the site's address,
+  and opened the link through that redirect. It now shows the site and opens the link itself, in chats you already
+  have too.
+
 ## [1.7] - 2026-11-12
 
 ### Added

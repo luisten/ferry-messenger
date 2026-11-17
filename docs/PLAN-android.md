@@ -254,6 +254,18 @@ count before each run; the baseline costs the same actions once more.
 
 When Android moves its pin past one of these, the Kotlin side changes in the same step. Newest first.
 
+- **A link's card is the link, not Meta's shim (after 1.7, seen on Android 2026-11-17).** A link Instagram previews
+  comes in the share's `target_url` behind a redirect: the card's host read `l.facebook.com` on the sender's side and
+  `l.instagram.com` on the receiver's, and a tap went through it. `core/chat`'s `share` now unwraps it (`unshim`): on
+  `l.instagram.com`, `l.facebook.com`, `lm.facebook.com` or `l.messenger.com`, the `u` parameter, only when it is an
+  absolute `http`/`https` link, else the URL as it was. That changes the preview's `matched_url`, the body of a link
+  sent without text, `external_url` and the share's kind. On Android: **move the pin; no Kotlin change**, as
+  `LinkPreview` already takes `matched_url ?? og:url` and the card draws its host. iOS keeps no converted events (the
+  engine rebuilds every chat from Instagram at each launch), so old cards heal on the next launch; if Android stores
+  converted events anywhere, those keep the shim until the chat is read again. The engine's tests:
+  `TestShimmedLinksAreUnwrapped`, and the shimmed link in `TestSharesBecomeTheBridgesShapes`. The shim shapes are
+  from knowledge, not a capture.
+
 - **Reactions bump the chat (iOS 1.7, the user's call 2026-11-10, checked live 2026-11-11).** Instagram logs every
   reaction as a message of its own, `REACTION_LOG_XMAT` ("Liked a message" for ❤, "Reacted 😂 to your message"
   otherwise), and its inbox shows it to the person reacted to as the chat's newest message, unread; the reactor's inbox
