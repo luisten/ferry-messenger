@@ -263,8 +263,9 @@ When Android moves its pin past one of these, the Kotlin side changes in the sam
   `LinkPreview` already takes `matched_url ?? og:url` and the card draws its host. iOS keeps no converted events (the
   engine rebuilds every chat from Instagram at each launch), so old cards heal on the next launch; if Android stores
   converted events anywhere, those keep the shim until the chat is read again. The engine's tests:
-  `TestShimmedLinksAreUnwrapped`, and the shimmed link in `TestSharesBecomeTheBridgesShapes`. The shim shapes are
-  from knowledge, not a capture.
+  `TestShimmedLinksAreUnwrapped`, and the shimmed link in `TestSharesBecomeTheBridgesShapes`. Confirmed live on
+  Android 2026-11-17: the card reads "example.com" on both sides (no raw shim captured; `lm.facebook.com` and
+  `l.messenger.com` are unseen).
 
 - **Reactions bump the chat (iOS 1.7, the user's call 2026-11-10, checked live 2026-11-11).** Instagram logs every
   reaction as a message of its own, `REACTION_LOG_XMAT` ("Liked a message" for ❤, "Reacted 😂 to your message"

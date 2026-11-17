@@ -998,8 +998,8 @@ func TestSharesBecomeTheBridgesShapes(t *testing.T) {
 	golden(t, "shares", map[string][]Event{"reel": reel, "post": post, "link": link, "expired": expired, "resolved": resolved})
 }
 
-// Meta's link shims (shapes from knowledge, not a capture) open the link itself: only an absolute http(s) one, as
-// the card's tap opens it.
+// Meta's link shims (both shapes confirmed live on Android 2026-11-17, not a raw capture) open the link itself:
+// only an absolute http(s) one, as the card's tap opens it.
 func TestShimmedLinksAreUnwrapped(t *testing.T) {
 	for _, step := range []struct{ in, want string }{
 		{"https://l.instagram.com/?u=https%3A%2F%2Fexample.com%2Fferry&e=AT0sample", "https://example.com/ferry"},

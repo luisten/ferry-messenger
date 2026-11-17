@@ -724,8 +724,9 @@ func shareType(link string) string {
 
 // shimHosts are Meta's link shims: a link shared in a DM comes as `https://l.instagram.com/?u=<link>&e=…` or
 // `https://l.facebook.com/l.php?u=<link>&h=…` (2026-11-17: a card read "l.facebook.com" on the sender's side,
-// "l.instagram.com" on the receiver's). ponytail: these shapes and hosts are from knowledge, never captured. The
-// bridge unwraps only `/l.php` (msgconv `removeLPHP`), so not Instagram's.
+// "l.instagram.com" on the receiver's; unwrapped, both read "example.com", confirmed live on Android the same day,
+// though no raw shim was captured). ponytail: `lm.facebook.com` and `l.messenger.com` are from knowledge, never
+// seen. The bridge unwraps only `/l.php` (msgconv `removeLPHP`), so not Instagram's.
 var shimHosts = map[string]bool{"l.instagram.com": true, "l.facebook.com": true, "lm.facebook.com": true, "l.messenger.com": true}
 
 // unshim is the link a shim leads to, else `link` as it is. Only an absolute http(s) link: the card opens it.
