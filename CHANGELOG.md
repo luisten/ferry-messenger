@@ -7,6 +7,14 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-11-17
+
+### Fixed
+
+- A link's preview card showed l.instagram.com or l.facebook.com, Instagram's redirect, instead of the site's address,
+  and opened the link through that redirect. It now shows the site and opens the link itself, in chats you already
+  have too.
+
 ## [1.7] - 2026-11-12
 
 ### Added
@@ -188,7 +196,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 - First public release: your Instagram direct messages, from all your accounts in one inbox, talking to Instagram
   straight from your iPhone.
 
-[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.7...HEAD
+[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.7.1...HEAD
+[1.7.1]: https://github.com/luisten/ferry-messenger/compare/v1.7...v1.7.1
 [1.7]: https://github.com/luisten/ferry-messenger/compare/v1.6.5...v1.7
 [1.6.5]: https://github.com/luisten/ferry-messenger/compare/v1.6.4...v1.6.5
 [1.6.4]: https://github.com/luisten/ferry-messenger/compare/v1.6.3...v1.6.4
