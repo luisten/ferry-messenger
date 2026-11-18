@@ -5,19 +5,21 @@ Instagram library (Go, `core/`). It grew out of Ferry, the same SwiftUI app on a
 Its history starts fresh at 1.0 (2026-10-17); the earlier history (Ferry's, and this app's first steps) is a private
 bundle outside the repo.
 
-**Status:** the app runs on `core/` at parity with Ferry, with no notifications: 1.6's catch-up ones were removed
-when Instagram's web push hardly ever arrived ([docs/PLAN-push.md](docs/PLAN-push.md)) (P0–P7 of
-[docs/PLAN-core.md](docs/PLAN-core.md), each checked live with the two dummies; its "Done" blocks hold the results and
-request counts). Instagram's data becomes the Matrix-shaped rooms the views always showed (decision C2), in the engine
+**Status:** 1.8. The app runs on `core/` at parity with Ferry (P0–P7 of [docs/PLAN-core.md](docs/PLAN-core.md), done;
+its "Done" blocks hold the live results with the two dummies and the request counts), with no notifications: 1.6's
+catch-up ones were removed when Instagram's web push hardly ever arrived ([docs/PLAN-push.md](docs/PLAN-push.md)).
+Instagram's data becomes the Matrix-shaped rooms the views always showed (decision C2), in the engine
 since stage 1 of [docs/PLAN-android.md](docs/PLAN-android.md) (`core/chat`, so an Android app can share it), so
 `Room`, `Timeline` and `Inbox` stay. As built: [specs.md](specs.md). Building, testing, installing, DEBUG switches
 and signed releases: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the README is for users (plain words, no internals),
 and so is [CHANGELOG.md](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)): a user-visible
 change adds a line under Unreleased.
-Feasibility, numbers and push results: [docs/spikes/2026-10-16-on-device.md](docs/spikes/2026-10-16-on-device.md). The
-other docs inherited from Ferry ([docs/PLAN.md](docs/PLAN.md), [docs/FOLLOWUPS.md](docs/FOLLOWUPS.md),
-[docs/DECISIONS.md](docs/DECISIONS.md), [docs/BRIEF.md](docs/BRIEF.md), `docs/research/`) describe the Matrix version;
-their design and UI parts still hold.
+Feasibility, numbers and push results: [docs/spikes/2026-10-16-on-device.md](docs/spikes/2026-10-16-on-device.md).
+[docs/DECISIONS.md](docs/DECISIONS.md) (D1–D19 Ferry's, those superseded marked so; D20 on this app's),
+[docs/FOLLOWUPS.md](docs/FOLLOWUPS.md) (cite its items as "FOLLOWUPS #N") and
+[docs/design/DESIGN.md](docs/design/DESIGN.md) (both apps' design; its `[bridge]` tags are the engine's job now) came
+from Ferry and are kept current. Ferry's server-era plan (`PLAN.md`, milestones M0–M9), bridge spike (S1–S7), design
+reviews and research are at tag v1.8, not on `main`.
 
 ## Commands
 
@@ -81,10 +83,11 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
 **Code**
 
 - **Dependencies:** none in Swift. The one exception is `core/`: `go.mau.fi/mautrix-meta` pinned to an exact tag in
-  `core/go.mod` with `go.sum`, built with Go 1.27.3 (its `toolchain` line). Bump either only on purpose, after
+  `core/go.mod` with `go.sum` (with the modules it brings, and `zerolog`, `go.mau.fi/util` and, for a test,
+  `coder/websocket`, all pinned there too), built with Go 1.27.3 (its `toolchain` line). Bump either only on purpose, after
   reading upstream's changelog; say what changes before pulling it.
-- **`core/` has a second consumer, the Android app** (ferry-messenger-android, PLAN-android stage 3), which pins a
-  commit of it. Its JNI bridge is `core/cmd/igcore/jni_android.c` (E6), one function per export, compiled only for
+- **`core/` has a second consumer, the Android app** (ferry-android, PLAN-android stage 3; its Go module is still named `ferry-messenger-android`), which pins a
+  commit of it. Its JNI bridge is `core/cmd/igcore/jni_android.c` (E6), one function per export but `IGFree`, compiled only for
   Android: change an exported function's signature and it changes too, in the same commit.
 - Zero third-party dependencies; no protocol-for-swappability abstractions; pure logic is `nonisolated` and
   unit-tested with real fixtures (`FerryTests/Fixtures`). App target defaults to `MainActor`, test targets to
@@ -98,13 +101,13 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   `FerryTests/Fixtures/engine_*.json` (`go test ./chat -update`), which `EngineTests` read: review that diff like code.
 - The thread is `Timeline.reduce(room)`, a pure fold over the raw window: never mutate `Room.events` to apply an edit,
   reaction or redaction. `core/chat` emits Instagram's changes as events (`m.reaction`, `m.replace`, redactions) for it
-  to fold; the reducer still absorbs the bridge's old echoes (TimelineTests, real M4 fixtures), harmless here.
+  to fold; the reducer still absorbs the bridge's old echoes (TimelineTests, real fixtures from Ferry's bridge), harmless here.
 - Inbox order is the **last message's** timestamp (`Room.lastActivity`), not the newest event: the engine's state
   events are stamped when made, and edits never bump a chat.
 - **Colors live in `Tokens.swift`.** Small text: `.inkSecondary` (not `.secondary`, 3.4:1), and on an incoming-bubble
   card `.inkSecondaryOnBubble` (inkSecondary is 4.30 on #E9E9EB); status text `.statusOK/.statusWarn/.statusError`
   (not system green/orange/red, 2.2–3.5:1 on white).
-- DEBUG switches live in `DebugFixtures.swift` (docs/DEVELOPMENT.md): fake request rooms and a fake group (`FERRY_DEBUG_GROUP`; `FERRY_DEBUG_GROUP_EXTRA=<n>` more unread in it, `…_INCOMING=<s>` one arriving every s seconds, `…_OLDER=<n>` opening from a five-message mailbox copy with older pages to load), an
+- DEBUG switches live in `DebugFixtures.swift` (docs/DEVELOPMENT.md; `FERRY_DEBUG_CAPTURE` in `AppModel.swift`): fake request rooms and a fake group (`FERRY_DEBUG_GROUP`; `FERRY_DEBUG_GROUP_EXTRA=<n>` more unread in it, `…_INCOMING=<s>` one arriving every s seconds, `…_OLDER=<n>` opening from a five-message mailbox copy with older pages to load), an
   account state override, a real chat shown as a request (the engine treats it as one, `IGCore.setDebug`; its sends
   are held back, "Seen" and typing aren't, so the request rule itself keeps them back), onboarding at a given step over the real accounts, made-up data only (`FERRY_DEBUG_DEMO`: two made-up
   accounts stand in for the Keychain's and never connect, identities in memory only; screenshots and the UI tests),
@@ -117,7 +120,7 @@ so UI fixes cherry-pick between the two repos. Only the display name ("Ferry Mes
   **Fixture rooms (`!debug-…`) never reach Instagram:** the engine refuses a room it didn't make (E4),
   `AppModel.hasThread` skips them (and New Message drafts) and `AppModel.checkSend` refuses them. A new Instagram call
   for a room takes its room ID and goes through `checkSend`; DEBUG's send block is the engine's (`blocked`).
-- **Groups (#24):** sender labels only where `BridgeInfo.roomType == .group`, never on our own (`@me`) messages:
+- **Groups (FOLLOWUPS #24):** sender labels only where `BridgeInfo.roomType == .group`, never on our own (`@me`) messages:
   `Timeline.layout(_:isGroup:)` sets `Row.groupSender` (name on the first of a run, avatar on the last, a tombstone
   neither). Names are `.inkSecondary`, never an account colour. Who a user is: `Room.displayName` = member event name
   (`core/chat` makes one per thread participant) → profile (`AppModel.profiles`, from the threads) → in a DM the room
@@ -259,7 +262,7 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
 
 **Simulator and live checks**
 
-- **Simulator audio is the Mac's default output device.** When that device can't start (M5 and M9: an external
+- **Simulator audio is the Mac's default output device.** When that device can't start (twice in Ferry: an external
   display; `afplay -v 0 x.aiff` → `AudioQueueStart failed (0xe0114101)`), AVFoundation silently drops every item with an
   audio track, video included (log: `RenderPipelineFailedToStart`). Check the host before debugging playback. Muting
   doesn't help; don't change the Mac's sound settings for it.
@@ -288,7 +291,7 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
 - `simctl io screenshot` right after a tap often shows the frame before it; wait 1.5–2 s (sheets animate longer).
   **Screenshot before every coordinate tap that depends on state**, and **take tap coordinates only from a full-size
   simulator screenshot** (points = pixels ÷ 3), never from a scaled or side-by-side image. Both mistakes started (then
-  cancelled) real logins in Ferry: M7a hit "Add Instagram account", M7b hit A3's "Log in again".
+  cancelled) real logins in Ferry: one hit "Add Instagram account", another A3's "Log in again".
 - **Every N1 search is an Instagram request** (`IGSearch`): 300 ms debounce, 2+ characters. A result opens our own
   room when one matches (the engine's `ExistingDM`: receiver + DM channel ID) and only otherwise asks Instagram
   (`IGOpenDM`).
@@ -303,12 +306,12 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
 - **A view's `.task` cancels its request when the lazy list re-creates the view.** Back-pagination from the top
   spinner's `.task(id: prevBatch)` got URLError -999 and never retried (the token didn't change). `AppModel.loadOlder`
   runs in its own `Task`; do the same for any request a lazy row starts.
-- **The thread's bottom pin (#17).** A push (every first open after launch, some reopens) lays the thread's
+- **The thread's bottom pin (FOLLOWUPS #17).** A push (every first open after launch, some reopens) lays the thread's
   `ScrollView` out mid-transition with no insets, settles on the bottom, then **jumps to the top** when the navigation
   bar and composer insets arrive;
   `.defaultScrollAnchor(.bottom)` (and a `ScrollPosition(edge: .bottom)`) don't undo it. `ScrollGeometry.containerSize`
   is the frame *minus* those insets and the offset starts at minus the top inset, so the end is `content − container −
-  top inset` (`ThreadView.ScrollEdge`); M4 took `containerSize` for the whole frame, read 208 pt at the end, and its
+  top inset` (`ThreadView.ScrollEdge`); the first pin took `containerSize` for the whole frame, read 208 pt at the end, and its
   re-pin never ran. `ThreadView` keeps `followsEnd` (decided when the user's own scrolling stops) and re-pins on every
   size change while it holds; a `scrollTo` made in the jump's own update can be dropped, so it's repeated in a `Task`.
   Not the media cards: their frames are fixed before the thumbnail loads. Check it with
@@ -328,7 +331,7 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   ID with a computed anchor (`showOlder`), as a scroll by the content's growth ended 600 pt off (the page's rows are
   estimates). The spinner waits 100 ms and loads only if it's still there, and stays while the last page is held back
 (the start block in its place dropped the rows 150 pt). Check it by hand with
-  `FERRY_DEBUG_GROUP_OLDER` (a UI test can't query after scrolling up, #39): `simctl io recordVideo`, then ffmpeg's
+  `FERRY_DEBUG_GROUP_OLDER` (a UI test can't query after scrolling up, FOLLOWUPS #39): `simctl io recordVideo`, then ffmpeg's
   `mpdecimate`, shows every frame that changes.
 - **A thread shorter than the screen fills it** (`ThreadView`: a `ZStack` over `Color.clear.containerRelativeFrame(.vertical)`),
   its messages bottom-aligned by layout. Left to `.defaultScrollAnchor(.bottom)`'s own alignment of short content, a new
@@ -356,8 +359,8 @@ the engine already had it read that far). A thread read weighs it too (`readUpTo
   opens: SwiftUI's own layout passes in the push's first frame (rows measured, insets arriving), not the bottom pin; it
   stays with the action emptied (FOLLOWUPS #63). Harmless; don't chase it again. **But never trust the action's `old`:**
   it can be a value it never reported as `new`, already the new size (iOS 27.2: the insets' arrival looked like no
-  change, so the "New messages" line was never scrolled to, #64). The pin compares with the last `new` it saw
-  (`pin.edge`). Two more from #64: held on the line, the lazy stack's estimate of the rows below the screen ran ~70 pt
+  change, so the "New messages" line was never scrolled to, FOLLOWUPS #64). The pin compares with the last `new` it saw
+  (`pin.edge`). Two more from FOLLOWUPS #64: held on the line, the lazy stack's estimate of the rows below the screen ran ~70 pt
   high, so whether what's new overflows by little is decided from the rows' measured heights (`pin.heights`); and on
   iOS 27.2 an animated `scrollTo` started within a frame of a plain one could end where it began (`BottomPin.jumping`
   finishes the jump button's).
