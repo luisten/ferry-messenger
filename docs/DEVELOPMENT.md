@@ -161,7 +161,8 @@ and `LaunchMark` @2x/@3x, light and dark. It refuses SVG features it doesn't dra
    It builds the newest release, optimised (Release), in a worktree under `build/update-iphone/`, so your checkout
    stays as it is, and installs it on the phone. It fetches Go 1.27.3 into `~/Library/Caches/ferry-messenger/` (checked
    against its SHA-256) if your `PATH` doesn't have it. With several iPhones paired, pick one with `--device <id>`
-   (`xcrun devicectl list devices`); `--no-install` stops after the build.
+   (`xcrun devicectl list devices`); `--no-install` stops after the build. The phone can be on a cable or on the same
+   Wi-Fi as the Mac (once it's been paired), unlocked; the script checks it can reach it before it builds.
 4. With a free Apple account, the first time: trust the developer in Settings → General → VPN & Device Management.
 5. Log in to your Instagram accounts **on your home Wi-Fi** the first time.
 

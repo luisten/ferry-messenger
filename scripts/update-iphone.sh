@@ -43,6 +43,12 @@ if [ -n "$install" ] && [ -z "$device" ]; then
   [ $# -eq 1 ] || die "several paired iPhones ($found ): pick one with --device <id>."
   device=$1
 fi
+# Reachable now, by cable or on this Mac's network (a real connection, ~2 s): an away or asleep phone stops us here,
+# not after the build.
+if [ -n "$install" ]; then
+  xcrun devicectl device info details --device "$device" --timeout 20 >/dev/null 2>&1 ||
+    die "can't reach your iPhone: connect it by cable or join this Mac's Wi-Fi, unlock it, and run this again."
+fi
 
 # The newest release: a v* tag without "-".
 git -C "$root" fetch -q --tags origin
