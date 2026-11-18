@@ -7,6 +7,7 @@ Instagram behaves): [CLAUDE.md](../CLAUDE.md).
 - [How it fits together](#how-it-fits-together)
 - [Build and test](#build-and-test)
 - [Install on your iPhone](#install-on-your-iphone)
+- [Update to a new version](#update-to-a-new-version)
 - [DEBUG switches](#debug-switches)
 - [Releases](#releases)
 - [CI](#ci)
@@ -79,7 +80,7 @@ t() { xcodebuild -project Ferry.xcodeproj -scheme Ferry -destination id=$SIM \
   -derivedDataPath ~/Library/Developer/Xcode/DerivedData/FerryMessenger \
   -parallel-testing-enabled NO -collect-test-diagnostics never "$@"; }
 
-t test -only-testing:FerryTests           # unit tests (296), on real captured Instagram data
+t test -only-testing:FerryTests           # unit tests (305), on real captured Instagram data
 t test -only-testing:FerryUITests         # UI tests on made-up data (below)
 ```
 
@@ -148,24 +149,53 @@ and `LaunchMark` @2x/@3x, light and dark. It refuses SVG features it doesn't dra
 
 ## Install on your iPhone
 
-1. Build the core (`core/build.sh`) and create `Config/Local.xcconfig` with your team ID and a bundle prefix of yours
-   (above). Don't pick a team in Xcode's Signing & Capabilities: that writes it into `project.pbxproj`.
-2. On the phone, turn on **Developer Mode** (Settings → Privacy & Security), and connect it to the Mac.
-3. Open `Ferry.xcodeproj`, choose your iPhone and press Run.
+1. Create `Config/Local.xcconfig` with your team ID and a bundle prefix of yours (above). Don't pick a team in Xcode's
+   Signing & Capabilities: that writes it into `project.pbxproj`.
+2. On the phone, turn on **Developer Mode** (Settings → Privacy & Security), connect it to the Mac and trust it.
+3. Run:
+
+   ```sh
+   scripts/update-iphone.sh
+   ```
+
+   It builds the newest release, optimised (Release), in a worktree under `build/update-iphone/`, so your checkout
+   stays as it is, and installs it on the phone. It fetches Go 1.27.3 into `~/Library/Caches/ferry-messenger/` (checked
+   against its SHA-256) if your `PATH` doesn't have it. With several iPhones paired, pick one with `--device <id>`
+   (`xcrun devicectl list devices`); `--no-install` stops after the build.
 4. With a free Apple account, the first time: trust the developer in Settings → General → VPN & Device Management.
 5. Log in to your Instagram accounts **on your home Wi-Fi** the first time.
+
+**While developing**, build the core (`core/build.sh`), open `Ferry.xcodeproj`, choose your iPhone and press Run. That
+installs a Debug build: slower, and Accounts says "(Debug)". For a build you'll keep using from Xcode, set Product →
+Scheme → Edit Scheme → Run → Build Configuration to **Release** first, or use the script.
 
 The app needs no special capabilities (no push, no app groups), so a free Apple account can build it:
 
 | | Free (Personal Team) | Paid (Apple Developer Program) |
 |---|---|---|
-| How long it opens | **7 days**, then run it from Xcode again (wireless debugging works too) | 1 year |
+| How long it opens | **7 days**, then run `scripts/update-iphone.sh` again | 1 year |
 | Limits | 3 apps you install yourself per device | None that matter here |
 
+Accounts shows until when your build opens, and on its last 2 days the command that renews it.
+
 **AltStore or SideStore** renew free-account apps every week on their own: install a release's `.ipa` with them
-instead of Xcode. They need your Apple ID, and count toward the 3-app limit. Stick to one way of installing:
-switching between Xcode and AltStore or SideStore changes how the app is signed, and you may have to log in to your
-accounts again.
+instead of Xcode (and add its source: next section). They need your Apple ID, and count toward the 3-app limit. Stick
+to one way of installing: switching between Xcode and AltStore or SideStore changes how the app is signed, and you
+may have to log in to your accounts again.
+
+## Update to a new version
+
+**With AltStore or SideStore:** add Ferry Messenger's source once, and they show each new version. On your iPhone,
+open [altstore://source?url=https://github.com/luisten/ferry-messenger/releases/latest/download/source.json](altstore://source?url=https://github.com/luisten/ferry-messenger/releases/latest/download/source.json)
+or [sidestore://source?url=https://github.com/luisten/ferry-messenger/releases/latest/download/source.json](sidestore://source?url=https://github.com/luisten/ferry-messenger/releases/latest/download/source.json),
+or add `https://github.com/luisten/ferry-messenger/releases/latest/download/source.json` under Sources. Installed
+1.7.1 or earlier from a downloaded `.ipa`? Install Ferry Messenger once more from the source and log in to your
+accounts again (the app's ID changed, so it's a new app to iOS), then delete the old one.
+
+**Built from source:** once a day, as the app opens, it asks GitHub for the newest release's version (one request that
+sends nothing about you or your accounts; turn it off with "Check for new versions" in Accounts). When there's a newer
+one, Accounts says "X.Y is out". Then run `scripts/update-iphone.sh`. Running it also renews a free account's 7 days:
+when the profile Xcode made has under 3 days left, it moves it aside so Xcode makes a fresh one.
 
 ## DEBUG switches
 
@@ -188,6 +218,8 @@ to the launch line above. They live in `Ferry/DebugFixtures.swift` and `Ferry/Ap
 | `FERRY_DEBUG_VOICE_FILE=<host path to an .m4a>` | Holding the mic "records" without the microphone and sends this file (`say -o v.aiff "…"; afconvert -f m4af -d aac v.aiff v.m4a`). The simulator reads host paths |
 | `FERRY_DEBUG_STACK_EXTRA=<STATE>[,…]` | One stand-in account per state ("Extra 1", …) after the real ones, in the inbox's account stack only |
 | `FERRY_DEBUG_PLAYER_FAILS=1` | Every video in the player and every voice note fails to play; they still download |
+| `FERRY_DEBUG_LATEST=<tag>` | Accounts says that release (`v9.9`) is out, as if GitHub had named it; the app doesn't ask GitHub |
+| `FERRY_DEBUG_EXPIRY=<days>` | Accounts' "Opens until" line as if the provisioning profile expired that many days from now (`1.5`: with the renewal command); the simulator has no profile |
 | `FERRY_DEBUG_CAPTURE=<host dir>` | Writes Instagram's answers (as `core/chat` reads them) and every live event to that folder, per account (cookies never), for fixtures. Scrub before committing ([CLAUDE.md](../CLAUDE.md) "Invariants") |
 
 To clear the Requests card's "seen" markers, stop the simulator's cfprefsd first, or it serves the cached value. That
@@ -207,8 +239,13 @@ the release workflow refuses a tag while it's set: empty it in the PR that goes 
 
 A release is a **signed tag** `vX.Y`. When one is pushed, `.github/workflows/release.yml` checks its signature
 against the publisher's key, checks that the app's version (`MARKETING_VERSION`) matches, builds the core and an
-unsigned `.ipa`, and publishes a GitHub release with the `.ipa` and its SHA-256. An unsigned tag, or one signed by
-another key, publishes nothing. AltStore and SideStore sign the `.ipa` with the installer's own Apple account.
+unsigned `.ipa`, and publishes a GitHub release with the `.ipa`, its SHA-256 and `source.json`, the AltStore and
+SideStore source ([Update to a new version](#update-to-a-new-version)). An unsigned tag, or one signed by another key,
+publishes nothing. AltStore and SideStore sign the `.ipa` with the installer's own Apple account. The `.ipa` is
+`com.luisten.ferry-messenger` (`FERRY_BUNDLE_PREFIX`, so the source can name it) and stamped `FERRY_DISTRIBUTION=ipa`,
+so the app leaves updates to AltStore or SideStore. `scripts/make-source.sh <Ferry.app> <ipa> <tag>` makes the source
+from the built app (version, build, minimum iOS, usage descriptions) and the `.ipa` (size, SHA-256); run it on a
+Release build to check it (`python3 -m json.tool`).
 
 **Once**, on the Mac you release from:
 

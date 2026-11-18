@@ -70,7 +70,7 @@ jobs:
 
       # Unsigned: AltStore and SideStore sign it with the installer's own Apple account. The bundle ID is the
       # publisher's, com.luisten.ferry-messenger, so the source below names it (they still change it to fit that
-      # account); FERRY_DISTRIBUTION=ipa tells the app its updates come from that source, not its own check (D21).
+      # account); FERRY_DISTRIBUTION=ipa tells the app its updates come from that source, not its own check (D20, D21).
       - name: Build the .ipa and its AltStore/SideStore source
         run: |
           xcodebuild build -project Ferry.xcodeproj -scheme Ferry -configuration Release -destination generic/platform=iOS \

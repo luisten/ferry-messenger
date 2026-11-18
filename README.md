@@ -32,8 +32,9 @@ server and no account to create: nothing sits between you and Instagram.
 
 - You log in on Instagram's own login page, inside the app. The app never sees or stores your password.
 - Your Instagram session stays in your iPhone's Keychain.
-- The app talks only to Instagram. The one exception: when you send a message that is just a link to a GIF, the app
-  downloads that GIF to send it as a GIF.
+- The app talks only to Instagram, and, unless you turn it off in Accounts, to GitHub once a day to see whether
+  there's a new version, if you built the app yourself. It sends nothing about you or your accounts. One more
+  exception: when you send a message that is just a link to a GIF, the app downloads that GIF to send it as a GIF.
 - No analytics and no tracking.
 
 ## Good to know
@@ -52,11 +53,12 @@ Ferry Messenger is not affiliated with Instagram or Meta.
 
 Ferry Messenger isn't on the App Store, so you install it yourself:
 
-- **With AltStore or SideStore:** download `FerryMessenger.ipa` from the
-  [latest release](https://github.com/luisten/ferry-messenger/releases/latest) and open it in AltStore or SideStore.
-  They install it with your free Apple account and renew it every week.
+- **With AltStore or SideStore:** add Ferry Messenger's source, as the
+  [latest release](https://github.com/luisten/ferry-messenger/releases/latest) explains, and install it from there.
+  They install it with your free Apple account, renew it every week and show you each new version.
 - **From the source code, with a Mac and Xcode:** follow
-  [Install on your iPhone](docs/DEVELOPMENT.md#install-on-your-iphone).
+  [Install on your iPhone](docs/DEVELOPMENT.md#install-on-your-iphone). One command installs each new version, and
+  Accounts tells you when there is one.
 
 With a free Apple account, an app you install yourself stops opening after 7 days until it's renewed (AltStore and
 SideStore do that for you). With a paid Apple Developer account it lasts a year.
