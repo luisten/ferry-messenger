@@ -902,15 +902,13 @@ private struct Composer: View {
                 if let photoItems {
                     // DESIGN §6.9 attachment button: photos and videos (no GIF), several at once, in the order
                     // they're picked; with a camera, a menu that also takes one (the user's call, 2026-11-11).
-                    let plus = Image(systemName: "plus").font(.title3.weight(.medium)).foregroundStyle(Color.primary)
-                        .frame(width: 44, height: 44).contentShape(.circle)
                     let count = max(ThreadView.maxAttachments - attachments.count, 1)
                     Group {
                         if let capture, CameraPicker.isAvailable {
                             Menu {
                                 Button("Take Photo or Video", systemImage: "camera") { showingCamera = true }
                                 Button("Choose from Library", systemImage: "photo.on.rectangle") { showingLibrary = true }
-                            } label: { plus }
+                            } label: { PlusIcon() }
                             .photosPicker(isPresented: $showingLibrary, selection: photoItems, maxSelectionCount: count,
                                           selectionBehavior: .ordered, matching: .any(of: [.images, .videos]), preferredItemEncoding: .current)
                             .fullScreenCover(isPresented: $showingCamera) {
@@ -922,7 +920,7 @@ private struct Composer: View {
                             }
                         } else {
                             PhotosPicker(selection: photoItems, maxSelectionCount: count, selectionBehavior: .ordered,
-                                         matching: .any(of: [.images, .videos]), preferredItemEncoding: .current) { plus }
+                                         matching: .any(of: [.images, .videos]), preferredItemEncoding: .current) { PlusIcon() }
                         }
                     }
                     .buttonStyle(.plain)
@@ -1136,6 +1134,15 @@ private struct Composer: View {
 
 /// Replaces the composer in request rooms. Opening the room sends nothing (no receipts or typing reach a requester,
 /// PLAN §2.8); only these buttons, or a reply, send an event.
+/// The composer's + button face. Its own view, not a captured local: PhotosPicker's label is a `@Sendable` closure,
+/// and a captured `some View` isn't Sendable.
+private struct PlusIcon: View {
+    var body: some View {
+        Image(systemName: "plus").font(.title3.weight(.medium)).foregroundStyle(Color.primary)
+            .frame(width: 44, height: 44).contentShape(.circle)
+    }
+}
+
 private struct RequestBar: View {
     let room: Room
     let identity: AccountIdentity?
