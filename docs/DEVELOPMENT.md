@@ -176,7 +176,7 @@ The app needs no special capabilities (no push, no app groups), so a free Apple 
 | How long it opens | **7 days**, then run `scripts/update-iphone.sh` again | 1 year |
 | Limits | 3 apps you install yourself per device | None that matter here |
 
-Accounts shows until when your build opens, and on its last 2 days the command that renews it.
+With a free account, Accounts shows until when your build opens, and on its last 2 days the command that renews it.
 
 **AltStore or SideStore** renew free-account apps every week on their own: install a release's `.ipa` with them
 instead of Xcode (and add its source: next section). They need your Apple ID, and count toward the 3-app limit. Stick

@@ -55,5 +55,8 @@ final class AppUpdateTests: XCTestCase {
         XCTAssertEqual(AppUpdate.expiry(ofProfile: blob), try Date("2026-11-25T09:00:00Z", strategy: .iso8601))
         XCTAssertNil(AppUpdate.expiry(ofProfile: Data(plist.prefix(200).utf8)))  // cut short
         XCTAssertNil(AppUpdate.expiry(ofProfile: Data([0x30, 0x80, 0x06])))
+        // A paid account's profile lasts a year: nothing to show.
+        let paid = plist.replacingOccurrences(of: "2026-11-25T09:00:00Z", with: "2027-11-18T09:00:00Z")
+        XCTAssertNil(AppUpdate.expiry(ofProfile: Data(paid.utf8)))
     }
 }

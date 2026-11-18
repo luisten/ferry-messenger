@@ -70,8 +70,9 @@ nonisolated enum AppUpdate {
         return parts.isEmpty || parts.contains(nil) ? nil : parts.compactMap(\.self)
     }
 
-    /// When this build stops opening: the `ExpirationDate` of the profile Xcode embedded (a plist inside a CMS-signed
-    /// blob). The simulator's builds have none.
+    /// When this build stops opening, for a free Apple account only: the `ExpirationDate` of the profile Xcode embedded
+    /// (a plist inside a CMS-signed blob), when it lasts a week from its `CreationDate`. A paid account's lasts a year:
+    /// nil, nothing to show. The simulator's builds have none.
     static let expiry: Date? = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision")
         .flatMap { try? Data(contentsOf: $0) }.flatMap(expiry(ofProfile:))
 
@@ -80,6 +81,9 @@ nonisolated enum AppUpdate {
               let end = blob.range(of: Data("</plist>".utf8), in: start.lowerBound..<blob.endIndex),
               let plist = try? PropertyListSerialization.propertyList(from: blob[start.lowerBound..<end.upperBound], format: nil)
         else { return nil }
-        return (plist as? [String: Any])?["ExpirationDate"] as? Date
+        guard let dict = plist as? [String: Any], let created = dict["CreationDate"] as? Date,
+              let expires = dict["ExpirationDate"] as? Date, expires.timeIntervalSince(created) <= 8 * 24 * 3600
+        else { return nil }
+        return expires
     }
 }
