@@ -258,7 +258,12 @@ Instagram to see it."
   General" for a business or creator account, status glyph + label (Connected,
   Connecting…, Syncing history…, Reconnecting…, Signed out, Can't connect) and an inline "Log in" when signed out.
   Touch-and-hold drag reorders the scope bar. "Add Instagram account" (O3, then the new account's A2). Footer: "Ferry
-  Messenger 1.0" (the version). No sign-out: each account has Remove.
+  Messenger 1.0" (the version; "(Debug)" after it in a DEBUG build). A build from source (no `FerryDistribution`
+  stamp) also has a "Check for new versions" switch (on unless turned off): once a day as the app becomes active it
+  reads the newest release's tag from GitHub's `releases/latest` redirect (D22), and the footer adds "· 1.8 is out",
+  linking to docs/DEVELOPMENT.md's "Update to a new version". Under it, "Opens until <date>" from the embedded
+  provisioning profile when it lasts a week (a free Apple account's; none for a paid one's year or on the simulator), with "run scripts/update-iphone.sh to renew it" on its last 2 days. No
+  sign-out: each account has Remove.
 - **A2:** a compact header row (avatar, @handle, status), the O5 identity editor (saved as you go when valid; its
   suggestion chips scroll edge to edge inside their card; mark suggestions are letters of the name, then ✦ ⛵️ 🌊), status (state, since when, Instagram's reason,
   "Log in again" when signed out), an E2EE note, and Remove Account (confirmation: the account's chats and session

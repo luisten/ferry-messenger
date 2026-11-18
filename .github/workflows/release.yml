@@ -1,4 +1,5 @@
-# Release: a signed tag vX.Y becomes a GitHub release with an unsigned .ipa (docs/DEVELOPMENT.md, "Releases").
+# Release: a signed tag vX.Y becomes a GitHub release with an unsigned .ipa and its AltStore/SideStore source
+# (docs/DEVELOPMENT.md, "Releases").
 # Nothing is published unless the tag is annotated, signed by a key in the RELEASE_SIGNERS repository variable (a
 # variable, so a push can't change who's trusted) and matches the app's MARKETING_VERSION. Never talks to Instagram.
 # Actions are pinned by commit SHA; Go by version and SHA-256, as in ci.yml.
@@ -67,24 +68,32 @@ jobs:
           tar -xzf "$RUNNER_TEMP/go-dl/go.tar.gz" -C "$RUNNER_TEMP"
           PATH="$RUNNER_TEMP/go/bin:$PATH" core/build.sh
 
-      # Unsigned: AltStore and SideStore sign it with the installer's own Apple account. Without Config/Local.xcconfig
-      # the bundle ID is com.example.ferry-messenger; they change it to fit that account.
-      - name: Build the .ipa
+      # Unsigned: AltStore and SideStore sign it with the installer's own Apple account. The bundle ID is the
+      # publisher's, com.luisten.ferry-messenger, so the source below names it (they still change it to fit that
+      # account); FERRY_DISTRIBUTION=ipa tells the app its updates come from that source, not its own check (D20, D21).
+      - name: Build the .ipa and its AltStore/SideStore source
         run: |
           xcodebuild build -project Ferry.xcodeproj -scheme Ferry -configuration Release -destination generic/platform=iOS \
-            -derivedDataPath "$RUNNER_TEMP/DerivedData" CODE_SIGNING_ALLOWED=NO
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" CODE_SIGNING_ALLOWED=NO \
+            FERRY_BUNDLE_PREFIX=com.luisten FERRY_DISTRIBUTION=ipa
+          app=$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/Ferry.app
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
-          cp -R "$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/Ferry.app" "$RUNNER_TEMP/ipa/Payload/"
+          cp -R "$app" "$RUNNER_TEMP/ipa/Payload/"
           (cd "$RUNNER_TEMP/ipa" && zip -qry FerryMessenger.ipa Payload && shasum -a 256 FerryMessenger.ipa >FerryMessenger.ipa.sha256)
           cat "$RUNNER_TEMP/ipa/FerryMessenger.ipa.sha256"
+          scripts/make-source.sh "$app" "$RUNNER_TEMP/ipa/FerryMessenger.ipa" "$TAG" >"$RUNNER_TEMP/ipa/source.json"
+          cat "$RUNNER_TEMP/ipa/source.json"
 
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cd "$RUNNER_TEMP/ipa"
+          source="https://github.com/$GITHUB_REPOSITORY/releases/latest/download/source.json"
           {
             echo "Install \`FerryMessenger.ipa\` with AltStore or SideStore, or build from source: [docs/DEVELOPMENT.md](https://github.com/$GITHUB_REPOSITORY/blob/$TAG/docs/DEVELOPMENT.md#install-on-your-iphone)."
+            echo
+            echo "Add Ferry Messenger's source once, and AltStore or SideStore show each new version: [altstore://source?url=$source](altstore://source?url=$source) or [sidestore://source?url=$source](sidestore://source?url=$source) (on your iPhone), or add \`$source\` by hand."
             echo
             echo "Built from the signed tag $TAG by [this run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID). SHA-256:"
             echo
@@ -92,5 +101,5 @@ jobs:
             cat FerryMessenger.ipa.sha256
             echo "\`\`\`"
           } >notes.md
-          gh release create "$TAG" FerryMessenger.ipa FerryMessenger.ipa.sha256 --repo "$GITHUB_REPOSITORY" --verify-tag \
+          gh release create "$TAG" FerryMessenger.ipa FerryMessenger.ipa.sha256 source.json --repo "$GITHUB_REPOSITORY" --verify-tag \
             --title "Ferry Messenger $TAG" --notes-file notes.md

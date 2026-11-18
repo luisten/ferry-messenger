@@ -9,4 +9,8 @@ DEVELOPMENT_TEAM =
 // stays numbers only, as iOS requires. CI refuses it on main: empty it before merging.
 FERRY_PRERELEASE =
 
+// How the app was installed: the release workflow builds its .ipa with `ipa`, whose updates come through AltStore or
+// SideStore. Empty: built from source, so Accounts checks for new versions and shows when the build stops opening.
+FERRY_DISTRIBUTION =
+
 #include? "Local.xcconfig"

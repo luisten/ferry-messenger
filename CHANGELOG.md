@@ -7,6 +7,17 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+## [1.8] - 2026-11-18
+
+### Added
+
+- AltStore and SideStore can show you each new version: add Ferry Messenger's source once, as the release notes
+  explain. If you installed 1.7.1 or earlier from a downloaded file, install it once more from the source and log in
+  to your accounts again (iOS sees it as a new app), then delete the old one.
+- If you built the app yourself, Accounts tells you when a new version is out (the app asks GitHub once a day; turn
+  it off with "Check for new versions"), and until when your build opens. One command,
+  `scripts/update-iphone.sh`, installs the new version and renews the 7 days of a free Apple account.
+
 ## [1.7.1] - 2026-11-17
 
 ### Fixed
@@ -196,7 +207,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 - First public release: your Instagram direct messages, from all your accounts in one inbox, talking to Instagram
   straight from your iPhone.
 
-[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.7.1...HEAD
+[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.8...HEAD
+[1.8]: https://github.com/luisten/ferry-messenger/compare/v1.7.1...v1.8
 [1.7.1]: https://github.com/luisten/ferry-messenger/compare/v1.7...v1.7.1
 [1.7]: https://github.com/luisten/ferry-messenger/compare/v1.6.5...v1.7
 [1.6.5]: https://github.com/luisten/ferry-messenger/compare/v1.6.4...v1.6.5

@@ -8,6 +8,8 @@ struct AccountsView: View {
     @State private var connecting = false
     @State private var detail: String?
     @State private var relogin: ReloginTarget?
+    @AppStorage(AppUpdate.enabledKey) private var checksForUpdates = true
+    @AppStorage(AppUpdate.latestKey) private var latestRelease = ""
 
     var body: some View {
         List {
@@ -27,8 +29,15 @@ struct AccountsView: View {
                 Text(model.accounts.count > 1 ? "Each chat stays tied to the account it belongs to. Touch and hold an account, then drag to reorder the scope bar."
                      : "Each chat stays tied to the account it belongs to.")
             }
-            Section {} footer: {
-                Text(Self.appVersion ?? "").accessibilityIdentifier("accounts.footer")
+            Section {
+                if AppUpdate.fromSource {
+                    Toggle("Check for new versions", isOn: $checksForUpdates)
+                }
+            } footer: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(versionLine).accessibilityIdentifier("accounts.footer")
+                    if let expiryLine { Text(expiryLine) }
+                }
             }
         }
         .navigationTitle("Accounts")
@@ -43,10 +52,41 @@ struct AccountsView: View {
     }
 
     /// "Ferry Messenger 1.0" (DESIGN A1 footer; no server any more), "Ferry Messenger 1.7-RC1" for a release candidate
-    /// (`FERRY_PRERELEASE`, Config/Base.xcconfig).
-    private static let appVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String).map { version in
-        let candidate = Bundle.main.object(forInfoDictionaryKey: "FerryPrerelease") as? String ?? ""
-        return "Ferry Messenger \(version)\(candidate.isEmpty ? "" : "-\(candidate)")"
+    /// (`FERRY_PRERELEASE`, Config/Base.xcconfig), "(Debug)" after it in a DEBUG build.
+    private static let appVersion: String = {
+        let candidate = AppUpdate.prerelease.isEmpty ? "" : "-\(AppUpdate.prerelease)"
+        #if DEBUG
+        return "Ferry Messenger \(AppUpdate.version)\(candidate) (Debug)"
+        #else
+        return "Ferry Messenger \(AppUpdate.version)\(candidate)"
+        #endif
+    }()
+
+    /// The version, then "· 1.8 is out" (a link to how to update) when a build from source has seen a newer release.
+    private var versionLine: AttributedString {
+        var latest = checksForUpdates ? latestRelease : ""
+        #if DEBUG
+        latest = DebugFixtures.latestRelease ?? (DebugFixtures.demo ? "" : latest)  // the screenshots show no release
+        #endif
+        guard AppUpdate.fromSource, AppUpdate.isNewer(latest, than: AppUpdate.version, prerelease: AppUpdate.prerelease)
+        else { return AttributedString(Self.appVersion) }
+        var link = AttributedString("\(latest.drop { $0 == "v" }) is out")
+        link.link = AppUpdate.howToUpdate
+        return AttributedString("\(Self.appVersion) · ") + link
+    }
+
+    /// "Opens until 25 Nov 2026" for a build from source with a provisioning profile, and on its last 2 days, when
+    /// the hour matters, the one command that renews it.
+    private var expiryLine: String? {
+        var expiry = AppUpdate.expiry
+        #if DEBUG
+        expiry = DebugFixtures.expiry ?? expiry
+        #endif
+        guard AppUpdate.fromSource, let expiry else { return nil }
+        guard expiry.timeIntervalSinceNow < 2 * 24 * 3600 else {
+            return "Opens until \(expiry.formatted(date: .abbreviated, time: .omitted))"
+        }
+        return "Opens until \(expiry.formatted(date: .abbreviated, time: .shortened)) · run scripts/update-iphone.sh to renew it"
     }
 }
 
