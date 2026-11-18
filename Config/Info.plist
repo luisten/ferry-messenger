@@ -6,11 +6,6 @@
 	<string>$(FERRY_DISTRIBUTION)</string>
 	<key>FerryPrerelease</key>
 	<string>$(FERRY_PRERELEASE)</string>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-	</dict>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
