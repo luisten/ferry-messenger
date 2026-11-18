@@ -9,7 +9,7 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 work=$root/build/update-iphone
 src=$work/src
 cache=$HOME/Library/Caches/ferry-messenger
-device= install=1
+device='' install=1
 while [ $# -gt 0 ]; do
   case $1 in
     --device) device=${2:?--device needs an identifier}; shift 2 ;;
@@ -65,7 +65,7 @@ if [ "$(GOTOOLCHAIN=local go env GOVERSION 2>/dev/null || true)" != "$want" ]; t
       die "release.yml's GO_VERSION isn't core/build.sh's $want."
     sum=$(sed -n 's/^ *GO_SHA256: \([0-9a-f]*\).*/\1/p' "$src/.github/workflows/release.yml")
     echo "Downloading $want"
-    rm -rf "$cache/$want" && mkdir -p "$cache/$want"
+    rm -rf "${cache:?}/${want:?}" && mkdir -p "$cache/$want"
     curl -fsSLo "$cache/$want/go.tar.gz" "https://go.dev/dl/$want.darwin-arm64.tar.gz"
     printf '%s  %s\n' "$sum" "$cache/$want/go.tar.gz" | shasum -a 256 -c - >/dev/null || die "$want's checksum doesn't match."
     tar -xzf "$cache/$want/go.tar.gz" -C "$cache/$want" && rm "$cache/$want/go.tar.gz"
