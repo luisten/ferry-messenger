@@ -1,8 +1,8 @@
 import XCTest
 @testable import Ferry
 
-/// #16: what `ThreadView` pays per body evaluation, `Timeline.reduce` plus `layout`, over a long window: the real
-/// backfill page (state, an unresolved reel and its resolve edit), then the real M4/M5 events (messages, media, edits,
+/// FOLLOWUPS #16: what `ThreadView` pays per body evaluation, `Timeline.reduce` plus `layout`, over a long window: the real
+/// backfill page (state, an unresolved reel and its resolve edit), then the other real events (messages, media, edits,
 /// reactions, redactions, send statuses) copied with fresh event IDs, about 500 events in all. Debug build, so an upper
 /// bound for the app.
 final class TimelineCostTests: XCTestCase {
@@ -22,7 +22,7 @@ final class TimelineCostTests: XCTestCase {
         }
     }
 
-    /// Well under a frame (16 ms at 60 Hz), so memoizing isn't needed (#16, 2026-10-14: about 2 ms).
+    /// Well under a frame (16 ms at 60 Hz), so memoizing isn't needed (FOLLOWUPS #16, 2026-10-14: about 2 ms).
     func testReduceAndLayoutOf500EventsFitsInAFrame() throws {
         let events = try Self.window(copies: 13)
         XCTAssertEqual(events.count, 495)

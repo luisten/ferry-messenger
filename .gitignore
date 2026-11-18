@@ -12,9 +12,8 @@ xcuserdata/
 # macOS
 .DS_Store
 
-# Simulator screenshots can show real IG accounts/messages; keep them local (the design diff is the one tracked file)
+# Simulator screenshots can show real IG accounts/messages; keep them local
 docs/verification/*
-!docs/verification/m7-design-diff.md
 .claude/
 dist/
 

@@ -10,7 +10,7 @@ final class RoomTests: XCTestCase {
         XCTAssertEqual(info.channelID, Fixture.tamoLogin)
         XCTAssertEqual(info.roomType, .dm)
         XCTAssertTrue(info.isDM)
-        XCTAssertFalse(info.isRequest)  // S6: the key is absent, not false
+        XCTAssertFalse(info.isRequest)  // the bridge leaves the key out, it isn't false
         XCTAssertEqual(info.displayName, "Tamo Veska")
         XCTAssertEqual(info.avatarURL, "mxc://igm.home.arpa/onvkSvgXgcbowUuvGnImEyPS")
     }
@@ -22,14 +22,14 @@ final class RoomTests: XCTestCase {
         XCTAssertFalse(info.isDM)
     }
 
-    /// Hand-made from the real DM shape: no request room exists on these accounts (S6, D11).
+    /// Hand-made from the real DM shape: no request room exists on these accounts (D11).
     func testRequestFlag() throws {
         let dm = try Fixture.event("state_bridge_dm").content
         XCTAssertTrue(try XCTUnwrap(BridgeInfo(content: dm.setting(["channel", "com.beeper.message_request"], .bool(true)))).isRequest)
         XCTAssertFalse(try XCTUnwrap(BridgeInfo(content: dm.setting(["channel", "com.beeper.message_request"], .bool(false)))).isRequest)
     }
 
-    /// Hand-made from the real DM shape: no group exists on these accounts. S7.6: IG groups have room type "",
+    /// Hand-made from the real DM shape: no group exists on these accounts. IG groups have room type "",
     /// so both room_type keys are absent, which must read as a group, not as an error.
     func testMissingRoomTypeIsGroup() throws {
         let group = try Fixture.event("state_bridge_dm").content
@@ -39,7 +39,7 @@ final class RoomTests: XCTestCase {
         XCTAssertFalse(info.isDM)
     }
 
-    /// S7: the bridge reports its Beeper type "instagramgo"; anything else is not ours.
+    /// The bridge reports its Beeper type "instagramgo"; anything else is not ours.
     func testOtherProtocolIsNotInstagram() throws {
         let dm = try Fixture.event("state_bridge_dm").content
         XCTAssertNil(BridgeInfo(content: dm.setting(["protocol", "id"], .string("instagram"))))
@@ -62,7 +62,7 @@ final class RoomTests: XCTestCase {
         XCTAssertEqual(room.memberName("@instagram_17841400000000302:igm.home.arpa"), "Kivo Studio")
     }
 
-    /// M8 Hand-off C (2026-10-14): the real m.bridge the patched bridge sent after kivostudio moved the thread
+    /// Hand-off C (2026-10-14): the real m.bridge the patched bridge sent after kivostudio moved the thread
     /// General -> Primary carries the folder key; flipping it to GENERAL must put the room in General.
     func testRealBridgeAfterMoveCarriesFolder() throws {
         let content = try Fixture.event("state_bridge_dm_after_move").content
@@ -117,7 +117,7 @@ final class RoomTests: XCTestCase {
         XCTAssertEqual(room.prevBatch, "s18_1_0_8_16_1_1_11_0_1_2_1_1_1")
     }
 
-    /// PLAN §2.4: no gap tracking. A limited batch replaces the window and its prev_batch becomes ours.
+    /// No gap tracking. A limited batch replaces the window and its prev_batch becomes ours.
     func testLimitedBatchResetsWindow() throws {
         let room = try Self.room(Fixture.tamoRoom)
         room.apply(JoinedRoom(timeline: .init(events: [Event.message("$new", ts: 1_800_000_000_000)], limited: true, prevBatch: "gap")))

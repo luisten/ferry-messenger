@@ -131,7 +131,7 @@ nonisolated struct AccountIdentity: Codable, Equatable, Sendable {
     }
 
     /// Mark chips (DESIGN O5): the first distinct letters of the name, then a few emoji, minus marks already taken. No
-    /// camera: next to "Instagram" it was the one Instagram-like glyph in the app (review 2026-10-15 #12).
+    /// camera: next to "Instagram" it was the one Instagram-like glyph in the app.
     static func markSuggestions(name: String, taken: Set<String>) -> [String] {
         var letters: [String] = []
         for letter in name.uppercased().filter(\.isLetter).map(String.init) where !letters.contains(letter) && !taken.contains(letter) {

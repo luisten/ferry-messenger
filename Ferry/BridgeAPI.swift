@@ -1,6 +1,6 @@
 import Foundation
 
-/// The shapes the bridge's provisioning API used (research/matrix-bridge.md §5), kept as the app's account and contact
+/// The shapes the bridge's provisioning API used, kept as the app's account and contact
 /// types: `IGAdapter.login` builds `Login` from Instagram's viewer, so `Health`, the stack, banners and A1–A3 stay.
 enum BridgeAPI {
 
@@ -31,7 +31,7 @@ enum BridgeAPI {
             enum CodingKeys: String, CodingKey { case stateEvent = "state_event", message, timestamp, info }
 
             struct Info: Decodable, Sendable {
-                /// Business or creator account, from our bridge patch (M8); absent on bridge v26.09.
+                /// Business or creator account, from our bridge patch; absent on bridge v26.09.
                 var isProfessionalAccount: Bool?
 
                 enum CodingKeys: String, CodingKey { case isProfessionalAccount = "is_professional_account" }
@@ -41,10 +41,10 @@ enum BridgeAPI {
         /// Professional accounts have Instagram's Primary/General tabs, so the inbox shows the General tile for them.
         var isProfessional: Bool { state?.info?.isProfessionalAccount == true }
 
-        /// whoami `state_event` → what the UI shows (PLAN §2.10, DESIGN §7.1).
+        /// whoami `state_event` → what the UI shows (DESIGN §7.1).
         enum Health: Equatable, Sendable {
             case connected
-            /// CONNECTING, no state yet, or a TRANSIENT_DISCONNECT under 2 minutes (most last under a second, S7.10).
+            /// CONNECTING, no state yet, or a TRANSIENT_DISCONNECT under 2 minutes (most last under a second).
             case connecting
             /// BACKFILLING
             case syncing
@@ -62,7 +62,7 @@ enum BridgeAPI {
                 }
             }
 
-            /// Worth an inbox banner (PLAN §2.10).
+            /// Worth an inbox banner.
             var raisesBanner: Bool { needsUser || self == .reconnecting }
 
             var isBusy: Bool { self == .connecting || self == .syncing || self == .reconnecting }
@@ -108,7 +108,7 @@ enum BridgeAPI {
         /// `["instagram:<handle>"]`.
         var identifiers: [String]?
         var mxid: String?
-        /// The DM's room once the bridge has one. Search leaves it out even for an existing DM (M7b live sample), so
+        /// The DM's room once the bridge has one. Search leaves it out even for an existing DM (seen live), so
         /// the app looks for its own room first (`Inbox.existingDM`).
         var dmRoomID: String?
 

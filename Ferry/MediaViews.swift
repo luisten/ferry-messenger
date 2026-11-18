@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Media cards (DESIGN §6.3–6.8; PLAN §2.7: only thumbnails load by themselves, full media on tap)
+// MARK: - Media cards (DESIGN §6.3–6.8; only thumbnails load by themselves, full media on tap)
 
 /// Picks the card for a media kind. Every failure keeps an "Open in Instagram" way out when there is a link.
 struct MediaCard: View {
@@ -499,7 +499,7 @@ struct LinkBubble: View {
     }
 }
 
-/// DESIGN §6.8 with the §14 fallback (static bars from the event ID; the bridge sends no waveform, M5): play/pause,
+/// DESIGN §6.8 with the §14 fallback (static bars from the event ID; the bridge sends no waveform): play/pause,
 /// drag across the bars to seek, 1×/1.5×/2× once started, duration then elapsed.
 private struct VoiceBubble: View {
     @Environment(AppModel.self) private var model
@@ -518,7 +518,7 @@ private struct VoiceBubble: View {
         let uploading = message.txnID.flatMap { model.uploads[$0] }
         let total = current && voice.duration > 0 ? voice.duration : Double(info.duration ?? 0) / 1000
         let shown = current && (voice.isPlaying || voice.elapsed > 0) ? voice.elapsed : total
-        // "Can't play": the circle offers the retry a tap already does (review 2026-10-15 #11).
+        // "Can't play": the circle offers the retry a tap already does.
         let failed = voice.failed == message.id
         HStack(spacing: 10) {
             Button {

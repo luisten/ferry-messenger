@@ -24,7 +24,7 @@ nonisolated struct CookieStep: Equatable, Sendable {
         waitForURLPattern: #"^https://www\.instagram\.com/(?:direct/(?:inbox/|t/[0-9]+/)?)?(?:\?.*)?$"#)
 }
 
-/// Decides when the instagram.com web view has produced a usable session (PLAN §2.9).
+/// Decides when the instagram.com web view has produced a usable session.
 nonisolated enum CookieGate {
     enum Result: Equatable, Sendable {
         /// Required cookies still missing (field ids, in the step's order).

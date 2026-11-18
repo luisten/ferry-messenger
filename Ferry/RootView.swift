@@ -56,7 +56,7 @@ struct RootView: View {
     }
 }
 
-/// The connection banner under the scope bar (PLAN §2.10, DESIGN §7.2/§7.3). Account banners have "Later", which
+/// The connection banner under the scope bar (DESIGN §7.2/§7.3). Account banners have "Later", which
 /// hides them until the next launch.
 struct ConnectionBanner: View {
     @Environment(AppModel.self) private var model
@@ -66,7 +66,7 @@ struct ConnectionBanner: View {
 
     var body: some View {
         // Title and body get the full width, the buttons a row under them: beside them the title wrapped after the
-        // account's name (review 2026-10-15 #10).
+        // account's name.
         HStack(alignment: .top, spacing: 12) {
             leading
             VStack(alignment: .leading, spacing: 1) {

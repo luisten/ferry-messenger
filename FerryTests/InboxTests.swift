@@ -72,9 +72,9 @@ final class InboxTests: XCTestCase {
         XCTAssertEqual(Inbox.folder(of: room), .requests)
     }
 
-    // MARK: Primary/General (M8: patched bridge, D12)
+    // MARK: Primary/General (patched bridge, D12)
 
-    /// The patched bridge turns each real `SlideUQPPIGMoveThread` (spike S5) into `fi.mau.instagram.inbox_folder` on
+    /// The patched bridge turns each real `SlideUQPPIGMoveThread` into `fi.mau.instagram.inbox_folder` on
     /// the room's `m.bridge` channel, and the chat follows it out of the main list and back.
     func testRealMoveDeltasMoveTheChatToGeneralAndBack() throws {
         let deltas = try Fixture.jsonArray("deltas_s5_ig_move_thread")
@@ -162,7 +162,7 @@ final class InboxTests: XCTestCase {
         XCTAssertEqual(Inbox.search([general], query: "ana", scope: .all, logins: bothLogins).map(\.id), ["!g"])
     }
 
-    // MARK: Archive (M7: the u.archived tag the app writes)
+    // MARK: Archive (the u.archived tag the app writes)
 
     func testArchiveTagRecordsWhenAndArchivesTheChat() throws {
         let room = try Self.portal("!a", receiver: Fixture.kivoLogin, ts: 1_000_000)
@@ -254,9 +254,9 @@ final class InboxTests: XCTestCase {
         XCTAssertEqual(Inbox.unreadChats(rooms, scope: .account(Fixture.kivoLogin), logins: bothLogins), 1)
     }
 
-    /// The tile shows how many requests are waiting in scope (PLAN M3 exit; mockups I1).
+    /// The tile shows how many requests are waiting in scope (mockups I1).
     func testRequestCountPerScope() throws {
-        XCTAssertEqual(Inbox.requestCount(try Self.realRooms(), scope: .all, logins: bothLogins), 0)  // S6: none live
+        XCTAssertEqual(Inbox.requestCount(try Self.realRooms(), scope: .all, logins: bothLogins), 0)  // none live
         let rooms = [
             try Self.portal("!a", receiver: Fixture.tamoLogin, request: true),
             try Self.portal("!b", receiver: Fixture.kivoLogin, request: true, unread: 1),
@@ -334,7 +334,7 @@ final class InboxTests: XCTestCase {
     }
 
     /// Badge = new requests in scope + unread General chats in scope; 0 (hidden) on a quiet day like the real sync.
-    /// The General chat is moved there by the real S5 delta and back by the real `m.bridge` after the move.
+    /// The General chat is moved there by the real move delta and back by the real `m.bridge` after the move.
     func testBadgeCountsNewRequestsAndUnreadGeneralChats() throws {
         let accounts = try XCTUnwrap(Fixture.whoami("provisioning_whoami_m8").logins)
         XCTAssertEqual(Inbox.foldersMenu(try Self.realRooms(), scope: .all, accounts: accounts, logins: bothLogins, seen: [:]).badge, 0)
@@ -412,7 +412,7 @@ final class InboxTests: XCTestCase {
                        "3 message requests, from Kestrel Bikes, Lena Ortiz and crypto.wins.daily. Opens Requests.")
     }
 
-    // MARK: Request privacy rule (PLAN §2.8)
+    // MARK: Request privacy rule
 
     func testReceiptsAndTypingNeverAllowedInRequests() throws {
         XCTAssertFalse(Inbox.allowsReceipts(try Self.portal("!req", receiver: Fixture.tamoLogin, request: true)))
@@ -513,7 +513,7 @@ final class InboxTests: XCTestCase {
         XCTAssertEqual(Timeline.reduce(room, me: Fixture.me).last?.id, "$1")
     }
 
-    /// M3 had its own media wording and showed reply fallbacks ("> <@…> …") verbatim; it now shares the thread's
+    /// The preview once had its own media wording and showed reply fallbacks ("> <@…> …") verbatim; it now shares the thread's
     /// classifier and body.
     func testReplyPreviewStripsTheFallback() throws {
         let room = try Self.portal("!p", receiver: Fixture.tamoLogin)
@@ -567,7 +567,7 @@ final class InboxTests: XCTestCase {
         XCTAssertEqual(Inbox.banner(syncFailures: 0, accounts: [Self.login("UNKNOWN_ERROR", id: "3")]), .account("3"))
     }
 
-    /// PLAN §2.10: a TRANSIENT_DISCONNECT is a quiet spinner, and a banner only once it has lasted over 2 minutes.
+    /// A TRANSIENT_DISCONNECT is a quiet spinner, and a banner only once it has lasted over 2 minutes.
     func testTransientDisconnectRaisesABannerAfterTwoMinutes() {
         let now = Date(timeIntervalSince1970: 1_791_900_000)
         var login = Self.login("TRANSIENT_DISCONNECT", id: "7")
@@ -594,7 +594,7 @@ final class InboxTests: XCTestCase {
     }
 
     /// A portal derived from the real DM `m.bridge` event. Request and group variants are hand-made because these
-    /// accounts have neither (S6, S7.6).
+    /// accounts have neither.
     static func portal(_ id: String, receiver: String, request: Bool = false, group: Bool = false, ts: Int64 = 1000,
                        unread: Int = 0, tags: JSON = [:], inboxFolder: String? = nil) throws -> Room {
         var bridge = try Fixture.event("state_bridge_dm")

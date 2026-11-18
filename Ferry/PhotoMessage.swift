@@ -4,7 +4,7 @@ import UIKit
 import UniformTypeIdentifiers
 
 /// Sending a photo (DESIGN §6.9): re-encode to JPEG within Instagram's limit, then an `m.image` with `info`. The
-/// bridge takes jpeg/png/gif/webp up to 8 MB and drops captions (research/matrix-bridge.md §4), so there's no
+/// app keeps a photo or GIF to 8,000,000 bytes (`maxBytes`), and Instagram drops captions, so there's no
 /// caption field. Pure, so it's unit-tested.
 nonisolated enum PhotoMessage {
     static let maxBytes = 8_000_000  // the bridge's MaxImageSize is decimal, not MiB

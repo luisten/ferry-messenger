@@ -48,7 +48,7 @@ final class IdentityTests: XCTestCase {
         XCTAssertEqual(AccountIdentity.normalizedMark(""), "")
     }
 
-    /// No camera among the emoji: next to "Instagram" it was the one Instagram-like glyph (review 2026-10-15 #12).
+    /// No camera among the emoji: next to "Instagram" it was the one Instagram-like glyph.
     func testMarkSuggestionsSkipTakenMarks() {
         XCTAssertEqual(AccountIdentity.markSuggestions(name: "Studio", taken: []), ["S", "T", "U", "✦", "⛵️", "🌊"])
         XCTAssertEqual(AccountIdentity.markSuggestions(name: "Studio", taken: ["S", "⛵️"]), ["T", "U", "D", "✦", "🌊"])

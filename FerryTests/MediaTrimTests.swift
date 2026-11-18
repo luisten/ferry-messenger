@@ -1,7 +1,7 @@
 import XCTest
 @testable import Ferry
 
-/// #25: `Caches/media` stays bounded. `trim` runs on a temporary folder here, with small limits.
+/// FOLLOWUPS #25: `Caches/media` stays bounded. `trim` runs on a temporary folder here, with small limits.
 final class MediaTrimTests: XCTestCase {
     private var folder: URL!
 

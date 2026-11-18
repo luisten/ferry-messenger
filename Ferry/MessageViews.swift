@@ -25,7 +25,7 @@ struct MessageActions {
     /// A tap on someone's picture in a group: who they are.
     var showPerson: (String) -> Void
     /// Request rooms: nothing that sends. The bridge marks the chat read on Instagram for *every* event we send
-    /// (seen in its logs in M4: "Sending implicit read receipt"), so even a reaction would leak "Seen".
+    /// (seen in its logs: "Sending implicit read receipt"), so even a reaction would leak "Seen".
     var readOnly = false
 }
 

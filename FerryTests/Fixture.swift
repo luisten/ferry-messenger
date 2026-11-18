@@ -1,9 +1,10 @@
 import XCTest
 @testable import Ferry
 
-/// Scrubbed real payloads in `Fixtures/` (M2 spike S2, M4/M5 live checks) and the IDs they contain.
+/// Scrubbed real payloads in `Fixtures/` and the IDs they contain. The Matrix-shaped ones are from live checks on
+/// Ferry's Matrix bridge (October 2026).
 enum Fixture {
-    /// The shared tamoveska↔kivostudio IG thread: tamoveska's room and kivostudio's room (S7.3).
+    /// The shared tamoveska↔kivostudio IG thread: tamoveska's room and kivostudio's room.
     static let tamoRoom = "!ehE0v9MxOfM_NXqxrNmHqfZ048PGl7MYoaGvwMU_5XA"
     static let kivoRoom = "!o6PqSlIHi7dXejqWKC9ZeSMhEMiPbIxW90UtmMjw8PU"
     static let tamoSpace = "!8B3W21v2O_DdWOmLU2US75eotLLpkE2-BhMsjpPbvZ0"
@@ -43,7 +44,7 @@ enum Fixture {
     }
 
     /// Ferry's bridge provisioning answer, whose account shape the app keeps (`IGAdapter.login`):
-    /// `provisioning_whoami` is bridge v26.09 (M2), `provisioning_whoami_m8` the patched bridge (M8).
+    /// `provisioning_whoami` is bridge v26.09, `provisioning_whoami_m8` the patched bridge.
     struct Whoami: Decodable {
         var logins: [BridgeAPI.Login]?
     }

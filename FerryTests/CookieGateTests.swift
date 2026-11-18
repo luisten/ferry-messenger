@@ -1,7 +1,7 @@
 import XCTest
 @testable import Ferry
 
-/// Cases from PLAN M1, against the app's copy of the bridge's cookie step (`CookieStep.instagram`), which the first
+/// Cases for the app's copy of the bridge's cookie step (`CookieStep.instagram`), which the first
 /// test checks against the real `login/start` fixture.
 final class CookieGateTests: XCTestCase {
     private let required = ["sessionid": "S", "csrftoken": "C", "ds_user_id": "42"]

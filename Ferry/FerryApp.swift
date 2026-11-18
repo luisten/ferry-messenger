@@ -33,7 +33,7 @@ struct FerryApp: App {
 }
 
 #if DEBUG
-/// Logs process start → first inbox rows once per launch (PLAN M3 exit: cold-launch time).
+/// Logs process start → first inbox rows once per launch (cold-launch time).
 /// Read it with `xcrun simctl spawn booted log show --last 2m --predicate 'subsystem == "<bundle ID>" AND category == "launch"'`.
 enum LaunchTimer {
     private static var logged = false

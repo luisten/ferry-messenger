@@ -2,7 +2,7 @@ import SwiftUI
 import XCTest
 @testable import Ferry
 
-/// O1 "The crossing" (DESIGN O1, REVIEW-2026-10-15 R2.3): who rides the ferry, when it moves, and the icon's shapes
+/// O1 "The crossing" (DESIGN O1): who rides the ferry, when it moves, and the icon's shapes
 /// it's drawn with. `scripts/make_icon.swift` checks that `FerryShape`'s path data is the SVG's, verbatim.
 final class WelcomeTests: XCTestCase {
     private func identity(_ color: AccountColor, _ mark: String, order: Int) -> AccountIdentity {

@@ -1,7 +1,7 @@
 import XCTest
 @testable import Ferry
 
-/// The inbox toolbar's account stack (design review 2026-10-15 §3, DESIGN §3.5, principle 9): your accounts side by
+/// The inbox toolbar's account stack (DESIGN §3.5, principle 9): your accounts side by
 /// side, never over each other; up to three avatars, from four on the first two and "+N"; a problem is a badge on the
 /// account it's about, or on "+N" when that account is behind it.
 final class AccountStackTests: XCTestCase {

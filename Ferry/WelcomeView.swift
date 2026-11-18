@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - O1 Welcome: "The crossing"
 
-/// O1 (DESIGN O1, REVIEW-2026-10-15 R2.3, D19): the wordmark and headline, the icon's ferry crossing a calm sea with
+/// O1 (DESIGN O1, D19): the wordmark and headline, the icon's ferry crossing a calm sea with
 /// two accounts aboard, the three promises, and the one button. Everything you read or tap sits on the system
 /// background; only the picture uses the brand's sea (principle 10). Nothing waits for the picture's motion.
 struct WelcomeView: View {
@@ -105,7 +105,7 @@ struct WelcomeView: View {
 
 // MARK: - The scene
 
-/// O1's picture (REVIEW R2.3 "The scene", back to front): the sky is the screen's background; a haze above the
+/// O1's picture, back to front: the sky is the screen's background; a haze above the
 /// horizon; the sea band with a wavy lower edge; two swell lines; a short wake; the icon's hull with two accounts'
 /// bubbles aboard. Brand scenery: the one place in the app the sea's colours appear. One image to VoiceOver.
 struct CrossingScene: View {
@@ -248,7 +248,7 @@ struct AmbientMotion<Content: View>: View {
 
 // MARK: - Logic
 
-/// O1's scene as plain logic (DESIGN O1, REVIEW R2.3): who rides the ferry, whether it moves, and where the moving
+/// O1's scene as plain logic (DESIGN O1): who rides the ferry, whether it moves, and where the moving
 /// parts are at a given moment. Lengths are points at scale 1 (393 × 224).
 nonisolated enum Crossing {
     static let height: CGFloat = 224

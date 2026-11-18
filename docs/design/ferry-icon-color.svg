@@ -5,7 +5,7 @@
        Concept "Two aboard": a ferry (raked bow to the right, the direction of travel) carrying two speech bubbles side
        by side, never overlapping (several accounts, one boat), over one wave. Treatment "Deep water": a white ferry on
        the sea. The sea is the brand's colour; account colours stay inside the app (DESIGN principle 10, round 2).
-       Geometry is identical to ferry-icon.svg (v3); only the fills change.
+       The v3 geometry; only the fills change.
        Render rules for CoreGraphics (top-left origin, 1 unit = 1 px of the 1024 artboard): only M, H, V, C, Z;
        absolute coordinates; every path is one closed outline filled nonzero (bubble and tail are a single outline, so
        no seams); the wave is a stroke (width 36, round caps, round joins). Draw in this order. -->

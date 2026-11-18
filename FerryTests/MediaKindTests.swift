@@ -2,10 +2,10 @@ import AVFoundation
 import XCTest
 @testable import Ferry
 
-/// PLAN §2.6 media table, DESIGN §6.3–6.8. Real fixtures: the backfilled reel and its resolve edit (M2/S3), the
-/// photo + voice note sent through Instagram in M5 (`event_photo_incoming`, `event_voice_incoming`, the own copies in
+/// DESIGN §6.3–6.8. Real fixtures from Ferry's bridge: the backfilled reel and its resolve edit, the
+/// photo + voice note sent through Instagram (`event_photo_incoming`, `event_voice_incoming`, the own copies in
 /// `events_m5_tamo_own_media`, and the bridged `voice_sample.ogg`), and the phone samples shared from the IG app
-/// (M2 part 2: `event_reel_live`, `event_reel_live_landscape`, `event_story_live`, `event_post_live`,
+/// (`event_reel_live`, `event_reel_live_landscape`, `event_story_live`, `event_post_live`,
 /// `event_voice_igapp`; its `voice_igapp.ogg` is a text-to-speech stand-in in the same format: stereo Opus in Ogg, 7 s).
 /// Still hand-made from the bridge source (mautrix/meta v0.2609.0
 /// `pkg/msgconv/igconv/xma.go`, `from-instagram.go`): the private-account reel, an expired story, a link preview,
@@ -35,7 +35,7 @@ final class MediaKindTests: XCTestCase {
         XCTAssertEqual(video.externalURL?.host(), "www.instagram.com")
     }
 
-    /// M5 live "Load video" on kivostudio's own backfilled reel: the bridge sends the edit through the double puppet
+    /// A live "Load video" on kivostudio's own backfilled reel: the bridge sends the edit through the double puppet
     /// (`@me`, `fi.mau.double_puppet_source`), so it passes the same-sender rule and swaps the card in place, unlabelled.
     func testRealOwnReelResolvedThroughTheDoublePuppet() throws {
         let events = try Fixture.events("events_m5_kivo_own_resolve")
@@ -49,13 +49,13 @@ final class MediaKindTests: XCTestCase {
         XCTAssertEqual(MediaInfo(content: reel.content).url, "mxc://igm.home.arpa/KCQEYOLketrXHGoZFDTWGEeT")
     }
 
-    /// A backfilled reel has only the link in its caption (S3): no author, no caption text.
+    /// A backfilled reel has only the link in its caption: no author, no caption text.
     func testRealBackfilledCaptionIsJustTheLink() throws {
         let content = try Fixture.event("event_reel_unresolved").content
         XCTAssertEqual(ShareCaption(html: content["formatted_body"]?.string), ShareCaption())
     }
 
-    /// M5: a JPEG sent from tamoveska's room, as it came back from Instagram into kivostudio's room.
+    /// A JPEG sent from tamoveska's room, as it came back from Instagram into kivostudio's room.
     func testRealBridgedPhoto() throws {
         let event = try Fixture.event("event_photo_incoming")
         XCTAssertEqual(MessageKind(type: event.type, content: event.content), .image)
@@ -66,7 +66,7 @@ final class MediaKindTests: XCTestCase {
         XCTAssertEqual(info.mimetype, "image/jpeg")
     }
 
-    /// M5 (spike S4): an AAC voice note sent from Matrix comes back from Instagram as Ogg/Opus with an empty waveform,
+    /// An AAC voice note sent from Matrix comes back from Instagram as Ogg/Opus with an empty waveform,
     /// and its `info.size` is the size *before* the bridge's conversion (32 428 vs 76 974 bytes downloaded).
     func testRealBridgedVoiceNote() throws {
         let event = try Fixture.event("event_voice_incoming")
@@ -85,7 +85,7 @@ final class MediaKindTests: XCTestCase {
         XCTAssertEqual(MediaInfo(content: messages[1].content).mimetype, "audio/mp4")
     }
 
-    // MARK: Live shares from the IG app (M2 part 2)
+    // MARK: Live shares from the IG app
 
     /// Live shares are fetched at once (`disable_xma_always: false`): every one arrives ready, as the media itself, with
     /// the preview image as its thumbnail.
@@ -144,7 +144,7 @@ final class MediaKindTests: XCTestCase {
         XCTAssertTrue(htmlOnly.title?.hasPrefix("sample.photos Morning") == true)
     }
 
-    /// A voice note recorded in the IG app: Ogg/Opus **stereo** 48 kHz (M5's CLI-sent note came back mono), 7.0 s.
+    /// A voice note recorded in the IG app: Ogg/Opus **stereo** 48 kHz (the CLI-sent note came back mono), 7.0 s.
     /// `info.size` (35 539) is again the size before the bridge's conversion: the file is 58 368 bytes.
     func testRealIGAppVoiceNotePlays() async throws {
         let event = try Fixture.event("event_voice_igapp")
@@ -183,7 +183,7 @@ final class MediaKindTests: XCTestCase {
     ]
 
     /// `fetchXMA` when the fetch fails (a private account the receiver doesn't follow): the preview part stays, with
-    /// the failure in `xma_fetch_status`. Still unobserved live (M2 part 2's samples were all public).
+    /// the failure in `xma_fetch_status`. Still unobserved live (the live samples were all public).
     static let privateReel: JSON = [
         "msgtype": "m.image",
         "body": "**wave.house**\nSunset sets at Playa Grande",
@@ -209,7 +209,7 @@ final class MediaKindTests: XCTestCase {
         func kind(_ content: JSON) -> MessageKind { MessageKind(type: "m.room.message", content: content) }
         XCTAssertEqual(kind(Self.captionedReel), .share(.reel, .ready))
         XCTAssertEqual(kind(Self.privateReel), .share(.reel, .unavailable))
-        // "reupload fail": over the bridge's/homeserver's size cap (S3).
+        // "reupload fail": over the bridge's/homeserver's size cap.
         XCTAssertEqual(kind(Self.privateReel.setting(["fi.mau.instagram.xma_fetch_status"], "reupload fail")), .share(.reel, .tooLarge))
         // "skip" alone isn't a failure (it always comes with unresolved_media; without it there's nothing to resolve).
         XCTAssertEqual(kind(Self.privateReel.setting(["fi.mau.instagram.xma_fetch_status"], "skip")), .share(.reel, .ready))
@@ -328,7 +328,7 @@ final class MediaKindTests: XCTestCase {
         XCTAssertEqual(last(try Fixture.event("event_post_live"), sender: Fixture.tamoGhost, ts: 7), "Sent a post by @sample.photos")
     }
 
-    // MARK: Cache file names (PLAN §2.7: the extension matters to AVFoundation)
+    // MARK: Cache file names (the extension matters to AVFoundation)
 
     func testCacheFileNames() {
         XCTAssertEqual(MediaCache.fileName(url: "mxc://igm.home.arpa/qfzfnZlXNGlgiHYGVUpxmyYw", mimetype: "video/mp4"), "qfzfnZlXNGlgiHYGVUpxmyYw.mp4")
@@ -348,7 +348,7 @@ final class MediaKindTests: XCTestCase {
         XCTAssertNil(MediaCache.fileName(url: "mxc://igm.home.arpa/", mimetype: "image/png"))
     }
 
-    /// M7: a Matrix sign-out empties `Caches/media`, so the next user can't open this one's downloads. (The test
+    /// A Matrix sign-out empties `Caches/media`, so the next user can't open this one's downloads. (The test
     /// host is the app, so this also empties the simulator app's cache: it's a cache.)
     @MainActor
     func testClearEmptiesTheMediaFolder() throws {
@@ -375,7 +375,7 @@ final class MediaKindTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: sent.path()))
     }
 
-    // MARK: Voice playback on the real bridged file (PLAN P3, spike S4)
+    // MARK: Voice playback on the real bridged file
 
     func testRealBridgedVoicePlaysWithAVFoundation() async throws {
         let url = try Fixture.url("voice_sample", ext: "ogg")

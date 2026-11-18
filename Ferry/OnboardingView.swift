@@ -143,7 +143,7 @@ private struct ConnectingView: View {
         HStack(spacing: 12) {
             Group {
                 switch state {
-                // Status tokens, not system green and red (2.2–3.4:1 on white; CLAUDE.md, design review 2026-10-15).
+                // Status tokens, not system green and red (2.2–3.4:1 on white; CLAUDE.md).
                 case .done: Image(systemName: "checkmark.circle.fill").foregroundStyle(.statusOK)
                 case .running: ProgressView()
                 case .waiting: Image(systemName: "circle").foregroundStyle(.tertiary)
@@ -215,7 +215,7 @@ private struct NameAccountView: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
             }
             IdentityEditor(draft: editing, loginID: loginID, login: login)
-            // A row, not a bottom bar: the bar covered the colors and Mark (review 2026-10-14, finding 1).
+            // A row, not a bottom bar: the bar covered the colors and Mark.
             Section {
                 Button("Add another account", systemImage: "plus") { save(editing.wrappedValue); addAnother() }
                     .disabled(!valid)

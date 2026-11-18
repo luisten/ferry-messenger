@@ -8,9 +8,9 @@ nonisolated final class Room: Identifiable {
     let id: String
     /// Current state, `type → state_key → event`, built from `state` and from state events inside the timeline.
     private(set) var state: [String: [String: Event]] = [:]
-    /// Timeline events in order, oldest first, since the last `limited` reset (no gap tracking, PLAN §2.4).
+    /// Timeline events in order, oldest first, since the last `limited` reset (no gap tracking).
     private(set) var events: [Event] = []
-    /// Pagination token for the start of `events` (M4 back-pagination).
+    /// Pagination token for the start of `events` (back-pagination).
     private(set) var prevBatch: String?
     private(set) var notificationCount = 0
     private(set) var highlightCount = 0
@@ -22,13 +22,13 @@ nonisolated final class Room: Identifiable {
     private(set) var receipts: [String: Receipt] = [:]
     /// Room tags from `m.tag` account data (`u.archived` = archived in this app).
     private(set) var tags: [String: JSON] = [:]
-    /// Our sends not yet echoed by sync (local echo, PLAN §2.6).
+    /// Our sends not yet echoed by sync (local echo).
     private(set) var pending: [PendingMessage] = []
     /// Reply targets fetched from outside the window (`/event/{id}`), by event ID.
     private(set) var related: [String: Event] = [:]
     /// Back-pagination reached the room's first event.
     private(set) var reachedStart = false
-    /// Accept, reply or Delete on a request, from the tap until the bridge answers (PLAN §2.8 optimistic move).
+    /// Accept, reply or Delete on a request, from the tap until the bridge answers (optimistic move).
     /// Local only, like `pending`.
     private(set) var requestAction: RequestAction?
 
@@ -225,7 +225,7 @@ nonisolated final class Room: Identifiable {
     }
 }
 
-/// What the room's `m.bridge` state says (PLAN §2.5, spike S7). Only Instagram (`protocol.id == "instagramgo"`).
+/// What the room's `m.bridge` state says. Only Instagram (`protocol.id == "instagramgo"`).
 nonisolated struct BridgeInfo: Equatable, Sendable {
     enum RoomType: Equatable, Sendable {
         case dm, group, personalSpace
@@ -237,10 +237,10 @@ nonisolated struct BridgeInfo: Equatable, Sendable {
         case primary, general
     }
 
-    /// The bridge's Beeper type, not the network id "instagram" (S7.4).
+    /// The bridge's Beeper type, not the network id "instagram".
     static let protocolID = "instagramgo"
-    /// Channel key our bridge patch writes (`PRIMARY`/`GENERAL`, M8): Instagram sends a thread's tab only when it's
-    /// moved, so a missing key means Primary (spike S5, server/bridge/inbox-folder.patch).
+    /// Channel key our bridge patch writes (`PRIMARY`/`GENERAL`): Instagram sends a thread's tab only when it's
+    /// moved, so a missing key means Primary (Ferry's server/bridge/inbox-folder.patch).
     static let inboxFolderKey = "fi.mau.instagram.inbox_folder"
 
     /// The bridge login (Instagram account FBID) this room belongs to.
@@ -261,11 +261,11 @@ nonisolated struct BridgeInfo: Equatable, Sendable {
         channelID = channel?["id"]?.string
         displayName = channel?["displayname"]?.string
         avatarURL = channel?["avatar_url"]?.string
-        isRequest = channel?["com.beeper.message_request"]?.bool == true  // absent means no (S6)
+        isRequest = channel?["com.beeper.message_request"]?.bool == true  // absent means no
         folder = channel?[Self.inboxFolderKey]?.string == "GENERAL" ? .general : .primary
         switch content["com.beeper.room_type.v2"]?.string ?? content["com.beeper.room_type"]?.string {
         case "dm": roomType = .dm
-        case nil, "", "group_dm": roomType = .group  // IG groups carry no room type at all (S7.6)
+        case nil, "", "group_dm": roomType = .group  // IG groups carry no room type at all
         case "personal_filtering_space": roomType = .personalSpace
         case let other?: roomType = .other(other)
         }

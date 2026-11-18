@@ -2,8 +2,8 @@ import XCTest
 @testable import Ferry
 
 /// Group chats (FOLLOWUPS #24): sender labels in the thread, who a user is, and Chat Info's members. No group exists
-/// on the dummy accounts, so groups are hand-made from the real DM shapes (`state_bridge_dm.json` without a room type,
-/// S7.6) and the real member events of `sync_initial.json` / `messages_dm_backfill.json`; each test says which.
+/// on the dummy accounts, so groups are hand-made from the real DM shapes (`state_bridge_dm.json` without a room type)
+/// and the real member events of `sync_initial.json` / `messages_dm_backfill.json`; each test says which.
 final class GroupTests: XCTestCase {
     private let me = Fixture.me
     private let theo = "@instagram_9:igm.home.arpa"
@@ -188,7 +188,7 @@ final class GroupTests: XCTestCase {
         XCTAssertEqual(Inbox.members(of: group, me: me, profiles: [:]).map(\.name), ["Theo Park", "You"])
     }
 
-    // MARK: Start block (DESIGN T1, review 2026-10-15 #3)
+    // MARK: Start block (DESIGN T1)
 
     /// Real DM rooms (`sync_initial.json`): the room summary counts 3 joined, us, the contact's ghost and the bridge
     /// bot; the bot isn't someone to count.
@@ -316,7 +316,7 @@ final class GroupTests: XCTestCase {
 
     // MARK: Helpers
 
-    /// A group derived from the real DM `m.bridge` (room type keys removed, S7.6) with members shaped like the real
+    /// A group derived from the real DM `m.bridge` (room type keys removed) with members shaped like the real
     /// ghost member event (`{"membership": "join", "displayname": …}`, sent by the ghost itself) plus the real bot
     /// and double-puppet ones.
     private func groupRoom(members: [String: String], prevBatch: String? = nil) throws -> Room {

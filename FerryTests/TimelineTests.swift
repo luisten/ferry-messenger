@@ -1,7 +1,7 @@
 import XCTest
 @testable import Ferry
 
-/// PLAN §2.6, one test per rule with its counter-case. Real fixtures where they exist; hand-made events say so.
+/// `Timeline.reduce`, one test per rule with its counter-case. Real fixtures where they exist; hand-made events say so.
 final class TimelineTests: XCTestCase {
     let utc = { var c = Calendar(identifier: .gregorian); c.timeZone = .gmt; return c }()
     private let me = Fixture.me
@@ -28,7 +28,7 @@ final class TimelineTests: XCTestCase {
 
     // MARK: Edits
 
-    /// Real S3 resolve_media edit: m.image → m.video in place, and no "Edited" because
+    /// A real resolve_media edit: m.image → m.video in place, and no "Edited" because
     /// `com.beeper.dont_render_edited` sits on the edit's top-level content.
     func testResolveEditReplacesMsgtypeWithoutEditedLabel() throws {
         let page = try Fixture.messages("messages_dm_backfill")
@@ -41,7 +41,7 @@ final class TimelineTests: XCTestCase {
         XCTAssertEqual(messages.count, 3)  // the edit itself is not a row
     }
 
-    /// Counter-case: the same flag inside `m.new_content` doesn't count (S3: only top-level is read).
+    /// Counter-case: the same flag inside `m.new_content` doesn't count (only top-level is read).
     func testDontRenderEditedInsideNewContentStillShowsEdited() throws {
         var edit = try Fixture.event("event_reel_resolve_edit")
         edit.content = edit.content.setting(["com.beeper.dont_render_edited"], nil)
@@ -84,7 +84,7 @@ final class TimelineTests: XCTestCase {
         XCTAssertEqual(message.ts, 1)  // keeps the original's time and place
     }
 
-    /// Real M4 edit: our edit, then Instagram's echo of it bridged back through our double puppet (same text).
+    /// A real edit, from Ferry's bridge: our edit, then Instagram's echo of it bridged back through our double puppet (same text).
     /// That's one edit for the 5-edit limit, not two. The target was unsent later, so its content is restored here
     /// as the app sent it (the server strips content on redaction).
     func testRealEditAndItsDoublePuppetEchoCountOnce() throws {
@@ -178,7 +178,7 @@ final class TimelineTests: XCTestCase {
         XCTAssertEqual(Timeline.reduce(events, me: me)[0].reactions, [])
     }
 
-    /// Real M4 change ❤️ → 😂 in tamoveska's room: the bridge's bot redacted our ❤️, Instagram's echo of the 😂
+    /// A real change ❤️ → 😂 in tamoveska's room: the bridge's bot redacted our ❤️, Instagram's echo of the 😂
     /// raced our own event, so the bridge posted its own 😂 through the double puppet and redacted ours. Redacted
     /// reactions are restored to the content the app sent (the server strips it). One 😂 must remain, whichever
     /// way the race orders the duplicate and its replacement.
@@ -200,7 +200,7 @@ final class TimelineTests: XCTestCase {
         XCTAssertEqual(Timeline.reduce(events, me: me).first { $0.id == reply }?.reactions, expected)
     }
 
-    /// Real M4, the other side: kivostudio's own reply carries one 😂 from tamoveska's ghost (its ❤️ arrives
+    /// The same, from the other side: kivostudio's own reply carries one 😂 from tamoveska's ghost (its ❤️ arrives
     /// already redacted).
     func testRealReactionOnTheOtherSide() throws {
         let messages = Timeline.reduce(try Fixture.events("events_m4_kivo"), me: me)
@@ -227,7 +227,7 @@ final class TimelineTests: XCTestCase {
         XCTAssertEqual(messages.map(\.sender), [ghost, me])  // the tombstone keeps who unsent it
     }
 
-    /// Real M4 unsend, fetched afterwards: the message arrives already redacted (`unsigned.redacted_because`, empty
+    /// A real unsend, fetched afterwards: the message arrives already redacted (`unsigned.redacted_because`, empty
     /// content). It's a tombstone, its two edits are ignored, and the reply quoting it says so.
     func testRealUnsentMessageIsATombstoneAndItsQuoteFollows() throws {
         let messages = Timeline.reduce(try Fixture.events("events_m4_tamo"), me: me)
@@ -277,7 +277,7 @@ final class TimelineTests: XCTestCase {
         XCTAssertEqual(reply.reply, Message.Reply(eventID: "$a", sender: ghost, kind: .text, body: "see you there"))
     }
 
-    /// Real M4 reply in tamoveska's room (kivostudio replying to our message), quoting the target as edited.
+    /// A real reply in tamoveska's room (kivostudio replying to our message), quoting the target as edited.
     func testRealReplyQuotesItsTarget() throws {
         let events = try Fixture.events("events_m4_tamo")
         let reply = try XCTUnwrap(events.first { $0.eventID == "$ioTZwPw6EpU8U0CoxD32g1RW2tAyxz0SuOz69ZqQEas" })
@@ -340,7 +340,7 @@ final class TimelineTests: XCTestCase {
         XCTAssertEqual(messages[1].body, "on its way")
     }
 
-    /// Real M3 CLI send: the echo carries `unsigned.transaction_id`, which retires the pending item.
+    /// A real CLI send: the echo carries `unsigned.transaction_id`, which retires the pending item.
     func testPendingIsReplacedByItsEcho() throws {
         let events = try Fixture.events("events_send_status")
         let txn = try XCTUnwrap(events[0].unsigned?.transactionID)
@@ -354,7 +354,7 @@ final class TimelineTests: XCTestCase {
 
     // MARK: Send status
 
-    /// Real M3 send: the bridge's SUCCESS status (an m.reference to our event) means Instagram has it.
+    /// A real send: the bridge's SUCCESS status (an m.reference to our event) means Instagram has it.
     func testSendStatusSuccessMeansDelivered() throws {
         let events = try Fixture.events("events_send_status")
         let messages = Timeline.reduce(events, me: me)
@@ -430,7 +430,7 @@ final class TimelineTests: XCTestCase {
         XCTAssertEqual(Timeline.receiptTarget(kivo, me: me), "$new")  // not the edit, not our own message
     }
 
-    // MARK: Classification (minimal; M5 extends it)
+    // MARK: Classification (minimal; MediaKindTests extends it)
 
     func testClassification() throws {
         func kind(_ msgtype: String, _ extra: [String: JSON] = [:], type: String = "m.room.message") -> MessageKind {
@@ -448,7 +448,7 @@ final class TimelineTests: XCTestCase {
         XCTAssertEqual(kind("m.audio", ["org.matrix.msc3245.voice": [:]]), .voice)
         XCTAssertEqual(kind("m.audio"), .audio)
         XCTAssertEqual(kind("m.image"), .image)
-        XCTAssertEqual(kind("m.text", ["external_url": reel]), .text)  // a link in text is text (link card: M5)
+        XCTAssertEqual(kind("m.text", ["external_url": reel]), .text)  // a link in text is text
         XCTAssertEqual(kind("m.notice"), .notice)
         XCTAssertEqual(kind("m.whatever"), .text)  // unknown msgtypes fall back to their body
         XCTAssertEqual(MessageKind(type: "m.sticker", content: ["body": "x"]), .sticker)

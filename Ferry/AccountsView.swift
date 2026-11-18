@@ -109,7 +109,7 @@ private struct AccountRow: View {
                         if let username = login.profile?.username {
                             Text("@\(username)").font(.subheadline).foregroundStyle(.inkSecondary)
                         }
-                        // Which account has Instagram's two tabs (review 2026-10-15 #8).
+                        // Which account has Instagram's two tabs.
                         if login.isProfessional {
                             Text("Professional · Primary and General").font(.footnote).foregroundStyle(.inkSecondary)
                         }
@@ -188,7 +188,7 @@ struct AccountDetailView: View {
         return Form {
             Section {
                 // A compact row like A1's, without a second copy of the name (the title has it), so the editor starts
-                // on the first screen (review 2026-10-14, finding 3).
+                // on the first screen.
                 HStack(spacing: 14) {
                     AccountAvatar(identity: editing.wrappedValue, avatarURL: login.profile?.avatar, initial: login.displayName, size: 56)
                     VStack(alignment: .leading, spacing: 2) {
@@ -263,7 +263,7 @@ struct AccountDetailView: View {
 // MARK: - A3 Re-login
 
 /// DESIGN A3: why the account needs a login, that nothing is lost, then "Log in again" opens the instagram.com sheet
-/// for this account (PLAN §2.9). Closes itself once the account is no longer signed out.
+/// for this account. Closes itself once the account is no longer signed out.
 struct ReloginSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss

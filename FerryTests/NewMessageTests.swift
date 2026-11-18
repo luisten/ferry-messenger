@@ -1,8 +1,8 @@
 import XCTest
 @testable import Ferry
 
-/// N1 and the contact handle (M7b): the bridge's search shape, matching a result to a DM we already have, and the
-/// handle from a ghost profile (`ghost_extra_profile_info`). Fixtures are live responses from M7b.
+/// N1 and the contact handle: the bridge's search shape, matching a result to a DM we already have, and the
+/// handle from a ghost profile (`ghost_extra_profile_info`). Fixtures are live responses from Ferry's bridge.
 final class NewMessageTests: XCTestCase {
     /// Live `search_users` from tamoveska for "kivostudio": `results`, the handle in `identifiers`, and no
     /// `dm_room_mxid` although the DM exists (so the app must match its own rooms).

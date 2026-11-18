@@ -188,7 +188,7 @@ private struct Chips: View {
             }
             .scrollIndicators(.hidden)
             // Edge to edge inside the card, first chip still at the row's 16 pt: inset rows cut chips hard at the
-            // card's inner padding ("Stud", review 2026-10-15 #13).
+            // card's inner padding ("Stud").
             .scrollClipDisabled()
             .contentMargins(.horizontal, 16, for: .scrollContent)
             .listRowInsets(EdgeInsets())

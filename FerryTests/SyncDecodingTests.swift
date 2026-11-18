@@ -1,14 +1,14 @@
 import XCTest
 @testable import Ferry
 
-/// Decoding of real payloads captured in M2 (docs/spikes/2026-10-12-live-bridge.md, S2).
+/// Decoding of real payloads from Ferry's bridge.
 final class SyncDecodingTests: XCTestCase {
     func testInitialSyncDecodes() throws {
         let sync = try Fixture.sync()
         XCTAssertFalse(sync.nextBatch.isEmpty)
         let join = try XCTUnwrap(sync.rooms?.join)
         XCTAssertEqual(join.count, 4)  // 2 DM portals (one IG thread, one room per account) + 2 personal spaces
-        XCTAssertNil(sync.rooms?.invite)  // S7: double puppeting joins directly, no invites
+        XCTAssertNil(sync.rooms?.invite)  // double puppeting joins directly, no invites
 
         let dm = try XCTUnwrap(join[Fixture.tamoRoom])
         XCTAssertEqual(dm.state?.events?.count, 6)
@@ -60,7 +60,7 @@ final class SyncDecodingTests: XCTestCase {
         XCTAssertNil(Event(type: "m.room.message", content: .object(["redacts": .string("$c")])).redactionTarget)
     }
 
-    /// M5 passes `com.beeper.unresolved_media` back verbatim, so JSON must survive a round trip unchanged.
+    /// The app passes `com.beeper.unresolved_media` back verbatim, so JSON must survive a round trip unchanged.
     func testJSONRoundTripsBridgePayload() throws {
         let content = try Fixture.event("event_reel_unresolved").content
         let media = try XCTUnwrap(content["com.beeper.unresolved_media"])

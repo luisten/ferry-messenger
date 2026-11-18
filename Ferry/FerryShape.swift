@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// One of the app icon's four shapes (DESIGN §18.1, `docs/design/ferry-icon-color.svg`) for O1's scene and the
-/// onboarding echoes: O2's glyph, O4's and O6's deck. The path data is the SVG's, verbatim (`scripts/make_icon.swift`
+/// onboarding echo: O4's and O6's deck. The path data is the SVG's, verbatim (`scripts/make_icon.swift`
 /// checks it), in the icon's 1024-unit artboard. `box` is the part of the artboard the shape's rect shows, so a shape
 /// can be cut to just the hull or the wave.
 struct FerryShape: Shape {
@@ -81,26 +81,6 @@ nonisolated enum FerryPath {
             }
         }
         return path
-    }
-}
-
-/// The icon's glyph without its tile, monochrome (DESIGN O2, round 2's echo of O1): ferry and front bubble in ink, back
-/// bubble and wave in `inkSecondary`, as the icon pairs white with foam. No sea: that stays on Welcome.
-struct FerryGlyph: View {
-    var height: CGFloat = 44
-
-    var body: some View {
-        let box = FerryShape.glyphBox
-        let scale = height / box.height
-        ZStack {
-            FerryShape(.backBubble, box: box).fill(.inkSecondary)
-            FerryShape(.frontBubble, box: box).fill(Color.primary)
-            FerryShape(.hull, box: box).fill(Color.primary)
-            FerryShape(.wave, box: box)
-                .stroke(.inkSecondary, style: StrokeStyle(lineWidth: 36 * scale, lineCap: .round, lineJoin: .round))
-        }
-        .frame(width: box.width * scale, height: height)
-        .accessibilityHidden(true)
     }
 }
 

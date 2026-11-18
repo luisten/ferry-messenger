@@ -2,7 +2,7 @@ import SwiftUI
 import XCTest
 @testable import Ferry
 
-/// #17: the thread's distance from its newest message, from scroll geometry logged on iOS 26.4 (iPhone 17, Kivo Studio
+/// FOLLOWUPS #17: the thread's distance from its newest message, from scroll geometry logged on iOS 26.4 (iPhone 17, Kivo Studio
 /// chat): a 116 pt navigation bar and a 92 pt composer as insets, `containerSize` the 666 pt between them.
 final class ThreadScrollTests: XCTestCase {
     private let bars = EdgeInsets(top: 116, leading: 0, bottom: 92, trailing: 0)
@@ -12,7 +12,7 @@ final class ThreadScrollTests: XCTestCase {
                        contentInsets: insets, containerSize: CGSize(width: 402, height: container))
     }
 
-    /// Settled on the newest message: the end, give or take the list's 8 pt bottom padding. The M4 formula
+    /// Settled on the newest message: the end, give or take the list's 8 pt bottom padding. The first formula
     /// (`containerSize` as the whole frame) read 208 here, so its "within 60 pt of the end" re-pin never ran.
     func testAtTheEndWithBarsAndComposer() {
         let end = geometry(offset: 2763, content: 3545, container: 666, insets: bars)
