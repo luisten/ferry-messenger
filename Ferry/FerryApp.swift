@@ -22,7 +22,9 @@ struct FerryApp: App {
         .onChange(of: scenePhase, initial: true) { _, phase in
             guard !isUnitTestHost else { return }
             switch phase {
-            case .active: model.startSync()
+            case .active:
+                model.startSync()
+                Task { await AppUpdate.checkIfDue() }  // builds from source: at most once a day
             case .background: model.stopSync()
             default: break
             }

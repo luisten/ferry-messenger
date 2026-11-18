@@ -34,6 +34,9 @@ import Foundation
 ///   account stack only (the dev stack has two accounts; the stack changes from four). Nothing else sees them.
 /// - `FERRY_DEBUG_PLAYER_FAILS=1`: every video in the player and every voice note fails to play, as when AVFoundation
 ///   drops them (M1's failed state, a voice note's "Can't play"). Downloads still happen.
+/// - `FERRY_DEBUG_LATEST=<tag>` (`v9.9`): Accounts says that release is out, without asking GitHub;
+///   `FERRY_DEBUG_EXPIRY=<days>` stands in for the provisioning profile's expiry (the simulator has none), for the
+///   footer's "Opens until" line and, under 2 days, its renewal hint.
 /// - `FERRY_DEBUG_DEMO=1`: made-up accounts and chats only, for the README's screenshots (the repo is public) and the UI
 ///   tests (C8): the Keychain's accounts are left alone and nothing connects, so nothing reaches Instagram. Includes the
 ///   requests and the group.
@@ -50,6 +53,8 @@ nonisolated enum DebugFixtures {
     static let blocksSends = env["FERRY_DEBUG_BLOCK_SENDS"] == "1"
     static let voiceFile = env["FERRY_DEBUG_VOICE_FILE"].flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) }
     static let playerFails = env["FERRY_DEBUG_PLAYER_FAILS"] == "1"
+    static let latestRelease = env["FERRY_DEBUG_LATEST"].flatMap { $0.isEmpty ? nil : $0 }
+    static let expiry = Double(env["FERRY_DEBUG_EXPIRY"] ?? "").map { Date.now.addingTimeInterval($0 * 24 * 3600) }
     static let endedSessions = Set((env["FERRY_DEBUG_ENDED_SESSION"] ?? "").split(separator: ",").map(String.init))
     private static let loginStates: [String: String] = Dictionary(
         (env["FERRY_DEBUG_LOGIN_STATE"] ?? "").split(separator: ",").compactMap { pair in
