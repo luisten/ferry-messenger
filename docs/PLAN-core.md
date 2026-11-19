@@ -30,7 +30,8 @@ Each had a recommendation. C3 and C8 were the user's call: both recommendations 
 
 ## 3. The C API
 
-The calls are the `//export`s in [`core/cmd/igcore/main.go`](../core/cmd/igcore/main.go), each with its comment, and
+The calls are the `//export`s in [`core/cmd/igcore/main.go`](../core/cmd/igcore/main.go), `IG<Name>` for each
+`engine.<Name>` in [`core/engine`](../core/engine/engine.go), whose comments say what each does, and
 [`Ferry/IGCore.swift`](../Ferry/IGCore.swift) wraps them for the app (Android: `jni_android.c`, PLAN-android E6). Every
 call except `IGLogin` takes the account (Instagram user ID). Never returned: the state dump (web tokens), cookies
 (except through `IGSession`, C3), passwords (there are none: the user logs in on instagram.com).

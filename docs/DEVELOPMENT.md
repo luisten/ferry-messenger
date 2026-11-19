@@ -17,8 +17,8 @@ Instagram behaves): [CLAUDE.md](../CLAUDE.md).
 - **`core/`** is a Go module over [mautrix](https://github.com/mautrix/meta)'s Instagram client
   (`go.mau.fi/mautrix-meta`, pinned in `core/go.mod`). It builds to a static library with a small C API (one client
   per account, every Instagram request counted), wrapped in `build/IGCore.xcframework` (gitignored). The API is
-  the `//export`s in `core/cmd/igcore/main.go`, each with its comment ([PLAN-android.md](PLAN-android.md) §3 has the
-  envelope its updates come in): `core/chat` turns
+  the `//export`s in `core/cmd/igcore/main.go`, `IG<Name>` for each `engine.<Name>` in `core/engine`, whose comments
+  say what each does ([PLAN-android.md](PLAN-android.md) §3 has the envelope its updates come in): `core/chat` turns
   Instagram's answers into Matrix-shaped chat updates (pure Go; `cd core && go test ./...`, on the captures in
   `core/testdata`), `core/engine` runs the clients and Instagram's rules on it (shared with the relay, PLAN-relay.md),
   and `cmd/igcore` is the C API around that.
