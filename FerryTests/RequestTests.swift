@@ -1,7 +1,7 @@
 import XCTest
 @testable import Ferry
 
-/// Message requests (PLAN §2.8, M6). These accounts have no request room (S6, D11), so every request here is the real
+/// Message requests. These accounts have no request room (D11), so every request here is the real
 /// DM `m.bridge` with `com.beeper.message_request: true` added (`InboxTests.portal`). The bridge marks a chat read on
 /// Instagram before handling *any* event we send (mautrix-go v0.31.0 `bridgev2/portal.go:874`, implicit read
 /// receipts), so in a request only Accept, Delete and a reply may send anything.
@@ -32,7 +32,7 @@ final class RequestTests: XCTestCase {
         XCTAssertEqual(Inbox.rooms(rooms, scope: .all, folder: .requests, logins: logins).map(\.id), ["!r1", "!r2"])
     }
 
-    // MARK: The request bar (T2, review 2026-10-15 #5)
+    // MARK: The request bar (T2)
 
     /// The account's tag follows the title on screen, so the words stop at "message"; VoiceOver hears one sentence
     /// with the account's name. Without an identity the bar has no tag and says "you".

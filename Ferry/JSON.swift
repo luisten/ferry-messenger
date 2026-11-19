@@ -1,7 +1,7 @@
 import Foundation
 
 /// Arbitrary JSON, for event content whose shape depends on the event type (and for passing bridge payloads such as
-/// `com.beeper.unresolved_media` back verbatim in M5). Numbers are Doubles: Matrix timestamps stay below 2^53.
+/// `com.beeper.unresolved_media` back verbatim). Numbers are Doubles: Matrix timestamps stay below 2^53.
 nonisolated enum JSON: Codable, Hashable, Sendable {
     case null
     case bool(Bool)

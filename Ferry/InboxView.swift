@@ -92,7 +92,7 @@ struct InboxView: View {
         }
         .navigationTitle(scopedAccount?.identity?.name ?? "Chats")
         .navigationSubtitle(subtitle)
-        .navigationBarTitleDisplayMode(.inline)  // the chips below already say where you are (review 2026-10-14 H1)
+        .navigationBarTitleDisplayMode(.inline)  // the chips below already say where you are
         .searchable(text: $query, prompt: scopedAccount?.identity.map { "Search \($0.name)" } ?? "Search")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -656,7 +656,7 @@ private struct RequestRow: View {
     }
 }
 
-// MARK: - Toolbar account stack (DESIGN §3.5, review 2026-10-15 §3)
+// MARK: - Toolbar account stack (DESIGN §3.5)
 
 /// Your accounts side by side in one glass capsule (`Inbox.AccountStack` decides what shows): 30 pt avatars 4 pt
 /// apart, 7 pt in from the capsule's ends, so it's 44, 78 or 112 pt wide. Its own glass: the toolbar item hides the

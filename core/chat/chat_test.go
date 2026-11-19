@@ -893,7 +893,7 @@ func TestUnsendingTheUnreadMessageReadsTheChat(t *testing.T) {
 	}
 }
 
-// Primary ↔ General on Instagram, live: the raw move deltas Ferry captured (spike S5) move the chat here.
+// Primary ↔ General on Instagram, live: the raw move deltas Ferry captured move the chat here.
 func TestMovesBetweenPrimaryAndGeneral(t *testing.T) {
 	c := New(kivo)
 	id := c.Thread(dm(t, "ig_login_kivo")).Room

@@ -98,7 +98,7 @@ nonisolated enum DebugFixtures {
 
     /// Three DM requests spread over the logins. The `m.bridge` content is the real DM event from
     /// `FerryTests/Fixtures/state_bridge_dm.json` (bridge v26.09) with only the channel changed and
-    /// `com.beeper.message_request: true` added, the way the bridge marks PENDING/SPAM threads (S6). Names and texts
+    /// `com.beeper.message_request: true` added, the way the bridge marks PENDING/SPAM threads. Names and texts
     /// come from the I2 mockup.
     static func requestRooms(logins: [String], now: Date = .now) -> [Room] {
         guard !logins.isEmpty else { return [] }
@@ -172,7 +172,7 @@ nonisolated enum DebugFixtures {
 
     /// One hand-made Instagram group on `receiver`, modelled on real shapes: the `m.bridge` content is the real DM event
     /// (`FerryTests/Fixtures/state_bridge_dm.json`) without `com.beeper.room_type`(`.v2`), which is how the bridge
-    /// marks a group (S7.6), with a group's channel; the member events copy the real ghost, bot and double-puppet ones
+    /// marks a group, with a group's channel; the member events copy the real ghost, bot and double-puppet ones
     /// of `sync_initial.json`. Four senders, runs, a reply, reactions (three people on one emoji), a time gap and two
     /// chat events (Instagram's line for Priya leaving, a poll the app can't show; `IGAdapter`'s shapes). Unread, with
     /// our `m.read` on Sam's last message, so it opens with the "New messages" line, and Maya and Sam have seen the

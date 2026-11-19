@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 import XCTest
 @testable import Ferry
 
-/// Sending photos (M7b, DESIGN §6.9): JPEG within Instagram's 8 MB, orientation applied, no metadata, no black
+/// Sending photos (DESIGN §6.9): JPEG within Instagram's 8 MB, orientation applied, no metadata, no black
 /// background from transparency, and the `m.image` content the bridge reads.
 final class PhotoMessageTests: XCTestCase {
     func testLargeImageIsDownscaledToJPEGKeepingAspect() throws {

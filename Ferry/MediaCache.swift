@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 
 /// Instagram's media for the UI, from its CDN links (no auth; they expire, which P5's refresh covers). Thumbnails
 /// (profile pictures, previews) are kept in memory and load as rows appear; full media downloads only on tap, to
-/// `Caches/media/<name>.<ext>` (PLAN §2.7), with progress and in-flight dedupe, and plays from there.
+/// `Caches/media/<name>.<ext>`, with progress and in-flight dedupe, and plays from there.
 @Observable
 final class MediaCache {
     /// Downloads in flight: fraction done (0…1) by URL. The cards' progress rings read it.
@@ -178,7 +178,7 @@ final class MediaCache {
         return "\(id).\(fileExtension(mimetype))"
     }
 
-    /// AVFoundation picks the format by extension (PLAN P3).
+    /// AVFoundation picks the format by extension.
     nonisolated static func fileExtension(_ mimetype: String?) -> String {
         let type = mimetype?.split(separator: ";").first?.trimmingCharacters(in: .whitespaces).lowercased() ?? ""
         switch type {
@@ -249,7 +249,7 @@ struct MXCImage: View {
 
 /// A chat's picture. A group without one shows two of its people, one over the other (Instagram's; two faces say
 /// "group" at a glance), or the people glyph with fewer than two others: its name's initial looked like a contact
-/// called "S" (review 2026-10-15 #9).
+/// called "S".
 struct RoomAvatar: View {
     @Environment(\.markRing) private var ring
     let room: Room

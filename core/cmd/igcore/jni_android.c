@@ -1,9 +1,9 @@
-// The Android app's JNI bridge (decision E6 in docs/PLAN-android.md): one function per export in main.go, for
-// `object IGCore` in package fi.ferry.core of the ferry-messenger-android repo. cgo compiles this file only for
+// The Android app's JNI bridge (decision E6 in docs/PLAN-android.md): one function per export in main.go but IGFree,
+// for `object IGCore` in package fi.ferry.core of the ferry-android repo. cgo compiles this file only for
 // GOOS=android (its name), so iOS builds never see it. Change it with any exported signature in main.go.
 //
 // Strings cross as UTF-8 byte arrays both ways, never jstring: JNI's modified UTF-8 sends emoji to Go as surrogate
-// pairs (invalid UTF-8), and CheckJNI aborts on the 4-byte UTF-8 Go returns (docs/spikes/2026-10-19-android-core.md).
+// pairs (invalid UTF-8), and CheckJNI aborts on the 4-byte UTF-8 Go returns (the Android spike, 2026-10-19).
 // A null array in is an empty string; a NULL result out (IGNextEvent's timeout) is null.
 #include <jni.h>
 #include <stdlib.h>

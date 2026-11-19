@@ -1,8 +1,8 @@
 # Ferry Messenger: as-built behaviour
 
-What the app does today, screen by screen: Ferry's v1.1 (inbox v2, design v3) on `core/`, with no server
+What the app does today, screen by screen: Ferry Messenger 1.8 (inbox v2, design v3) on `core/`, with no server
 ([docs/PLAN-core.md](docs/PLAN-core.md); its "Done" blocks hold the live checks with the two dummies). Screen IDs are
-DESIGN.md's. Why it differs from the design: PLAN §7 and [m7-design-diff.md](docs/verification/m7-design-diff.md).
+[DESIGN.md](docs/design/DESIGN.md)'s; where this list and the design differ, this list is what's built.
 
 ## Rules that hold everywhere
 
@@ -249,7 +249,8 @@ Instagram to see it."
   and, for a share, Open in Instagram, as glass capsules; no scrubber, author row or caption.
 - **M2 photo viewer:** pinch and double-tap zoom, pan; swipe down or up to close; Share.
 - Media links are Instagram's CDN URLs. Live checks covered photos, videos, voice notes and an old shared reel
-  (PLAN-core P5); live post, story, private-reel and link shares are pending (the user, from the phone).
+  (PLAN-core P5), story replies (2026-10-19) and link cards (2026-11-17); a post and a private account's reel are still
+  unseen live (FOLLOWUPS #5).
 
 ## Accounts (A1, A2, A3) and connecting (O3)
 
@@ -286,8 +287,8 @@ rooms, a fake group, a forced login state, a session Instagram ends for one laun
 stand-in accounts in the toolbar stack, failing playback) and the fixture capture:
 docs/DEVELOPMENT.md "DEBUG switches". None of it exists in Release builds.
 
-## Not in v1
+## Not built
 
-Moving chats between Primary and General, account-type labels in Accounts, notifications and an icon badge (D6), a GIF search, "slide up to lock" a recording, mute/pin, marking a chat unread on Instagram (it stays on this iPhone), message
-search, new groups and group management (members are read-only; no "Start a chat" from a member yet), inline reel autoplay, real waveforms, a media size cap,
-identity sync across devices, a verified run on the iPhone, E2EE chats (the library can't show them).
+Moving chats between Primary and General, "Business" or "Creator" in Accounts, notifications and an icon badge (D6), a GIF search, "slide up to lock" a recording, mute/pin, marking a chat unread on Instagram (it stays on this iPhone), message
+search, new groups and group management (members are read-only; no "Start a chat" from a member yet), inline reel autoplay, real waveforms,
+identity sync across devices, E2EE chats (the library can't show them).

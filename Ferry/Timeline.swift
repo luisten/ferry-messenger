@@ -1,7 +1,7 @@
 import Foundation
 
-/// What a message shows as (PLAN §2.6 media table, DESIGN §6.3–6.8). Shapes are from the bridge source (mautrix/meta
-/// v0.2609.0 `igconv/xma.go`, `from-instagram.go`) and live samples (S3, M5).
+/// What a message shows as (DESIGN §6.3–6.8). Shapes are from the bridge source (mautrix/meta
+/// v0.2609.0 `igconv/xma.go`, `from-instagram.go`) and live samples.
 nonisolated enum MessageKind: Equatable, Sendable {
     case text, notice, emote
     case image, video, audio, voice, file, sticker
@@ -13,20 +13,20 @@ nonisolated enum MessageKind: Equatable, Sendable {
     case link
     /// View-once media: the bridge sends a notice instead ("This image can only be viewed once…").
     case viewOnce
-    /// A plain attachment over the size cap: the bridge's "Too large attachment" notice (S3).
+    /// A plain attachment over the size cap: the bridge's "Too large attachment" notice.
     case tooLarge
     /// Unsent (redacted): a tombstone that keeps its sender and time.
     case unsent
     /// Instagram's own line about the chat ("… named the group …", "… left the group"): `body` as it is.
     case event
-    /// Something the app can't show (`IGAdapter.unsupported`): what it is, "a poll" or "a message Ferry can't show".
+    /// Something the app can't show (`core/chat`'s `unsupported`): what it is, "a poll" or "a message Ferry can't show".
     case unsupported(String)
 
     static let eventKey = "fi.ferry.event"
     /// `core/chat`'s reaction log entry (`isReactionLog`).
     static let reactionLogKey = "fi.ferry.reactionLog"
     static let unsupportedKey = "fi.ferry.unsupported"
-    /// The text sent with a share (`IGAdapter.share`): a story reply, or a story reaction's emoji.
+    /// The text sent with a share (`core/chat`'s `share`): a story reply, or a story reaction's emoji.
     static let shareTextKey = "fi.ferry.share_text"
     /// A sticker from Instagram's GIPHY picker: an animated image (`MediaInfo.isAnimated`) shown as a sticker.
     static let stickerKey = "fi.ferry.sticker"
@@ -35,13 +35,13 @@ nonisolated enum MessageKind: Equatable, Sendable {
     enum ShareType: String, Sendable { case reel, post, story, other }
     enum ShareState: Sendable { case ready, unresolved, unavailable, tooLarge }
 
-    /// For an edited message pass the edit's `m.new_content` (S3: it has no `xma_fetch_status`, so a resolved reel
+    /// For an edited message pass the edit's `m.new_content` (it has no `xma_fetch_status`, so a resolved reel
     /// reads as ready).
     init(type: String, content: JSON) {
         if type == "m.sticker" { self = .sticker; return }
         // Only the bridge's XMA parts carry `external_url`.
         let share = content["external_url"]?.string.map { ShareType(instagramURL: $0) ?? .other }
-        // S3: `unresolved_media` = backfilled and not fetched yet. `xma_fetch_status` is absent on success, "skip"
+        // `unresolved_media` = backfilled and not fetched yet. `xma_fetch_status` is absent on success, "skip"
         // when deferred, otherwise a failure; "reupload fail" means too big for the homeserver.
         if content["com.beeper.unresolved_media"] != nil { self = .share(share ?? .reel, .unresolved); return }
         if let status = content["fi.mau.instagram.xma_fetch_status"]?.string, status != "skip", let share {
@@ -127,15 +127,15 @@ nonisolated struct MediaInfo: Equatable, Sendable {
     var url: String?
     var mimetype: String?
     /// Bytes as the bridge reports them. Not always the download's size: for voice notes it's the size before the
-    /// bridge converted them to Ogg (M5), so progress uses the HTTP length instead.
+    /// bridge converted them to Ogg, so progress uses the HTTP length instead.
     var size: Int?
     var width: Double?
     var height: Double?
-    /// Milliseconds. Voice notes carry it; reels don't (S3).
+    /// Milliseconds. Voice notes carry it; reels don't.
     var duration: Int?
     var thumbnailURL: String?
     var externalURL: URL?
-    /// Photos and videos sent together, each its own content (`IGAdapter.album`); empty for one.
+    /// Photos and videos sent together, each its own content (`core/chat`'s `album`); empty for one.
     var album: [JSON]
     /// A GIF, or a sticker from Instagram's GIPHY picker: plays like one (`info.fi.mau.gif`).
     var isAnimated: Bool
@@ -176,10 +176,10 @@ nonisolated struct MediaInfo: Equatable, Sendable {
     }
 }
 
-/// A share's caption, from `formatted_body` as the bridge's `wrapXMACaption` builds it (S3), every part optional:
+/// A share's caption, from `formatted_body` as the bridge's `wrapXMACaption` builds it, every part optional:
 /// `<blockquote>eyebrow</blockquote><strong>title</strong><br>subtitle<p>caption</p><p><a href="url">url</a></p>`.
 ///
-/// Live samples (M2 part 2, DESIGN §16 Q1): the bridge fills these only from IG's `title_text`/`subtitle_text`/
+/// Live samples (DESIGN §16 Q1): the bridge fills these only from IG's `title_text`/`subtitle_text`/
 /// `caption_body_text` and ignores `header_title_text`, which is where IG puts the author.
 /// - **Reels and stories** come with no text at all: just the link.
 /// - **Posts** come as `<strong>{handle} {caption, cut to 100 chars + "…"}</strong>`.
@@ -285,7 +285,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable {
     var kind: MessageKind
     /// Text to show: the latest edit's body, reply fallback stripped. Empty for tombstones.
     var body: String
-    /// The current content (latest edit's `m.new_content`), for M5's media cards.
+    /// The current content (latest edit's `m.new_content`), for the media cards.
     var content: JSON
     var isOwn: Bool
     var isEdited = false
@@ -347,7 +347,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable {
     }
 }
 
-/// A send we've started but whose event hasn't come back through sync yet (PLAN §2.6 local echo).
+/// A send we've started but whose event hasn't come back through sync yet (local echo).
 nonisolated struct PendingMessage: Equatable, Sendable {
     var txnID: String
     var content: JSON
@@ -361,7 +361,7 @@ nonisolated struct PendingMessage: Equatable, Sendable {
     }
 }
 
-/// PLAN §2.6: the pure fold from raw room events to thread rows.
+/// The pure fold from raw room events to thread rows.
 nonisolated enum Timeline {
     /// Instagram's limits, as the bridge's `com.beeper.room_features` reports them.
     static let editMaxAge: Int64 = 900_000
@@ -393,7 +393,7 @@ nonisolated enum Timeline {
         var edits: [String: [Event]] = [:]
         // Each sender's latest surviving reaction per target (Instagram allows one per person). Redacted ones go
         // first: the bridge redacts a replaced reaction itself, and when Instagram's echo races our own send it
-        // redacts our copy, which can land after its replacement in the timeline (both seen live in M4).
+        // redacts our copy, which can land after its replacement in the timeline (both seen live).
         var reactions: [String: [String: Event]] = [:]
         var statuses: [String: JSON] = [:]
         for event in events {
@@ -433,10 +433,10 @@ nonisolated enum Timeline {
             var message = Message(id: id, eventID: id, txnID: base.unsigned?.transactionID, sender: sender, ts: base.originServerTS ?? 0,
                                   kind: MessageKind(type: base.type, content: content), body: body(of: content), content: content,
                                   isOwn: sender == me)
-            // S3: the flag is on the edit's top-level content; resolve_media edits set it.
+            // The flag is on the edit's top-level content; resolve_media edits set it.
             message.isEdited = applied.contains { $0.content["com.beeper.dont_render_edited"]?.bool != true }
             // Distinct texts: Instagram's echo of our edit comes back through the double puppet as a second edit
-            // with the same text (plus an empty `m.mentions`, M4), and only one counts toward the 5-edit limit.
+            // with the same text (plus an empty `m.mentions`), and only one counts toward the 5-edit limit.
             message.editCount = Set(applied.map { [$0.content["m.new_content"]?["msgtype"], $0.content["m.new_content"]?["body"]] }).count
             message.reactions = group(Array((reactions[id] ?? [:]).values), position: position, me: me)
             if message.isOwn {

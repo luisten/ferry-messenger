@@ -366,7 +366,7 @@ func snapshot(t Thread, account, myName, myAvatar string, readUpTo int64) Envelo
 	}
 	bridge := map[string]any{"protocol": map[string]any{"id": protocolID, "displayname": "Instagram"}, "channel": channel}
 	if isDM {
-		bridge["com.beeper.room_type"] = "dm" // a group has none (S7.6)
+		bridge["com.beeper.room_type"] = "dm" // a group has none
 	}
 
 	state := []Event{stateEvent("m.bridge", "instagram", bridge), stateEvent("m.room.name", "", map[string]any{"name": name})}

@@ -17,7 +17,8 @@ Instagram behaves): [CLAUDE.md](../CLAUDE.md).
 - **`core/`** is a Go module over [mautrix](https://github.com/mautrix/meta)'s Instagram client
   (`go.mau.fi/mautrix-meta`, pinned in `core/go.mod`). It builds to a static library with a small C API (one client
   per account, every Instagram request counted), wrapped in `build/IGCore.xcframework` (gitignored). The API is
-  [docs/PLAN-core.md](PLAN-core.md) §3 as changed by [PLAN-android.md](PLAN-android.md) §3: `core/chat` turns
+  the `//export`s in `core/cmd/igcore/main.go`, each with its comment ([PLAN-android.md](PLAN-android.md) §3 has the
+  envelope its updates come in): `core/chat` turns
   Instagram's answers into Matrix-shaped chat updates (pure Go; `cd core && go test ./...`, on the captures in
   `core/testdata`), `cmd/igcore` is the C API around it.
 - **The app** (SwiftUI, no third-party Swift packages) links it through `Ferry/IGCore.swift` and applies the engine's
@@ -31,9 +32,12 @@ The Xcode project, scheme, targets and folders are named `Ferry` (`Ferry.xcodepr
 display name is "Ferry Messenger" and its bundle ID `<prefix>.ferry-messenger`. The project is hand-written with
 synchronized folders: drop a `.swift` file into `Ferry/` (or a test folder) and it builds, with no project edits.
 
-The other documents in `docs/` (`PLAN.md`, `DECISIONS.md`, `FOLLOWUPS.md`, `BRIEF.md`, `research/`, `spikes/`) are the
-design history, from when the app reached Instagram through a server of its own. Their design and UI parts still hold;
-code comments refer to their numbers (D6, #17, …).
+The other documents in `docs/`: [DECISIONS.md](DECISIONS.md) (the decision log, D1–D19 from Ferry's server days, D20
+on this app's), [FOLLOWUPS.md](FOLLOWUPS.md) (what's left to do), [design/DESIGN.md](design/DESIGN.md) (the design both
+apps follow), the done plans [PLAN-core.md](PLAN-core.md) and [PLAN-android.md](PLAN-android.md) (their decisions, C and
+E, and results), [PLAN-push.md](PLAN-push.md) (the notifications 1.6.3 removed, and why), [BRIEF.md](BRIEF.md) and
+`spikes/` (the first spike on the phone). Code comments refer to their numbers (D6, C3, E4, FOLLOWUPS #17, DESIGN §3.5).
+Ferry's server-era plan, spike, design reviews and research are in the repo at tag v1.8.
 
 ## Build and test
 
@@ -113,8 +117,9 @@ xcrun simctl spawn $SIM log show --last 2m --predicate "subsystem == \"$APP\" AN
 Most run on `FERRY_DEBUG_DEMO`'s made-up accounts and chats, which never connect: nothing reaches Instagram, and the
 simulator's own accounts are left alone. They cover the inbox, an account's chip, a chat and Chat Info; Requests and a
 request thread; a group (senders named to VoiceOver, Chat Info's members); where an unread chat opens and its
-jump-to-newest button; the welcome screen; New Message; the mic (a tap records hands-free and the trash cancels;
-hold and slide cancels).
+jump-to-newest button; a short chat opening above the composer; swiping a message to reply; holding a photo for its
+sheet; Mark as Unread from the inbox; pasting two photos as one set; the welcome screen; New Message; the mic (a tap
+records hands-free and the trash cancels; hold and slide cancels).
 
 These skip unless you opt in:
 
@@ -292,6 +297,7 @@ git -c gpg.ssh.allowedSignersFile=/tmp/allowed_signers tag -v v1.0
 ## CI
 
 `.github/workflows/ci.yml` runs on pull requests to `main`, pushes to `main`, and by hand. It uses no secrets and
-never talks to Instagram: shellcheck, actionlint and the secret and home-path scans on Ubuntu, then on GitHub's
-`xcode-27` macOS runner `core/build.sh` (Go 1.27.3, pinned and checksummed) and the unit tests. Actions are pinned by
+never talks to Instagram: a check that `main` carries no release-candidate label (`FERRY_PRERELEASE`), shellcheck,
+actionlint and the secret and home-path scans on Ubuntu, then on GitHub's `xcode-27` macOS runner `core/build.sh` (Go
+1.27.3, pinned and checksummed), the engine's tests (`go test ./...`) and the unit tests. Actions are pinned by
 commit SHA (Dependabot keeps them fresh); downloaded tools by version and SHA-256.

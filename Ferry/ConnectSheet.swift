@@ -2,7 +2,7 @@ import SwiftUI
 import WebKit
 
 /// O3: the user logs in on instagram.com in a throwaway web view; the session cookies go to `core/` and the Keychain
-/// (PLAN §2.9, D7, decision C3). The app never sees the password.
+/// (D7, decision C3). The app never sees the password.
 struct ConnectSheet: View {
     /// Set to re-login an existing account (A3); nil adds a new one.
     var reloginID: String? = nil

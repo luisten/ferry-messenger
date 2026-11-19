@@ -2,7 +2,7 @@ import AVFoundation
 import SwiftUI
 
 /// What a thread shows full screen: a video (M1) or a photo (M2), always from a downloaded file, because AVPlayer
-/// can't send the auth header media needs (PLAN §2.7).
+/// can't send the auth header media needs.
 struct MediaViewerItem: Identifiable {
     let message: Message
     let file: URL
@@ -128,7 +128,7 @@ struct PlayerView: View {
                     Text("Shared by \(item.sender) · \(item.message.ts.timeText)").font(.footnote).foregroundStyle(.white.opacity(0.75))
                     if let identity { AccountTag(identity: identity) }
                 }
-                // Nothing to scrub until the video says how long it is ("0:00 / −0:00" on a failure, review 2026-10-15 #7).
+                // Nothing to scrub until the video says how long it is ("0:00 / −0:00" on a failure).
                 if playback.duration > 0 {
                     Scrubber(progress: playback.progress, elapsed: playback.elapsed, duration: playback.duration) { playback.seek($0) }
                 }
@@ -244,7 +244,7 @@ final class LoopingPlayback {
         timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 10), queue: .main) { [weak self] time in
             MainActor.assumeIsolated { self?.tick(time) }
         }
-        // AVFoundation drops an item it can't render (M5: no audio output in the simulator) with no error on the
+        // AVFoundation drops an item it can't render (no audio output in the simulator) with no error on the
         // player, which left a black screen; this is the only signal.
         failObserver = NotificationCenter.default.addObserver(forName: AVPlayerItem.failedToPlayToEndTimeNotification, object: nil,
                                                               queue: .main) { [weak self] note in
@@ -419,7 +419,7 @@ struct PhotoViewer: View {
 // MARK: - Voice
 
 /// One voice note at a time (DESIGN §6.8): AVPlayer on the cached file. It plays the bridge's Ogg/Opus natively
-/// (PLAN P3; confirmed on a real bridged note in M5, so no AVAudioFile fallback was needed).
+/// (confirmed on a real bridged note, so no AVAudioFile fallback was needed).
 @Observable
 final class VoicePlayback {
     /// The note playing, or paused part-way; nil when none is.

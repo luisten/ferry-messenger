@@ -41,7 +41,7 @@ struct ChatInfoView: View {
             }
             if let identity {
                 Section {
-                    // "Account", not "In [tag]" (review 2026-10-15 #6); the handle when it fits.
+                    // "Account", not "In [tag]"; the handle when it fits.
                     LabeledContent("Account") {
                         ViewThatFits(in: .horizontal) {
                             AccountTag(identity: identity, handle: login?.profile?.username)

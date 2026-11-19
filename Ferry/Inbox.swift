@@ -1,6 +1,6 @@
 import Foundation
 
-/// Pure inbox rules (PLAN §2.5, §2.8, DESIGN §4): which rooms show, where, in what order, with which counts.
+/// Pure inbox rules (DESIGN §4): which rooms show, where, in what order, with which counts.
 nonisolated enum Inbox {
     /// Whose chats you see: everyone's, or one bridge login's (its FBID).
     enum Scope: Hashable, Sendable {
@@ -170,7 +170,7 @@ nonisolated enum Inbox {
         return max(joined - (botJoined ? 1 : 0), 0)
     }
 
-    // MARK: Start block (DESIGN T1, review 2026-10-15 #3)
+    // MARK: Start block (DESIGN T1)
 
     /// The top of a thread's history: who it's with, then (only while there are no messages, where it's the only cue;
     /// otherwise the composer says it) which account you're writing from.
@@ -185,7 +185,7 @@ nonisolated enum Inbox {
                    messagingFrom: isEmpty ? account.map { "You're messaging from \($0)." } : nil)
     }
 
-    // MARK: Request bar (DESIGN T2, review 2026-10-15 #5)
+    // MARK: Request bar (DESIGN T2)
 
     struct RequestTitle: Equatable, Sendable {
         var shown: String
@@ -199,7 +199,7 @@ nonisolated enum Inbox {
         return RequestTitle(shown: "\(requester) wants to message", spoken: "\(requester) wants to message \(account).")
     }
 
-    // MARK: Account stack (DESIGN §3.5, review 2026-10-15 §3)
+    // MARK: Account stack (DESIGN §3.5)
 
     /// The inbox toolbar's accounts, side by side and never over each other (principle 9): all of them up to three,
     /// else the first two and a "+N" disc, so the capsule is never wider than 112 pt. A problem is a badge on the
@@ -366,14 +366,14 @@ nonisolated enum Inbox {
 
     /// The bridge forwards `m.read` and typing to Instagram as "Seen"/typing, which would reveal to a requester that
     /// we read their request; it also marks the chat read before handling *any* event we send (implicit read receipts,
-    /// mautrix-go `bridgev2/portal.go:874`). So every receipt, typing, reaction, edit and unsend must pass this
-    /// (PLAN §2.8). It follows the bridge's flag, not our optimistic Accept. Unknown rooms are refused.
+    /// mautrix-go `bridgev2/portal.go:874`). So every receipt, typing, reaction, edit and unsend must pass this.
+    /// It follows the bridge's flag, not our optimistic Accept. Unknown rooms are refused.
     static func allowsReceipts(_ room: Room) -> Bool {
         guard let bridge = room.bridge else { return false }
         return !bridge.isRequest
     }
 
-    // MARK: Requests (PLAN §2.8, DESIGN I2/T2)
+    // MARK: Requests (DESIGN I2/T2)
 
     /// A request as the user sees it: the bridge's flag, unless they just accepted or replied (optimistic; a failure
     /// status from the bridge undoes it).
@@ -468,7 +468,7 @@ nonisolated enum Inbox {
         return date.formatted(style)
     }
 
-    // MARK: Connection banner (PLAN §2.10, DESIGN §7.2)
+    // MARK: Connection banner (DESIGN §7.2)
 
     enum Banner: Equatable, Sendable {
         /// No account can reach Instagram (2 failed connects in a row).

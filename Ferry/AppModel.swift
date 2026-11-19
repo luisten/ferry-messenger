@@ -688,7 +688,7 @@ final class AppModel {
         return found.room
     }
 
-    // MARK: Requests (PLAN §2.8, DESIGN I2/T2)
+    // MARK: Requests (DESIGN I2/T2)
 
     /// The chat moves to the main list at once; Instagram accepts, then a re-read brings the thread's new folder (and
     /// with it "Seen" and typing). A failure puts it back.

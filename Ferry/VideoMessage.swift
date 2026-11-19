@@ -4,9 +4,8 @@ import ImageIO
 import UniformTypeIdentifiers
 
 /// Sending a video (DESIGN §6.9): fit Instagram's limit, then an `m.video` with `info` and a thumbnail (our own card
-/// shows it). The bridge takes mp4/mov/webm/ogg up to 25 × 1000 × 1000 bytes and drops captions (igconnector
-/// `capabilities.go`; it refuses a bigger `info.size` before uploading). Videos stay files from the picker to the
-/// upload: never read into memory.
+/// shows it). The app keeps a video to 25,000,000 bytes (`maxBytes`), and Instagram drops captions. Videos stay
+/// files from the picker to the upload: never read into memory.
 nonisolated enum VideoMessage {
     static let maxBytes = 25_000_000
     /// Containers Instagram takes that Photos hands over: sent with their own codec, only remuxed to drop metadata.

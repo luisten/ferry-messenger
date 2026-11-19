@@ -1,6 +1,6 @@
 import Foundation
 
-/// `GET /_matrix/client/v3/sync` response, only the parts the app reads (PLAN §2.4). Everything is optional because
+/// `GET /_matrix/client/v3/sync` response, only the parts the app reads. Everything is optional because
 /// Synapse omits empty sections in incremental syncs.
 nonisolated struct SyncResponse: Decodable, Sendable {
     var nextBatch: String

@@ -1,15 +1,20 @@
 # Ferry: design spec
 
-Version 1, 2026-10-12; inbox v2 2026-10-14 (D14, [review](REVIEW-2026-10-14.md), [`mockups-v2.html`](mockups-v2.html));
-v3 2026-10-15: renamed **Ferry** (D15, formerly "IG Messenger"), app icon and launch screen (§18), account stack without
-overlap, design pass ([review](REVIEW-2026-10-15.md), [`mockups-v3.html`](mockups-v3.html)); round 2 the same day: the
-icon in colour (the user's decision), the launch screen to match, and a new Welcome (review "Round 2").
-Target: iPhone, portrait, **iOS 26+** (Liquid Glass), SwiftUI.
+Version 1, 2026-10-12; inbox v2 2026-10-14 (D14, [`mockups-v2.html`](mockups-v2.html)); v3 2026-10-15: renamed
+**Ferry** (D15, formerly "IG Messenger"), app icon and launch screen (§18), account stack without overlap, a design pass
+([`mockups-v3.html`](mockups-v3.html)); round 2 the same day: the icon in colour (the user's decision), the launch screen
+to match, and a new Welcome.
+Target: iPhone, portrait, **iOS 26+** (Liquid Glass), SwiftUI. The Android app follows it too.
 Companion file: [`mockups.html`](mockups.html). Open it in a browser; the toggle at the top switches light and dark.
 
-Inputs: [`../BRIEF.md`](../BRIEF.md), [`../research/beeper-ux.md`](../research/beeper-ux.md),
-notes on an earlier web-wrapper prototype, [`../research/matrix-bridge.md`](../research/matrix-bridge.md)
-(mautrix-instagram v26.09).
+Inputs: [`../BRIEF.md`](../BRIEF.md) and notes on an earlier web-wrapper prototype. The design reviews of 2026-10-14
+and 2026-10-15 and the research on the bridge and on Beeper's UX are in the repo at tag v1.8 (`docs/design/REVIEW-*`,
+`docs/research/`).
+
+**Written for Ferry on a Matrix bridge.** Ferry Messenger talks to Instagram from the phone: where this spec names the
+bridge, a Matrix endpoint or a **[bridge]** tag, the engine (`core/chat`) does that job now, and the root CLAUDE.md's
+"Instagram behaviour" says what Instagram allows. What's built, and where it differs from this spec:
+[`../../specs.md`](../../specs.md).
 
 Tags used throughout:
 
@@ -17,7 +22,7 @@ Tags used throughout:
 |---|---|
 | **[v1]** | Ship in the first build. |
 | **[later]** | Designed now, built when the bridge supports it or when v1 is stable. The layout already has a slot for it. |
-| **[bridge]** | Behaviour depends on what mautrix-instagram sends. The section names the field or endpoint. |
+| **[bridge]** | Behaviour depends on what Instagram sends (through Ferry's bridge then, the engine now). The section names the field. |
 | **[$$]** | Expensive for one engineer. A cheaper fallback is given in §14. |
 
 ---
@@ -30,8 +35,8 @@ Tags used throughout:
    brand's sea (§0.8) is scenery, not UI: it appears only in the app icon, the launch screen and the Welcome picture.
 2. **Every account has a mark.** Name + color + a one-character mark (`S`, `P`, an emoji). Color is never shown
    without the mark or the name, so the system works for color-blind users and VoiceOver.
-3. **Threads are locked to their account.** The bridge creates one Matrix room per IG account per conversation
-   (`m.bridge` → `channel["fi.mau.receiver"]`). The thread header, the bubble color and the composer placeholder
+3. **Threads are locked to their account.** The engine makes one room per IG account per conversation
+   (`!ig-<account>-<thread>`, `m.bridge` → `channel["fi.mau.receiver"]`). The thread header, the bubble color and the composer placeholder
    ("Message as Studio") all say which account you are using. There is no account switcher in a thread, so a
    wrong-account reply cannot happen.
 4. **One control picks whose chats you see. Folders are places, not filters.** A single scope bar
@@ -125,15 +130,15 @@ flowchart TD
 | ID | Screen | Status |
 |---|---|---|
 | O1 | Welcome | v1 |
-| O2 | Server sign-in (only if the app is not preconfigured for one homeserver) | v1, conditional |
+| O2 | Server sign-in | removed (no server) |
 | O3 | Connect: instagram.com login sheet | v1 |
 | O4 | Connecting and syncing | v1 |
 | O5 | Name and color | v1 |
 | O6 | Add another account? | v1 |
-| O7 | Notifications pre-prompt | v1 |
+| O7 | Notifications pre-prompt | Android only (iOS has no notifications since 1.6.3) |
 | I1 | Inbox (scope All or one account) | v1 |
 | I2 | Requests | v1 |
-| I3 | General | later [bridge] |
+| I3 | General | v1 (professional accounts) |
 | I4 | Archived | v1 |
 | I5 | Search | v1 |
 | N1 | New message | v1 |
@@ -151,7 +156,7 @@ flowchart TD
 ## 3. The account identity system
 
 This is the core design problem. Beeper has no documented way to tell two accounts on the same network apart
-(beeper-ux §1.3). We do it with four redundant signals: **color, mark, name, placement**.
+We do it with four redundant signals: **color, mark, name, placement**.
 
 ### 3.1 Anatomy of an account identity
 
@@ -160,13 +165,11 @@ This is the core design problem. Beeper has no documented way to tell two accoun
 | **Name** | User-chosen at O5. Suggestions: "Personal", "Work", "Studio", "Shop", "Creator", or the IG display name. | 1–16 characters. Unique across accounts. |
 | **Color** | User-chosen from 8 options (§3.4). Auto-assigned in order: Ocean, Ember, Grape, Teal, Berry, Moss, Cocoa, Slate. | Unique. Colors already used show the other account's mark and cannot be picked. |
 | **Mark** | One grapheme: a letter (default: first letter of the name) or one emoji. | Unique. If the first letter is taken, suggest the next distinct letter of the name. |
-| **Avatar** | IG profile photo from `/v3/whoami` `profile.avatar`. Cache the bytes (CDN URLs expire, per the PoC). | Shown only for *your* accounts, always with a 2 pt ring in the account color. |
-| **Handle** | `profile.username` from `/whoami`. | Shown as `@marlo.studio` next to the name in thread headers, Accounts and the re-login sheet. |
+| **Avatar** | IG profile photo from Instagram's viewer. Cache the bytes (CDN URLs expire, per the PoC). | Shown only for *your* accounts, always with a 2 pt ring in the account color. |
+| **Handle** | The viewer's username. | Shown as `@marlo.studio` next to the name in thread headers, Accounts and the re-login sheet. |
 
-Identity is stored on our side, keyed by the bridge login ID (the account's FBID). Sync it through Matrix account
-data (a custom `com.igmessenger.accounts` event) so it survives reinstalls. **[v1]** *(v3: not built yet; choose the
-final namespace before building it. Existing `com.igmessenger.*` keys, such as the archive tag's `archived_at`, are data
-on the server: keep reading them after the rename.)*
+Identity is stored on this phone, keyed by the account's Instagram ID (`UserDefaults`), so a reinstall loses it
+(FOLLOWUPS #22).
 
 ### 3.2 Components
 
@@ -189,7 +192,7 @@ on the server: keep reading them after the rename.)*
 | Your bubbles | Filled with the account color, white text | The strongest signal while typing and reading. |
 | Composer | AccountAvatar inside the field + placeholder "Message as Studio" + send button in account color | Tap the avatar for an explanation popover. No switcher. |
 | Player | AccountTag in the footer: "Shared by Maya · S Studio" | You know which account a reply will come from. |
-| New message | Required "From" picker of AccountTags before the recipient field | Search runs against that account (`/v3/search_users?login_id=`), so the choice comes first. |
+| New message | Required "From" picker of AccountTags before the recipient field | Search runs as that account (`IGSearch`), so the choice comes first. |
 | Notifications | Title = contact, subtitle = "to Studio" | iOS cannot badge a sender avatar with our mark; the subtitle carries the account. |
 | Accounts | AccountAvatar + name + handle + status | Edit name, color and mark in Account detail. |
 
@@ -325,14 +328,15 @@ Why this shape:
 
 ### 4.4 Account type, privacy and folders
 
-The bridge does not expose personal/business/creator or private/public today (matrix-bridge §2). So:
-- **v1 treats every account the same:** Chats + Requests. Account rows show no type label.
-- **Later**, when the bridge reports type, show "Business", "Creator" or "Personal" and a lock glyph for private
-  accounts in Accounts, and enable General for professional accounts.
+Instagram's viewer says whether an account is professional (`is_professional_account`), not whether it's a
+business or a creator, nor private or public. So:
+- **Professional accounts** get General, and Accounts labels them "Professional · Primary and General" (A1).
+- **Later**, if the type is ever known, show "Business" or "Creator", and a lock glyph for private accounts
+  (FOLLOWUPS #32).
 - Private/public mostly shows up as **media availability**: a reel from a private account that the receiving account
   does not follow cannot be fetched. Section 6.3 covers that card.
-- If the bridge ever reports `ig_inbox_folder` values for an account, show General for that account even if its
-  type is unknown. Data wins over assumptions.
+- A chat Instagram files under General shows in General even if the account's type is unknown. Data wins over
+  assumptions.
 
 ### 4.5 Counts, badges and notifications (defaults)
 
@@ -354,9 +358,8 @@ at the default text size. Standard margins are 16 pt.
 
 ### O1. Welcome: "The crossing"
 
-*(Round 2, 2026-10-15: a complete redesign at the user's request; it replaces v3's lockup. Directions B and C, the
-reasoning and the full tables: [REVIEW-2026-10-15.md](REVIEW-2026-10-15.md) "Round 2", R2.3; drawn in
-[`mockups-v3.html`](mockups-v3.html) "Round 2 · Welcome".)*
+*(Round 2, 2026-10-15: a complete redesign at the user's request; it replaces v3's lockup. Drawn, with the other two
+directions, in [`mockups-v3.html`](mockups-v3.html) "Round 2 · Welcome".)*
 
 - **Idea:** the name, then the picture that explains it. The icon's ferry crosses a calm sea carrying your accounts as
   two bubbles in their own colours, side by side.
@@ -374,7 +377,8 @@ reasoning and the full tables: [REVIEW-2026-10-15.md](REVIEW-2026-10-15.md) "Rou
     - the icon's bubbles × 0.3 in `AccountColor.ocean` ("A") and `.ember` ("S"), with white SF Pro Rounded Bold marks
       (36 and 29 pt).
 
-    It uses fixed sample identities. At accessibility sizes it shrinks to 70%.
+    The bubbles take your first two accounts' colours and marks once you have them (FOLLOWUPS #53). At accessibility
+    sizes it shrinks to 70%.
   - **Promises**, 28 below: three rows of a 36 pt `tertiarySystemFill` disc with the symbol (`tray`,
     `play.rectangle.on.rectangle`, `eye.slash`) and `.body` text, 16 apart, in a centred 300-wide column.
   - `Spacer(minLength: 24)`.
@@ -412,14 +416,9 @@ reasoning and the full tables: [REVIEW-2026-10-15.md](REVIEW-2026-10-15.md) "Rou
   `Drift`.
 - **States:** none.
 
-### O2. Server sign-in (conditional)
+### O2. Server sign-in (removed)
 
-Only shown if the build is not preconfigured for one homeserver. Fields: server (prefilled), then Matrix sign-in
-through the homeserver's own flow. Hidden behind "Use a different server" if a default exists. **Assumption:** the
-user runs a single private homeserver, so this screen is normally skipped. See §16.
-
-Echo of O1 (round 2): the ferry glyph (`FerryShape`, monochrome: ink and `inkSecondary`, no sea), 44 pt, centred as
-the form's first row above the explanation, with a clear background. Nothing else changes.
+Ferry's sign-in to its Matrix server. Ferry Messenger has no server, so there's no O2; the ID stays unused.
 
 ### O3. Connect: instagram.com login sheet
 
@@ -432,16 +431,16 @@ the form's first row above the explanation, with a clear background. Nothing els
   the session it needs to sync your messages." Second line: "Instagram may ask you to confirm it's you. Keep your
   Instagram app or email nearby."
 - **Completion:** watch cookies on every navigation. When `sessionid`, `csrftoken`, `ds_user_id` exist and the URL
-  matches the bridge's `wait_for_url_pattern`, submit and close automatically. Instagram often shows a "Save your login
+  is Instagram's home or inbox (`CookieGate`, the bridge's old `wait_for_url_pattern`), submit and close automatically. Instagram often shows a "Save your login
   info?" page first, which does not match the pattern. So, **as soon as the required cookies exist**, the footer turns
-  into a "Logged in. **Continue**" bar. The user is never stuck on that page. **[bridge]** (cookie flow, §5.3)
+  into a "Logged in. **Continue**" bar. The user is never stuck on that page.
 - **Safety:** block navigation to Instagram's logout URLs inside this web view (logging out would kill the session the
-  bridge just received). Open external links in Safari.
+  app just received). Open external links in Safari.
 - **States:**
   - Loading page: system progress bar under the toolbar.
   - Offline: `ContentUnavailableView` "You're offline" + Retry.
   - Submitting: the sheet content dims, a centered glass card "Connecting @…" with a spinner.
-  - Errors from the bridge map to §7.3 messages, shown in the sheet with "Try again". Checkpoint: "Instagram wants to
+  - Errors from Instagram map to §7.3 messages, shown in the sheet with "Try again". Checkpoint: "Instagram wants to
     confirm it's you" with steps.
 - **Haptics:** `.success` when cookies are captured; `.error` on a failed submit.
 - **Re-login mode:** opened from A3 with `?login_id=<existing>`; the title becomes "Log in to Studio" and shows the
@@ -457,9 +456,9 @@ the form's first row above the explanation, with a clear background. Nothing els
 - **Copy:** "You can start chatting while older messages load."
 - **Button:** "Continue" enabled after step 2. Sync continues in the background and is visible in Accounts and the
   scope chip spinner.
-- **Progress:** indeterminate unless the bridge reports counts. **[bridge]** (bridge state `backfilling`)
-- **Errors:** UNKNOWN_ERROR → "Couldn't finish connecting" + Try again + "Copy details" (puts the bridge message on
-  the clipboard for bug reports).
+- **Progress:** indeterminate.
+- **Errors:** "Couldn't finish connecting" + Try again + "Copy details" (puts Instagram's message on the clipboard for
+  bug reports).
 
 ### O5. Name and color
 
@@ -489,8 +488,8 @@ the form's first row above the explanation, with a clear background. Nothing els
 - Copy: "Get notified about new messages?" / "You'll see which account each message is for. You can change this per
   account later."
 - Buttons: "Turn On Notifications" (triggers the system prompt), "Not now".
-- Push needs the paid Apple Developer Program and a push gateway (matrix-bridge, open risk 13). Without push, skip
-  this screen.
+- Android only: the iPhone app has no notifications (1.6.3 removed them, [`../PLAN-push.md`](../PLAN-push.md)), so it
+  skips this screen.
 
 ### I1. Inbox
 
@@ -516,16 +515,13 @@ the form's first row above the explanation, with a clear background. Nothing els
 - **Swipe actions:** leading full swipe = Mark Read/Unread. Trailing: Archive (full swipe), Mute, More (Pin; later:
   Move to General/Primary [bridge]). Neutral colors: archive = label-inverted ink, others gray.
 - **Context menu (long-press row):** Pin, Mark as Unread, Mute, Archive, Open in Instagram, Delete Chat…
-  (confirm; `com.beeper.delete_chat`, removes the chat for this account on Instagram too **[bridge]**; verify what
-  "delete" means on IG before shipping and word the alert to match).
+  (confirm; `IGDeleteThread`, which removes the chat for this account on Instagram too).
 - **Pull to refresh:** `.refreshable` triggers a sync nudge. Mostly reassurance.
 - **States:**
   - Loading (first sync): 8 shimmer rows (`.redacted(reason: .placeholder)`).
   - Empty, All: `ContentUnavailableView` "No chats yet" / "New messages from all your accounts land here."
   - Empty, account: "No chats in Studio yet".
   - Offline: a glass pill under the toolbar, "Offline. Messages will send when you're back online."
-  - End of list footer (account scope): "That's everything synced from Studio." (The bridge's thread-list backfill
-    has a known bug, so older chats may appear later when someone writes. [bridge] #374)
 - **Haptics:** `.selection` on scope change; `.impact(.light)` when a swipe action commits.
 
 ### I2. Requests
@@ -537,18 +533,17 @@ the form's first row above the explanation, with a clear background. Nothing els
   two small bordered buttons: **Delete** and **Accept**. Tapping the row opens T2.
 - **Sections:** in All scope, one section per account; header = AccountTag + count.
 - **Bottom toolbar:** "Delete All" (destructive, confirmation names the count and the account).
-- **Footer:** "Requests that arrived before you connected Studio appear when the sender writes again." **[bridge]**
-  (matrix-bridge §2 gotcha).
-- **No "Hidden requests" split in v1.** The bridge reports IG's Requests and Hidden Requests both as "request". If it
-  ever distinguishes them, add a collapsed "Hidden" section at the end of this list (no new control).
+- **No "Hidden requests" split.** The engine reads Instagram's Requests and Hidden Requests (`PENDING`, `SPAM`) and
+  shows both as requests. A collapsed "Hidden" section at the end of this list would split them (no new control;
+  FOLLOWUPS #18).
 - **States:** Empty: "No message requests" / "When someone you don't follow messages @marlo.studio, it shows up here."
-- **Privacy rule:** **never send read receipts in a request room** (bridge forwards them; client must suppress). Never
-  send typing indicators there either.
+- **Privacy rule:** **never send "Seen" in a request**, nor typing indicators (the engine's request rule,
+  `core/chat/rules.go`).
 - **Haptics:** `.success` on Accept; `.impact(.medium)` on Delete.
 
-### I3. General (later)
+### I3. General
 
-Same layout as I1's list, scoped. Swipe action "Move to Primary" **[bridge]**. Empty: "Nothing in General" /
+Same layout as I1's list, scoped. No "Move to Primary": moving chats is done in Instagram (specs.md). Empty: "Nothing in General" /
 "On Instagram, business and creator accounts can move chats here."
 
 ### I4. Archived
@@ -561,7 +556,7 @@ back when there's a new message."
 - `.searchable` with `.searchScopes`: All, then one scope per account (stock scope bar).
 - Results sections: Chats (name match), Messages (text match, newest first, snippet with the term bold), each row with
   an AccountMark.
-- Search is local over synced messages (Matrix server-side search is optional later).
+- Search is local over loaded messages.
 - Empty: `ContentUnavailableView.search(text:)`.
 
 ### N1. New message
@@ -570,10 +565,11 @@ back when there's a new message."
 - **From** row first: a horizontal picker of AccountTags (custom chips). In account scope, preselected to that
   account. In All scope **nothing is preselected** and the To field is disabled with the hint "Choose an account
   first". This kills Beeper's "new chat created through the wrong account" bug class.
-- **To:** search field. Queries `POST /v3/search_users?login_id=<account>` with a 300 ms debounce. Results: avatar,
-  name, `@handle`; existing threads on that account show "Open chat". **[bridge]**
-- Selecting a user calls `create_dm` and pushes T1 with the composer focused.
-- One recipient in v1 (the bridge can create groups, but adding or removing members is unsupported, so skip groups).
+- **To:** search field. Searches Instagram as that account (`IGSearch`) with a 300 ms debounce. Results: avatar,
+  name, `@handle`; existing threads on that account show "Open chat".
+- Selecting a user opens the DM (`IGOpenDM`: ours, Instagram's, or a draft until the first message) and pushes T1 with
+  the composer focused.
+- One recipient (no new groups).
 - **States:** searching (spinner row), no results ("No Instagram accounts match “…”"), error ("Couldn't search from
   Studio. Check that it's connected.").
 
@@ -594,11 +590,11 @@ back when there's a new message."
   `person.2.fill` on `tertiarySystemFill`), the name in `.title3.weight(.semibold)`, "@handle" or "4 members" in
   `.footnote`, the AccountTag, with 22 pt above and 20 pt below. It's content, not a second header. *(v3: in short group
   threads the old header read as a doubled title.)*
-- **Typing indicator:** incoming bubble with three dots. **[bridge]** supported.
+- **Typing indicator:** incoming bubble with three dots.
 - **Scroll-to-bottom button:** glass circle with chevron.down + count of new messages, bottom-right above the composer.
 - **Composer:** §6.9.
 - **States:**
-  - Loading history: spinner at top while paginating back (`/messages` backwards).
+  - Loading history: spinner at top while paginating back (`IGOlder`).
   - Empty (new DM): the start block plus "You're messaging from Studio" (only here; with messages, the composer says it).
   - Account signed out: composer replaced by the recovery bar (§7.2).
   - Account syncing: no change; messages fill in.
@@ -612,16 +608,14 @@ back when there's a new message."
   title) / "They won't see that you've read this until you accept." Buttons: **Delete** (destructive) and **Accept**
   (prominent), `.frame(maxWidth: .infinity, minHeight: 44)`. *(v3: was about 195 pt with 54 pt buttons.)*
 - A text link under the buttons: "Reply instead" opens the composer with a note "Replying accepts the request."
-  (the bridge auto-accepts on send).
-- Accept sends `com.beeper.accept_message_request`; the chat moves to the main list with a toast "Accepted. This chat
-  is now in Studio." **[bridge]**
+  (Instagram accepts on send).
+- Accept sends `IGAccept`; the chat moves to the main list with a toast "Accepted. This chat is now in Studio."
 
 ### T3. Chat info (minimal)
 
 Inset grouped list: big avatar, name, `@handle`, then `LabeledContent("Account") { AccountTag }` (and
 `LabeledContent("Folder", value: "General")` when it applies; v3, was "In [tag]"). Rows: Open in Instagram, Mute, Search in Chat,
-Shared media (grid of photos, videos and reels, stock `LazyVGrid`), Delete Chat. Groups: member list (read-only;
-the bridge cannot invite or remove members), rename and photo change (supported).
+Shared media (grid of photos, videos and reels, stock `LazyVGrid`), Delete Chat. Groups: member list (read-only).
 
 ### M1. Reel / video player
 
@@ -667,7 +661,7 @@ horizontally within the gallery only. Toolbar: close, Share, Save, Reply.
 - **Section "Privacy":** Send Read Receipts (on), Send Typing Indicators (on). Footer: "Never sent in message requests."
 - **Section "Reels and videos":** Auto-download: Wi-Fi only / Always / Never (default Wi-Fi only). Storage: size +
   Clear Cache.
-- **Footer:** "Ferry" and its version, the Matrix user and the server, small secondary text.
+- **Footer:** "Ferry Messenger" and its version, small secondary text.
 
 ### A2. Account detail
 
@@ -676,10 +670,10 @@ horizontally within the gallery only. Toolbar: close, Share, Save, Reply.
 - Identity: Name, Color, Mark (same editors as O5, with live preview).
 - Status card: state, last change time, and the recovery action when needed.
 - Toggles: Show in All Chats (on), Notifications (on), Request notifications (off).
-- Note row: "Instagram's end-to-end encrypted chats can't be shown here. Open them in Instagram." **[bridge]**
+- Note row: "Instagram's end-to-end encrypted chats can't be shown here. Open them in Instagram."
 - Destructive: "Remove Account…" Alert: "Remove Studio?" / "Chats from @marlo.studio will be removed from Ferry.
-  Your Instagram account isn't affected." Buttons: Remove Account, Cancel. Calls `/v3/logout/{loginID}`. **Verify**
-  that bridge logout does not revoke the IG session for other clients; adjust the copy if it does.
+  Your Instagram account isn't affected." Buttons: Remove Account, Cancel. It forgets the account on this phone and
+  tells Instagram nothing.
 
 ### A3. Re-login sheet
 
@@ -752,7 +746,7 @@ Reels look and behave like a video message: same component as a sent video, plus
 |---|---|---|---|
 | Ready (remote) | live reel arrived as `m.video` | thumbnail + play + duration | download, then play inline |
 | Preview only | backfilled reel (`com.beeper.unresolved_media`) | thumbnail + "Load video" glass button, no duration | `POST resolve_media`; card shows "Getting video…" with an indeterminate ring; the message is **replaced in place** by an edit (`m.image` → `m.video`), cross-fade 0.25 s, then plays |
-| Downloading | download from Matrix media in progress | determinate ring around the play glyph, size "4.2 MB" | cancel |
+| Downloading | download in progress | determinate ring around the play glyph, size "4.2 MB" | cancel |
 | Playing inline | | video, thin progress line, mute toggle bottom-left, expand top-right | pause; expand opens M1 |
 | Unavailable | `xma_fetch_status` ≠ ok | preview (if any) dimmed + caption + reason + "Open in Instagram" | opens instagram.com link in Safari or the IG app |
 | Too large | "Too large attachment" notice | neutral card: "This reel is too big to bring into the chat." + Open in Instagram | open link |
@@ -763,7 +757,7 @@ Reels look and behave like a video message: same component as a sent video, plus
   "Facebook reels can't be shown here."
 - **Inline playback rules:** never autoplay. One inline video at a time. Scrolling it off screen pauses it. Media is
   authenticated, so download first, then play from the local file.
-- **Cache:** after first play, keep the file; evict least-recently-played beyond the cache limit (default 1 GB).
+- **Cache:** after first play, keep the file; evict least-recently-played beyond the cache limit (500 MB, trimmed to 400 MB).
   "Auto-download" (Wi-Fi only by default) pre-fetches live reels so the first tap plays instantly.
 
 ### 6.4 Video message
@@ -795,12 +789,13 @@ states.
 ### 6.8 Voice message
 
 - Bubble 240 wide, 48 tall. Play/pause circle 32 pt (incoming: primary on gray; outgoing: white on account color).
-- Waveform: 36 bars, 3 pt wide, 2 pt gaps, height from the waveform data if present, else computed after download.
+- Waveform: 36 bars, 3 pt wide, 2 pt gaps, height from the waveform data if present, else static bars from the message ID (§14).
   Played portion fully opaque, the rest 35%.
 - Duration "0:14" trailing, then elapsed while playing. Speed pill "1×" appears after playback starts (1×, 1.5×, 2×).
 - **Scrub** by dragging across the waveform. VoiceOver adjustable action ±5 s.
 - Consecutive voice messages autoplay. Lock Screen controls through `MPNowPlayingInfoCenter`.
-- Audio arrives as Ogg/Opus; the app transcodes before playback, so the first tap shows a short ring. **[bridge]**
+- Audio arrives as Ogg/Opus or AAC; AVFoundation plays both from the downloaded file, so the first tap shows a short
+  ring while it downloads.
 
 ### 6.9 Composer
 
@@ -810,7 +805,7 @@ states.
 - **Placeholder:** "Message as Studio".
 - **AccountAvatar tap:** popover "This chat belongs to Studio (@marlo.studio). Replies always come from this account."
   + "Account settings" link.
-- **Limits [bridge]:**
+- **Limits (Instagram's):**
   - Text: 1000 characters. A counter ("87 left") appears at 900; Send disables above 1000.
   - Photos: compressed to ≤ 8 MB automatically. **Captions on images are dropped by Instagram**, so the attachment
     preview has no caption field; text typed alongside goes as a separate message ("Sent as a separate message").
@@ -829,10 +824,10 @@ states.
 
 ### 7.1 State machine
 
-Bridge states come from `/v3/whoami` `logins[].state.state_event` and bridge-state events. Login errors come from the
-provisioning responses.
+States come from the engine's account updates, which kept the bridge's state names (`BridgeAPI.swift`). Login errors
+come from Instagram's answers.
 
-| App state | Bridge source | Account row | Scope chip | Inbox banner | Thread | Action |
+| App state | Source | Account row | Scope chip | Inbox banner | Thread | Action |
 |---|---|---|---|---|---|---|
 | **Connecting** | TRANSIENT_DISCONNECT, or startup | spinner "Connecting…" | spinner | none for 30 s, then compact pill "Reconnecting to Studio…" | composer works; sends queue | none (automatic) |
 | **Syncing history** | backfilling | "Syncing history…" + progress bar (indeterminate unless counts exist) | spinner | none | normal | none |
@@ -853,8 +848,8 @@ provisioning responses.
    "2 accounts need attention" → Accounts.
 4. **Thread recovery bar** (replaces the composer): "Studio is signed out. Log in again to send and receive messages."
    + **Log in again**.
-5. **Local notification** when an account goes Signed out while the app is backgrounded (only if push is configured;
-   the bridge state reaches us through Matrix). **[bridge]**
+5. **Local notification** when an account goes Signed out while the app is in the background (Android only: the iPhone
+   app has no notifications).
 
 ### 7.3 Copy per state
 
@@ -1132,7 +1127,7 @@ State copy for connection problems is in §7.3.
 | Reel / video card | `ZStack` with `AsyncImage`-like thumbnail loader, `AVPlayerLayer` view for inline | **custom (core)** [$$] | |
 | Photo / gallery | `Image`, `Grid` | custom (small) | |
 | Share cards (post/story) | `VStack` card | **custom (small)** | |
-| Link preview | `LPLinkView` in `UIViewRepresentable`, or bridge `com.beeper.linkpreviews` data in a simple card | stock-ish | |
+| Link preview | `com.beeper.linkpreviews` data (the engine's) in a simple card | custom (small) | |
 | Voice message | `Canvas` waveform + `AVAudioPlayer` | **custom (core)** | |
 | Composer | `TextField(axis: .vertical)`, `PhotosPicker`, glass in `GlassEffectContainer`, `safeAreaBar(edge: .bottom)` | custom layout, stock parts | |
 | Composer lock popover | `.popover` + `.presentationCompactAdaptation(.popover)` | stock | |
@@ -1163,46 +1158,14 @@ State copy for connection problems is in §7.3.
 | Waveform | Needs decoded samples | Static bars from a seeded hash of the event ID until the file is decoded. |
 | Shimmer placeholders | Custom animation | `.redacted(reason: .placeholder)` without shimmer. |
 | Welcome scene motion | A timeline-driven `Canvas` plus an entrance | The scene drawn at rest (exactly the Reduce Motion version); add the motion later. |
-| Identity sync through Matrix account data | Extra event type and merge rules | Store locally in v1; migrate later. |
+| Identity sync across devices | Somewhere to keep it, and merge rules | Stored on this phone (built); FOLLOWUPS #22. |
 
 ---
 
-## 15. Bridge dependency register
+## 15. Bridge dependency register (removed)
 
-Source: matrix-bridge.md (mautrix-instagram v26.09). "Works" means the bridge provides it today.
-
-| Feature in this design | Bridge status | Design consequence |
-|---|---|---|
-| Room → account link | Works (`m.bridge` → `fi.mau.receiver`) | Locked threads. Needs `split_portals: true` before the first login. |
-| Account name, @username, avatar, state | Works (`/v3/whoami`) | Identity defaults, status rows. |
-| Requests (per account) | Works (`com.beeper.message_request`) | v1 Requests tile and screen. |
-| Requests vs Hidden requests | Not distinguished | One list. Hidden section later. |
-| Requests from before login | May not bridge until a new message | Footer note in I2. |
-| Accept / Delete request | Works (`accept_message_request`, `delete_chat`); reply also accepts | T2 bar, request row buttons. |
-| No read receipts in requests | Client must enforce | Rule in I2/T2. |
-| Primary / General | **Not exposed** | v1 without General tile. Patch or fork needed. |
-| Account type, private/public | Not exposed | No type labels in v1. |
-| Live reels as video | Works (`m.video` + thumbnail + caption body + `external_url`) with `disable_xma_always: false` | Ready state. |
-| Backfilled reels | Preview + `unresolved_media`; `resolve_media` → edit replaces in place | Preview-only state + "Load video". |
-| Reel fetch failure | `xma_fetch_status` | Unavailable card. Cause not reliably known. |
-| Too-large reels | "Too large attachment" notice | Too large card. Raise `max_upload_size`. |
-| Reel author / caption | Caption body (eyebrow/title/subtitle/caption) | Parse; fall back to raw caption text. Needs one live sample. |
-| Typing, read receipts | Works both ways | Typing dots, "Seen", settings toggles. |
-| Reactions | Works, one per user per message | Palette replaces; same emoji removes. |
-| Edits | Works, max 5 within 15 min | Edit action availability. |
-| Unsend | Works; no "delete for me" | No "Delete for me" anywhere. |
-| Voice messages | Works (Ogg/Opus in, `audio/mp4` out) | Transcode on download; recording sends m4a. |
-| Images out | ≤ 8 MB, captions dropped | Auto-compress; no caption field. |
-| Video out | ≤ 25 MB | Compress or error. |
-| Text out | ≤ 1000 chars | Counter at 900. |
-| New DM | `search_users` + `create_dm` per login | From-first New message. |
-| Groups | Members, title, avatar in; rename/avatar out; no invite/kick | Read-only member list. No new groups in v1. |
-| IG end-to-end encrypted chats | Not bridged | One-line note in Account detail. |
-| View-once | Bridged or a notice | View-once card. |
-| Link previews | `com.beeper.linkpreviews` | Link card from bridge data. |
-| Connection states | CONNECTED, TRANSIENT_DISCONNECT, BAD_CREDENTIALS, UNKNOWN_ERROR, backfilling + login errors | §7 state machine. |
-| Backfill progress counts | Not confirmed | Indeterminate progress unless counts appear. |
-| Thread-list backfill | Known bug #374 | End-of-list footer wording. |
+What Ferry's Matrix bridge provided, feature by feature. Ferry Messenger has no bridge: the root CLAUDE.md's "Instagram
+behaviour" holds what Instagram gives the engine, and the register itself is in the repo at tag v1.8.
 
 ---
 
@@ -1210,13 +1173,13 @@ Source: matrix-bridge.md (mautrix-instagram v26.09). "Works" means the bridge pr
 
 Assumptions I made (running unattended, so recorded here instead of asked):
 
-1. **Single private homeserver.** The app is preconfigured for the user's own server, so O2 is usually skipped and
-   there is no Matrix sign-up in onboarding. If the app must support arbitrary servers, O2 needs a full design.
+1. **Single private homeserver.** *(Moot: Ferry Messenger has no server, and O2 is gone.)*
 2. **No paywall, no account limit.** Beeper's paid second account is a top complaint.
 3. **No merged chats.** The same person on two accounts stays as two threads. This keeps "locked threads" simple.
 4. **No tab bar.** Messaging only; Accounts lives behind the toolbar AccountStack.
 5. **Push may not exist in v1** (needs a paid Apple Developer account and a push gateway). Designs still include
-   notification copy; skip O7 if push is off.
+   notification copy; skip O7 if push is off. *(The iPhone app has none since 1.6.3; Android notifies from a
+   foreground service.)*
 6. **Monochrome chrome.** If the user wants a brand accent color, it must stay out of the account palette's hues
    (and it weakens "color means account"). *(Round 2: resolved. The user chose a coloured icon; the brand's sea is
    scenery only, never chrome (principle 10, §8.1).)*
@@ -1226,17 +1189,19 @@ Questions for engineering:
 1. Can we get one raw sample of a live reel's caption body (eyebrow/title/subtitle/caption) to lock the author/caption
    parser?
 2. Does bridge `logout` revoke the Instagram session, or only drop it from the bridge? (Affects "Remove account" copy.)
-   **Answer (M6, bridge source):** only drops it; no logout reaches Instagram. But the bridge deletes that account's
-   chats from our server, so the A2 alert says so (PLAN §7).
+   **Answer:** Remove Account tells Instagram nothing; the account and its chats leave this phone, and the A2 alert
+   says so.
 3. What does `delete_chat` do on Instagram's side for this account? (Affects the Delete Chat alert.)
-   **Answer (M6, bridge source):** Instagram's "Delete chat" for this account only (the sender keeps it; future
+   **Answer (Ferry's bridge source):** Instagram's "Delete chat" for this account only (the sender keeps it; future
    messages aren't sent to spam), after the bridge marks the chat read. The alert says "They may see it as read."
-4. Does bridge state include backfill counts? (Determinate vs indeterminate progress.)
-5. Will we patch the bridge for Primary/General and account type? If yes, the General tile turns on with no layout work.
+4. Does bridge state include backfill counts? *(Moot: no bridge; progress is indeterminate.)*
+5. Will we patch the bridge for Primary/General and account type? *(Moot: the engine reads Instagram's folders, and
+   General is built.)*
 6. Is `safeAreaBar` (iOS 26) available as expected for the scope bar and composer? If not, `safeAreaInset` works.
-   **Answer (M3, v2):** under the large title it pulled the title into the scroll-edge blur, so v1 used `safeAreaInset`;
+   **Answer (v2):** under the large title it pulled the title into the scroll-edge blur, so v1 used `safeAreaInset`;
    with v2's inline title the scope bar is in `safeAreaBar` and rows pass under it with the edge effect.
 7. Confirm `Picker(.palette)` renders as a horizontal emoji row inside `.contextMenu` on iOS 26.
+   **Answer:** it does, drawn small; the message menu became a sheet (2026-10-21, §13).
 
 Questions for the user:
 
@@ -1251,31 +1216,21 @@ Questions for the user:
 
 ---
 
-## 17. Suggested build order
+## 17. Suggested build order (removed)
 
-1. **Identity core:** `AccountIdentity` model, palette, AccountMark/Tag/Avatar, Accounts list (read-only) from
-   `/whoami`.
-2. **Inbox:** list, rows with marks, scope bar, Requests tile + screen with Accept/Delete, Archived.
-3. **Thread:** bubbles and grouping, composer with lock + limits, replies, reactions (context menu), Seen, typing.
-4. **Media:** photo, reel/video card (tap → full-screen first), resolve_media "Load video", unavailable states,
-   voice playback.
-5. **Onboarding + connect:** login sheet with cookie capture, connecting screen, name and color, add another.
-6. **Connection states:** banners, recovery bar, re-login sheet.
-7. **Polish:** inline video, swipe-to-reply, waveform from audio, recording gestures, shimmer, welcome motion.
-8. **Later:** General folder and account types (bridge patch), hidden requests, identity sync via account data.
+Built, in that order, as Ferry's v1; the list is in the repo at tag v1.8.
 
 ---
 
 ## 18. App icon and launch screen
 
-*(v3, 2026-10-15. Reasoning and the other three concepts: [REVIEW-2026-10-15.md](REVIEW-2026-10-15.md) §1–2;
-drawn in [`mockups-v3.html`](mockups-v3.html).)*
+*(v3, 2026-10-15. The other three concepts are drawn in [`mockups-v3.html`](mockups-v3.html).)*
 
 ### 18.1 App icon: "Two aboard", Deep water
 
 A ferry (raked bow to the right, the direction of travel) carrying two speech bubbles side by side, over one wave:
-several accounts carried together, never merged. **In colour** *(round 2, the user's decision; v3's monochrome files
-`ferry-icon*.svg` are superseded)*: a white ferry on the sea. The sea is the brand's colour and appears only as
+several accounts carried together, never merged. **In colour** *(round 2, the user's decision; it replaced v3's monochrome
+icon)*: a white ferry on the sea. The sea is the brand's colour and appears only as
 scenery (principle 10).
 
 Source files, 1024 × 1024, the same paths as v3, one linear gradient:
@@ -1292,7 +1247,7 @@ has four fills.
 | Dark | transparent (iOS backdrop) | `#F4F9FA` | `#2F9CC5` | `#8FCBD9` | `#2F9CC5` |
 | Tinted | transparent | `#FFFFFF` | `#FFFFFF` | `#8A8A8A` | `#8A8A8A` |
 
-Alternatives drawn in mockups-v3 (REVIEW "Round 2", R2.1):
+Alternatives drawn in mockups-v3 ("Round 2"):
 - Harbour: a white tile with the glyph in sea colours.
 - Night crossing: a night tile with a pale-blue glyph.
 

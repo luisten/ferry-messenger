@@ -2,7 +2,7 @@ import XCTest
 @testable import Ferry
 
 /// Sending voice notes (DESIGN §6.9): the mic's touch-and-hold rules and the `m.audio` the bridge uploads to Instagram
-/// as a voice clip (`IsVoiceClip` when `org.matrix.msc3245.voice` is present; `audio/mp4` fully supported, spike S4).
+/// as a voice clip (`IsVoiceClip` when `org.matrix.msc3245.voice` is present; `audio/mp4` fully supported).
 final class VoiceMessageTests: XCTestCase {
     typealias Hold = VoiceMessage.Hold
 
@@ -142,7 +142,7 @@ final class VoiceMessageTests: XCTestCase {
 
     // MARK: Content
 
-    /// Exact keys, as in spike S4's send that Instagram took as a voice clip (minus the made-up waveform).
+    /// Exact keys, as in Ferry's send that Instagram took as a voice clip (minus the made-up waveform).
     func testContentIsAVoiceAudio() {
         let voice = VoiceMessage.Recorded(file: URL(fileURLWithPath: "/tmp/v.m4a"), duration: 4200, size: 33_000)
         let content = VoiceMessage.content(url: "mxc://igm.home.arpa/a", voice: voice)

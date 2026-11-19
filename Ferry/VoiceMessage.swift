@@ -2,8 +2,8 @@ import AVFoundation
 import SwiftUI
 
 /// Sending a voice note (DESIGN §6.9): AAC in an .m4a, sent as `m.audio` with the voice flag, which the bridge uploads
-/// to Instagram as a voice clip (`IsVoiceClip`; `audio/mp4` is fully supported, igconnector `capabilities.go`; spike
-/// S4 sent one this way). Instagram gets no caption, and the bridge sets no length limit.
+/// to Instagram as a voice clip (`IsVoiceClip`; `audio/mp4` is fully supported, igconnector `capabilities.go`; Ferry
+/// sent one this way). Instagram gets no caption, and the bridge sets no length limit.
 nonisolated enum VoiceMessage {
     static let mimetype = "audio/mp4"
     static let filename = "voice.m4a"

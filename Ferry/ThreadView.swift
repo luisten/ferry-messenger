@@ -75,7 +75,7 @@ struct ThreadView: View {
         let typing = room.typing.contains { $0 != me }
         let profiles = model.profiles
         let name = { (user: String) in Self.firstName(user, in: room, me: me, profile: profiles[user]) }
-        // Groups label who wrote what (DESIGN §6.1); a missing room type means a group (S7.6).
+        // Groups label who wrote what (DESIGN §6.1); a missing room type means a group.
         let isGroup = room.bridge?.roomType == .group
         let member = { (user: String) in
             (name: room.displayName(of: user, profile: profiles[user]), avatarURL: room.avatarURL(of: user, profile: profiles[user]))
@@ -130,12 +130,12 @@ struct ThreadView: View {
             }
             .defaultScrollAnchor(.bottom)
             .defaultScrollAnchor(.bottom, for: .sizeChanges)  // meant for prepends; at the end the re-pin below does it
-            // Photos and our coloured bubbles don't show through behind the header's capsule (review 2026-10-15 #1).
+            // Photos and our coloured bubbles don't show through behind the header's capsule.
             .scrollEdgeEffectStyle(.hard, for: .top)
             .scrollDismissesKeyboard(.interactively)
-            // The anchors above don't follow the keyboard or rows that grow after their first layout (M4), and a
+            // The anchors above don't follow the keyboard or rows that grow after their first layout, and a
             // push (every first open after launch, some reopens) jumps to the top when the navigation bar and composer
-            // insets arrive (#17). So until the user scrolls away from the newest message, every size change pins it
+            // insets arrive (FOLLOWUPS #17). So until the user scrolls away from the newest message, every size change pins it
             // again. Whether they have is decided when their scrolling stops: the action's `old` can already be the
             // jumped one.
             .onScrollTargetVisibilityChange(idType: String.self) { visible in
@@ -192,7 +192,7 @@ struct ThreadView: View {
                 guard line != nil || pin.followsEnd, new.container != old?.container || new.content != old?.content else { return }
                 let (target, anchor) = line.map { ($0, UnitPoint.top) } ?? (Self.bottom, .bottom)
                 proxy.scrollTo(target, anchor: anchor)
-                // Mid-push the scroll view can drop a scroll made in the same update (#17): repeat it after, unless the
+                // Mid-push the scroll view can drop a scroll made in the same update (FOLLOWUPS #17): repeat it after, unless the
                 // user has moved on meanwhile: a repeat back to the line ran after a tap on the jump button and undid it.
                 Task { if line != nil ? pin.holdsLine : pin.followsEnd { proxy.scrollTo(target, anchor: anchor) } }
             }
@@ -262,7 +262,7 @@ struct ThreadView: View {
                 if shown.count < messages.count, !pin.scrolling { showOlder(rows) }
             }
             .onChange(of: !attachments.isEmpty) { _, shown in
-                // The bar grows the bottom inset (M7b). Added when the re-pin above never ran; not re-checked since.
+                // The bar grows the bottom inset. Added when the re-pin above never ran; not re-checked since.
                 guard shown else { return }
                 pin.holdsLine = false  // as a send does, or the next size change snaps back to the line
                 pin.followsEnd = true
@@ -341,7 +341,7 @@ struct ThreadView: View {
             model.setTyping(false, in: room)
             model.voice.stop()
         }
-        // "Load video" finished: play it, as if tapped again (M5 stopped at the swapped card).
+        // "Load video" finished: play it, as if tapped again (before, it stopped at the swapped card).
         .onChange(of: model.autoOpen) { _, id in
             guard let id, let message = Timeline.reduce(room, me: me).first(where: { $0.id == id }) else { return }
             model.autoOpen = nil
@@ -468,7 +468,7 @@ struct ThreadView: View {
             readOnly: !Inbox.allowsReceipts(room))
     }
 
-    /// Full media only on tap (PLAN §2.7): download with the card's ring, then full screen. A second tap while it
+    /// Full media only on tap: download with the card's ring, then full screen. A second tap while it
     /// downloads cancels. A cached file opens at once, with no request at all.
     private func open(_ message: Message, in room: Room) {
         let info = MediaInfo(content: message.content)
@@ -703,7 +703,7 @@ struct ThreadView: View {
     }
 
     /// A push lays the thread out without the bars' insets, at its end; when they arrive it jumps to the top and the
-    /// re-pin scrolls it back down (#17). The first layout also shows the top spinner, so an older page lands right
+    /// re-pin scrolls it back down (FOLLOWUPS #17). The first layout also shows the top spinner, so an older page lands right
     /// after, above the end, and the offset trails it for a few frames. The user saw both as a jump. So the thread
     /// appears only once it has stayed at its end, under the bars, for 100 ms (rows re-measure for a few frames after
     /// a scroll) with no page on its way, and at the latest after 1 s or when the user touches it. Held on the "New
@@ -757,7 +757,7 @@ struct ThreadView: View {
     }
 
     /// What the bottom pin reads from the scroll geometry. The offset and top inset are part of the value, so the
-    /// frame where a push jumps to the top is reported (M4's value read the same just before it, so it went unseen).
+    /// frame where a push jumps to the top is reported (the first pin's value read the same just before it, so it went unseen).
     nonisolated struct ScrollEdge: Equatable {
         var offset: CGFloat
         var content: CGFloat
@@ -773,7 +773,7 @@ struct ThreadView: View {
         }
 
         /// How far the newest message is below what the bars and composer leave visible: 0 at the end (the offset
-        /// starts at minus the top inset). M4 took `containerSize` for the whole frame and read 208 pt here on iOS
+        /// starts at minus the top inset). The first pin took `containerSize` for the whole frame and read 208 pt here on iOS
         /// 26.4, so its re-pin never ran (ThreadScrollTests).
         var distanceFromEnd: CGFloat { content - container - topInset - offset }
 
@@ -802,7 +802,7 @@ struct ThreadView: View {
 // MARK: - Header (DESIGN T1: contact, then the AccountTag that says which account this chat belongs to)
 
 /// One 44 pt glass capsule (the button around it adds the glass): on the soft scroll edge alone, the tag became
-/// unreadable over photos and our own coloured bubbles (review 2026-10-15 #1).
+/// unreadable over photos and our own coloured bubbles.
 private struct ThreadHeader: View {
     let room: Room
     let identity: AccountIdentity?
@@ -973,7 +973,7 @@ private struct Composer: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 // The system placeholder grey is ~2:1; the mockups' placeholder is label-2 (DESIGN §11). A voice note too
-                // short to send says so here for a moment instead of a hint floating over the thread (#14).
+                // short to send says so here for a moment instead of a hint floating over the thread.
                 TextField("Message as \(accountName)", text: $draft,
                           prompt: Text(recorder.hint ?? "Message as \(accountName)").foregroundStyle(.inkSecondary), axis: .vertical)
                     .lineLimit(1...6)
@@ -1132,8 +1132,8 @@ private struct Composer: View {
 
 // MARK: - Request bar (DESIGN T2)
 
-/// Replaces the composer in request rooms. Opening the room sends nothing (no receipts or typing reach a requester,
-/// PLAN §2.8); only these buttons, or a reply, send an event.
+/// Replaces the composer in request rooms. Opening the room sends nothing (no receipts or typing reach a requester);
+/// only these buttons, or a reply, send an event.
 /// The composer's + button face. Its own view, not a captured local: PhotosPicker's label is a `@Sendable` closure,
 /// and a captured `some View` isn't Sendable.
 private struct PlusIcon: View {
@@ -1156,7 +1156,7 @@ private struct RequestBar: View {
     var body: some View {
         let title = Inbox.requestTitle(requester: handle.map { "@\($0)" } ?? room.name, account: identity?.name)
         VStack(alignment: .leading, spacing: 6) {
-            // The tag ends the title's line (review 2026-10-15 #5: on its own line it made the bar ~195 pt), and wraps
+            // The tag ends the title's line (on its own line it made the bar ~195 pt), and wraps
             // under it when both don't fit.
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 6) { titleText(title.shown); tag }

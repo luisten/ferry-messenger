@@ -18,7 +18,7 @@ one inbox, and no feed, no Explore, no algorithm.
   account a chat belongs to. Tap an account to see only its chats.
 - **Replies always come from the right account.** Every chat stays with the account it belongs to.
 - **Everything you'd expect in a chat:** replies, reactions, edits, unsending, typing and "Seen".
-- **Photos, videos, voice notes and GIFs,** sent and received. Shared reels play right in the chat.
+- **Photos, videos, voice notes and GIFs,** sent and received. Shared reels play in the app, without opening Instagram.
 - **Message requests,** opened without sending "Seen". Accept or delete them when you're ready.
 - **Primary and General** for business and creator accounts, plus an archive for chats you're done with.
 - Light and dark mode, large text and VoiceOver.

@@ -1,6 +1,6 @@
 import XCTest
 
-/// Smoke flows (PLAN §4, M7b; PLAN-core C8). Most run on `FERRY_DEBUG_DEMO`'s made-up accounts and chats, which never
+/// Smoke flows (PLAN-core C8). Most run on `FERRY_DEBUG_DEMO`'s made-up accounts and chats, which never
 /// connect, so nothing reaches Instagram. The live ones use the accounts logged in to the simulator's app and are
 /// opt-in (`TEST_RUNNER_FERRY_UITEST_LIVE=1`): each launch loads every account's inbox. Nothing is typed anywhere:
 /// never into instagram.com, never a message, never a search.
@@ -63,7 +63,7 @@ final class SmokeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["sheet.Reply"].exists)
     }
 
-    /// #17/#34: right after a cold launch (and again on reopening), the first two chats with nothing unread open with
+    /// FOLLOWUPS #17/#34: right after a cold launch (and again on reopening), the first two chats with nothing unread open with
     /// their newest message fully above the composer; on the dummies those are the two accounts' DMs with each other,
     /// full of tall reel and post cards, so it's a live test. Nothing here scrolls the thread up: a query after that can hang the app
     /// (CLAUDE.md, FOLLOWUPS #39).
@@ -399,7 +399,7 @@ final class SmokeUITests: XCTestCase {
     /// The same group as Instagram's mailbox has it (`FERRY_DEBUG_GROUP_OLDER`): its newest five messages, all unread,
     /// as after a busy day (2026-11-04). The top spinner still pages back until the "New messages" line has its place
     /// (two pages), and the thread holds it. What that day's fix is for, a scroll up to the spinner loading one page
-    /// and keeping the user's place, can't be queried (#39), and rows above the screen aren't in the tree: check it by
+    /// and keeping the user's place, can't be queried (FOLLOWUPS #39), and rows above the screen aren't in the tree: check it by
     /// hand with `FERRY_DEBUG_GROUP_OLDER` (CLAUDE.md).
     @MainActor
     func testUnreadGroupPagesBackToItsLine() throws {
