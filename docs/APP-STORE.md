@@ -198,6 +198,15 @@ security unlock-keychain ~/Library/Keychains/login.keychain-db
 security set-key-partition-list -S apple-tool:,apple:,codesign: -s ~/Library/Keychains/login.keychain-db
 ```
 
+Unlocking in your own SSH login doesn't help the next one (each SSH login has its own keychain session): run the
+commands in a `tmux` session on the Mac Mini and the build in that same session. Even then (2026-11-23) the archive
+signed but the upload didn't: from SSH, xcodebuild can't read the Xcode account's credentials (`exportArchive Failed to
+Use Accounts`, "missing Xcode-Username"). So the upload is a few clicks: copy the archive into
+`~/Library/Developer/Xcode/Archives/<date>/`, then on the Mac Mini's screen Xcode → Window → Organizer → the archive →
+Distribute App → App Store Connect → Distribute. For uploads with no screen at all (CI), use an App Store Connect API
+key instead (Users and Access → Integrations → Team Keys, role App Manager) with `-authenticationKeyPath`,
+`-authenticationKeyID` and `-authenticationKeyIssuerID` on both xcodebuild commands.
+
 `Config/Local.xcconfig` must give `FERRY_BUNDLE_PREFIX = com.luisten` and the team ID. The export uploads straight to
 App Store Connect (`destination` `upload`). The first run makes the team's Apple Distribution certificate (Xcode
 keeps it in the cloud) and the App Store profile. Alternatively: Xcode → Product → Archive, then Organizer →
