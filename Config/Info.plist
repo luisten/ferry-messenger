@@ -6,6 +6,8 @@
 	<string>$(FERRY_DISTRIBUTION)</string>
 	<key>FerryPrerelease</key>
 	<string>$(FERRY_PRERELEASE)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

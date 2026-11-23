@@ -239,6 +239,8 @@ xcrun simctl spawn $SIM launchctl stop com.apple.SpringBoard   # only if `simctl
 
 ## Releases
 
+The App Store (an experiment, likely rejected): [APP-STORE.md](APP-STORE.md), the process and every answer.
+
 **Release candidates** carry a label in `Config/Base.xcconfig` (`FERRY_PRERELEASE = RC1`), shown after the version in
 Accounts ("Ferry Messenger 1.7-RC1"); `MARKETING_VERSION` stays numbers only, as iOS requires. CI fails on main and
 the release workflow refuses a tag while it's set: empty it in the PR that goes to main.
