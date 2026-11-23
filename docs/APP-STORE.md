@@ -1,5 +1,8 @@
 # Submitting to the App Store
 
+**Status: 1.8 (build 202611231324) submitted for review 2026-11-23** as "Ferry Messenger: Calm DMs", with a
+review-only Instagram account (its address is kept outside this public repo).
+
 Started 2026-11-23, against the earlier call to stay off the App Store (rejection is likely, see
 [Risks](#risks)): the user wants to go through the process anyway, and learn it for later apps. Part 1 is the process
 for any iPhone app; part 2 is Ferry Messenger's answers to every question App Store Connect asks.
