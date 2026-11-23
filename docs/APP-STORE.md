@@ -95,7 +95,7 @@ Things that catch first submissions:
 | Apple ID | 6838185228 (made 2026-11-23) |
 | Subtitle (30) | Direct messages, nothing else |
 | Category | Social Networking (primary), none secondary |
-| Content rights | "Contains, shows or accesses third-party content": **yes**, honestly; the next box asks whether you have the rights to it. You don't have Instagram's permission, so this is your call. Answering it truthfully is what 5.2.2 rejections are made of |
+| Content rights | Only two choices: "Yes, it contains third-party content, **and I have the necessary rights**", or "No third-party content"; there is no "yes, without rights". The user chose the first (2026-11-23), on the view that users see only their own messages. App Review can still ask for Instagram's authorization (5.2.2) |
 | Age rating | see below |
 | License agreement | Apple's standard EULA (the AGPL covers the source, see [Risks](#risks)) |
 
@@ -113,9 +113,10 @@ signs in to themselves; the App Store build never calls GitHub. Privacy policy U
 
 ### Pricing and Availability
 
-Free (set 2026-11-23, United States as the base). Availability: not set yet. Leave out **China mainland**: it now
+Free (set 2026-11-23, United States as the base). Availability (set 2026-11-23): 174 of 175 regions, all but **China mainland**: it now
 needs an AI-generated content declaration and a security assessment (App Compliance), and Instagram isn't reachable
-there anyway. Apple silicon Macs: on by default; untested there, so consider turning it off. All other countries, or leave out the EU if you don't answer trader status (as an individual with a free
+there anyway. Apple silicon Macs: on by default, turned off (untested there). EU: declared **non-trader** under the DSA
+(Business → Compliance, 2026-11-23), so nothing is shown publicly. For reference, or leave out the EU if you don't answer trader status (as an individual with a free
 app and no income from it you're most likely a **non-trader**; a trader's address, phone and email are shown on the
 store page).
 
@@ -186,6 +187,15 @@ xcodebuild archive -project Ferry.xcodeproj -scheme Ferry -configuration Release
   FERRY_DISTRIBUTION=appstore CURRENT_PROJECT_VERSION=$(date +%Y%m%d%H%M)
 xcodebuild -exportArchive -archivePath ~/Builds/FerryMessenger-appstore.xcarchive \
   -exportOptionsPlist scripts/ExportOptions-AppStore.plist -exportPath ~/Builds/appstore-export -allowProvisioningUpdates
+```
+
+**Over SSH the login keychain is locked**, and codesign fails with `errSecInternalComponent` after a full build.
+Once per boot (typing the Mac Mini's password; the second command, once ever, lets codesign use the keys without a
+dialog nobody can see over SSH):
+
+```sh
+security unlock-keychain ~/Library/Keychains/login.keychain-db
+security set-key-partition-list -S apple-tool:,apple:,codesign: -s ~/Library/Keychains/login.keychain-db
 ```
 
 `Config/Local.xcconfig` must give `FERRY_BUNDLE_PREFIX = com.luisten` and the team ID. The export uploads straight to
