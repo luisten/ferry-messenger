@@ -177,40 +177,27 @@ accounts, a thread with photos and reactions, the group, requests, Accounts, wel
 
 ### Build and upload
 
-On the Mac Mini (Xcode 27.2, signed in to the developer account in Xcode → Settings → Accounts), from an up-to-date
-`main`:
+**On the Mac Mini's screen (Screen Sharing), never over SSH:** each attempt to sign or upload over SSH logged the
+developer account out of Xcode (2026-11-23), and the upload failed anyway (`exportArchive Failed to Use Accounts`).
 
-```sh
-core/build.sh
-xcodebuild archive -project Ferry.xcodeproj -scheme Ferry -configuration Release -destination generic/platform=iOS \
-  -archivePath ~/Builds/FerryMessenger-appstore.xcarchive -allowProvisioningUpdates \
-  FERRY_DISTRIBUTION=appstore CURRENT_PROJECT_VERSION=$(date +%Y%m%d%H%M)
-xcodebuild -exportArchive -archivePath ~/Builds/FerryMessenger-appstore.xcarchive \
-  -exportOptionsPlist scripts/ExportOptions-AppStore.plist -exportPath ~/Builds/appstore-export -allowProvisioningUpdates
-```
+1. `git pull` on `main`, then `core/build.sh` (a Terminal over SSH is fine for this: nothing is signed).
+2. `Config/Local.xcconfig` gives `FERRY_BUNDLE_PREFIX = com.luisten` and the team ID. For the build, also set
+   `FERRY_DISTRIBUTION = appstore` and a new `CURRENT_PROJECT_VERSION` (a timestamp like `202611231324`) there, and take
+   them out again afterwards; or archive from Terminal on the Mac Mini's screen:
 
-**Over SSH the login keychain is locked**, and codesign fails with `errSecInternalComponent` after a full build.
-Once per boot (typing the Mac Mini's password; the second command, once ever, lets codesign use the keys without a
-dialog nobody can see over SSH):
+   ```sh
+   xcodebuild archive -project Ferry.xcodeproj -scheme Ferry -configuration Release -destination generic/platform=iOS \
+     -archivePath ~/Library/Developer/Xcode/Archives/$(date +%F)/FerryMessenger-$(date +%Y%m%d%H%M).xcarchive \
+     -allowProvisioningUpdates FERRY_DISTRIBUTION=appstore CURRENT_PROJECT_VERSION=$(date +%Y%m%d%H%M)
+   ```
 
-```sh
-security unlock-keychain ~/Library/Keychains/login.keychain-db
-security set-key-partition-list -S apple-tool:,apple:,codesign: -s ~/Library/Keychains/login.keychain-db
-```
+3. Xcode → Window → Organizer → the archive → **Distribute App** → **App Store Connect** → **Distribute**, signing
+   automatic. The first one made the team's Apple Distribution certificate.
+4. Apple processes the build (5–30 minutes, an email); then it can be picked on the version page.
 
-Unlocking in your own SSH login doesn't help the next one (each SSH login has its own keychain session): run the
-commands in a `tmux` session on the Mac Mini and the build in that same session. Even then (2026-11-23) the archive
-signed but the upload didn't: from SSH, xcodebuild can't read the Xcode account's credentials (`exportArchive Failed to
-Use Accounts`, "missing Xcode-Username"). So the upload is a few clicks: copy the archive into
-`~/Library/Developer/Xcode/Archives/<date>/`, then on the Mac Mini's screen Xcode → Window → Organizer → the archive →
-Distribute App → App Store Connect → Distribute. For uploads with no screen at all (CI), use an App Store Connect API
-key instead (Users and Access → Integrations → Team Keys, role App Manager) with `-authenticationKeyPath`,
-`-authenticationKeyID` and `-authenticationKeyIssuerID` on both xcodebuild commands.
-
-`Config/Local.xcconfig` must give `FERRY_BUNDLE_PREFIX = com.luisten` and the team ID. The export uploads straight to
-App Store Connect (`destination` `upload`). The first run makes the team's Apple Distribution certificate (Xcode
-keeps it in the cloud) and the App Store profile. Alternatively: Xcode → Product → Archive, then Organizer →
-Distribute App → App Store Connect.
+The first upload: 1.8 (202611231324), 2026-11-23. For uploads with no screen at all (CI), an App Store Connect API key
+(Users and Access → Integrations → Team Keys, role App Manager) passed to `xcodebuild` with `-authenticationKeyPath`,
+`-authenticationKeyID` and `-authenticationKeyIssuerID`, and `scripts/ExportOptions-AppStore.plist` for the export.
 
 ## Risks
 
