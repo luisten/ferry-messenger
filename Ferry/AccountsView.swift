@@ -33,6 +33,9 @@ struct AccountsView: View {
                 if AppUpdate.fromSource {
                     Toggle("Check for new versions", isOn: $checksForUpdates)
                 }
+                // App Review 5.1.1: the privacy policy inside the app, not only on the App Store page.
+                Link("Privacy Policy", destination: URL(string: "https://github.com/luisten/ferry-messenger/blob/main/PRIVACY.md")!)
+                    .foregroundStyle(Color.primary)
             } footer: {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(versionLine).accessibilityIdentifier("accounts.footer")

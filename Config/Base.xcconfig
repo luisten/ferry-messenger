@@ -10,7 +10,8 @@ DEVELOPMENT_TEAM =
 FERRY_PRERELEASE =
 
 // How the app was installed: the release workflow builds its .ipa with `ipa`, whose updates come through AltStore or
-// SideStore. Empty: built from source, so Accounts checks for new versions and shows when the build stops opening.
+// SideStore; an App Store build is `appstore` (docs/APP-STORE.md). Empty: built from source, so Accounts checks for new
+// versions and shows when the build stops opening.
 FERRY_DISTRIBUTION =
 
 #include? "Local.xcconfig"

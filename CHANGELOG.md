@@ -7,6 +7,10 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+### Added
+
+- A Privacy Policy link in Accounts.
+
 ## [1.8] - 2026-11-18
 
 ### Added
