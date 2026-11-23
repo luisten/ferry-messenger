@@ -168,6 +168,12 @@ store page).
 
 ### Screenshots
 
+**Done 2026-11-23:** the version page asked for one slot, "iPhone with Dynamic Island (medium display)" (6.3",
+1206 × 2622), and scales it to every other iPhone; four from `testDesignTour` on a fresh iPhone 17 Pro simulator
+(`CODE_SIGNING_ALLOWED=NO`, no `Local.xcconfig`): inbox, group, Jonas's DM, Lena's request. Not Accounts: a Debug
+build shows "(Debug)" and the update switch, which the App Store build hasn't. The 6.9" set below was made too but
+isn't needed.
+
 On the Mac Mini, from the made-up data (`FERRY_DEBUG_DEMO`, a Debug build is fine), at full size: one set on an
 **iPhone 17 Pro Max** simulator (6.9", 1320 × 2868) and one on an **iPhone 17 Pro** (6.3", 1206 × 2622), so whichever
 slot App Store Connect marks required is filled. Status bar as for the README's
