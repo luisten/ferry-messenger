@@ -1,5 +1,8 @@
 # Submitting to the App Store
 
+**Status: 1.8 (build 202611231324) submitted for review 2026-11-23** as "Ferry Messenger: Calm DMs", with a
+review-only Instagram account (its address is kept outside this public repo).
+
 Started 2026-11-23, against the earlier call to stay off the App Store (rejection is likely, see
 [Risks](#risks)): the user wants to go through the process anyway, and learn it for later apps. Part 1 is the process
 for any iPhone app; part 2 is Ferry Messenger's answers to every question App Store Connect asks.
@@ -66,7 +69,11 @@ Things that catch first submissions:
 
   Re-check after a `core/` dependency bump: `nm -u build/IGCore.xcframework/ios-arm64/libigcore.a | grep -E
   '_(f?stat|lstat|fstatat|getattrlist|f?statv?fs|mach_absolute_time)$'`.
-- `ITSAppUsesNonExemptEncryption = NO` (Config/Info.plist): only HTTPS/TLS, Apple's and Go's standard library's.
+- `ITSAppUsesNonExemptEncryption = NO` (Config/Info.plist): only HTTPS/TLS. **Not settled:** App Store Connect asks
+  for documentation when an app uses "standard encryption algorithms instead of, or in addition to" the system's,
+  and `core/` talks to Instagram with Go's own TLS, not Apple's. Common practice treats HTTPS-only as exempt; the strict
+  answer is `YES`, then "standard algorithms", which brings a French import declaration if the app is offered in
+  France. Your call before submitting.
 - **Privacy Policy** row in Accounts, linking [PRIVACY.md](../PRIVACY.md) (5.1.1 wants it inside the app too).
 - An App Store build is stamped `FERRY_DISTRIBUTION=appstore`: like the release `.ipa`, it never asks GitHub for new
   versions and shows neither "… is out" nor "Opens until" (`AppUpdate.fromSource`). Apple doesn't allow pointing
@@ -78,7 +85,7 @@ Things that catch first submissions:
 | Field | Value |
 |---|---|
 | Platform | iOS |
-| Name | Ferry Messenger |
+| Name | Ferry Messenger: Calm DMs ("Ferry Messenger" is taken on the store; the name under the icon stays Ferry Messenger) |
 | Primary language | English (U.S.) |
 | Bundle ID | `com.luisten.ferry-messenger` (the release's, `FERRY_BUNDLE_PREFIX=com.luisten`) |
 | SKU | `ferry-messenger` |
@@ -88,26 +95,31 @@ Things that catch first submissions:
 
 | Field | Value |
 |---|---|
+| Apple ID | 6838185228 (made 2026-11-23) |
 | Subtitle (30) | Direct messages, nothing else |
 | Category | Social Networking (primary), none secondary |
-| Content rights | "Contains, shows or accesses third-party content": **yes**, honestly; the next box asks whether you have the rights to it. You don't have Instagram's permission, so this is your call. Answering it truthfully is what 5.2.2 rejections are made of |
+| Content rights | Only two choices: "Yes, it contains third-party content, **and I have the necessary rights**", or "No third-party content"; there is no "yes, without rights". The user chose the first (2026-11-23), on the view that users see only their own messages. App Review can still ask for Instagram's authorization (5.2.2) |
 | Age rating | see below |
 | License agreement | Apple's standard EULA (the AGPL covers the source, see [Risks](#risks)) |
 
-**Age rating questionnaire** (2026 questions): everything "None"/"No" except **Messaging and Chat: Yes** and
-**User-Generated Content: Yes**. No unrestricted web access (the only web view is Instagram's login page). No
-advertising, no gambling, no in-app purchases. Apple computes the rating from that (expect 13+, Instagram's own age
-limit, or higher); don't set an override.
+**Age rating questionnaire** (2026 questions, answered 2026-11-23): everything "None"/"No" except **Messaging and
+Chat: Yes**. User-Generated Content is "broad distribution" of what users make, and Social Media a feed: neither is
+a DM client. No unrestricted web access (the only web view is Instagram's login page), no shared location, no
+advertising, no gambling. Apple computed **4+**; overridden to **13+** (Instagram's age limit and PRIVACY.md's, and the
+form says a stated minimum must be matched), shown as 12+ in Vietnam.
 
 ### App Privacy
 
-**Data Not Collected.** The developer receives nothing; messages go between the phone and Instagram, which the user
+**Data Not Collected** (saved 2026-11-23; **Publish** is yours: it attests the answers are accurate). The developer receives nothing; messages go between the phone and Instagram, which the user
 signs in to themselves; the App Store build never calls GitHub. Privacy policy URL:
 `https://github.com/luisten/ferry-messenger/blob/main/PRIVACY.md`.
 
 ### Pricing and Availability
 
-Free. Availability: all countries, or leave out the EU if you don't answer trader status (as an individual with a free
+Free (set 2026-11-23, United States as the base). Availability (set 2026-11-23): 174 of 175 regions, all but **China mainland**: it now
+needs an AI-generated content declaration and a security assessment (App Compliance), and Instagram isn't reachable
+there anyway. Apple silicon Macs: on by default, turned off (untested there). EU: declared **non-trader** under the DSA
+(Business → Compliance, 2026-11-23), so nothing is shown publicly. For reference, or leave out the EU if you don't answer trader status (as an individual with a free
 app and no income from it you're most likely a **non-trader**; a trader's address, phone and email are shown on the
 store page).
 
@@ -159,6 +171,12 @@ store page).
 
 ### Screenshots
 
+**Done 2026-11-23:** the version page asked for one slot, "iPhone with Dynamic Island (medium display)" (6.3",
+1206 × 2622), and scales it to every other iPhone; four from `testDesignTour` on a fresh iPhone 17 Pro simulator
+(`CODE_SIGNING_ALLOWED=NO`, no `Local.xcconfig`): inbox, group, Jonas's DM, Lena's request. Not Accounts: a Debug
+build shows "(Debug)" and the update switch, which the App Store build hasn't. The 6.9" set below was made too but
+isn't needed.
+
 On the Mac Mini, from the made-up data (`FERRY_DEBUG_DEMO`, a Debug build is fine), at full size: one set on an
 **iPhone 17 Pro Max** simulator (6.9", 1320 × 2868) and one on an **iPhone 17 Pro** (6.3", 1206 × 2622), so whichever
 slot App Store Connect marks required is filled. Status bar as for the README's
@@ -168,22 +186,27 @@ accounts, a thread with photos and reactions, the group, requests, Accounts, wel
 
 ### Build and upload
 
-On the Mac Mini (Xcode 27.2, signed in to the developer account in Xcode → Settings → Accounts), from an up-to-date
-`main`:
+**On the Mac Mini's screen (Screen Sharing), never over SSH:** each attempt to sign or upload over SSH logged the
+developer account out of Xcode (2026-11-23), and the upload failed anyway (`exportArchive Failed to Use Accounts`).
 
-```sh
-core/build.sh
-xcodebuild archive -project Ferry.xcodeproj -scheme Ferry -configuration Release -destination generic/platform=iOS \
-  -archivePath ~/Builds/FerryMessenger-appstore.xcarchive -allowProvisioningUpdates \
-  FERRY_DISTRIBUTION=appstore CURRENT_PROJECT_VERSION=$(date +%Y%m%d%H%M)
-xcodebuild -exportArchive -archivePath ~/Builds/FerryMessenger-appstore.xcarchive \
-  -exportOptionsPlist scripts/ExportOptions-AppStore.plist -exportPath ~/Builds/appstore-export -allowProvisioningUpdates
-```
+1. `git pull` on `main`, then `core/build.sh` (a Terminal over SSH is fine for this: nothing is signed).
+2. `Config/Local.xcconfig` gives `FERRY_BUNDLE_PREFIX = com.luisten` and the team ID. For the build, also set
+   `FERRY_DISTRIBUTION = appstore` and a new `CURRENT_PROJECT_VERSION` (a timestamp like `202611231324`) there, and take
+   them out again afterwards; or archive from Terminal on the Mac Mini's screen:
 
-`Config/Local.xcconfig` must give `FERRY_BUNDLE_PREFIX = com.luisten` and the team ID. The export uploads straight to
-App Store Connect (`destination` `upload`). The first run makes the team's Apple Distribution certificate (Xcode
-keeps it in the cloud) and the App Store profile. Alternatively: Xcode → Product → Archive, then Organizer →
-Distribute App → App Store Connect.
+   ```sh
+   xcodebuild archive -project Ferry.xcodeproj -scheme Ferry -configuration Release -destination generic/platform=iOS \
+     -archivePath ~/Library/Developer/Xcode/Archives/$(date +%F)/FerryMessenger-$(date +%Y%m%d%H%M).xcarchive \
+     -allowProvisioningUpdates FERRY_DISTRIBUTION=appstore CURRENT_PROJECT_VERSION=$(date +%Y%m%d%H%M)
+   ```
+
+3. Xcode → Window → Organizer → the archive → **Distribute App** → **App Store Connect** → **Distribute**, signing
+   automatic. The first one made the team's Apple Distribution certificate.
+4. Apple processes the build (5–30 minutes, an email); then it can be picked on the version page.
+
+The first upload: 1.8 (202611231324), 2026-11-23. For uploads with no screen at all (CI), an App Store Connect API key
+(Users and Access → Integrations → Team Keys, role App Manager) passed to `xcodebuild` with `-authenticationKeyPath`,
+`-authenticationKeyID` and `-authenticationKeyIssuerID`, and `scripts/ExportOptions-AppStore.plist` for the export.
 
 ## Risks
 
