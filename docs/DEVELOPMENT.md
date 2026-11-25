@@ -154,6 +154,9 @@ and `LaunchMark` @2x/@3x, light and dark. It refuses SVG features it doesn't dra
 
 ## Install on your iPhone
 
+To just use the app, get it from the [App Store](https://apps.apple.com/app/ferry-messenger-calm-dms/id6838185228).
+This is how to build it and install it yourself.
+
 1. Create `Config/Local.xcconfig` with your team ID and a bundle prefix of yours (above). Don't pick a team in Xcode's
    Signing & Capabilities: that writes it into `project.pbxproj`.
 2. On the phone, turn on **Developer Mode** (Settings → Privacy & Security), connect it to the Mac and trust it.
