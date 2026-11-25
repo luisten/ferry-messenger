@@ -1,7 +1,8 @@
 # Submitting to the App Store
 
-**Status: 1.8 (build 202611231324) submitted for review 2026-11-23** as "Ferry Messenger: Calm DMs", with a
-review-only Instagram account (its address is kept outside this public repo).
+**Status: 1.8 (build 202611231324) approved and on the
+[App Store](https://apps.apple.com/app/ferry-messenger-calm-dms/id6838185228) since 2026-11-24**, as "Ferry Messenger:
+Calm DMs" (submitted 2026-11-23, with a review-only Instagram account whose address is kept outside this public repo).
 
 Started 2026-11-23, against the earlier call to stay off the App Store (rejection is likely, see
 [Risks](#risks)): the user wants to go through the process anyway, and learn it for later apps. Part 1 is the process

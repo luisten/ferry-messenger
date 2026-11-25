@@ -4,6 +4,10 @@ Ferry Messenger is an iPhone app for your Instagram direct messages and nothing 
 one inbox, and no feed, no Explore, no algorithm.
 
 <p align="center">
+  <a href="https://apps.apple.com/app/ferry-messenger-calm-dms/id6838185228"><img src="docs/app-store-badge.svg" height="54" alt="Download on the App Store"></a>
+</p>
+
+<p align="center">
   <img src="docs/screenshots/welcome.png" width="200" alt="Welcome screen: the Ferry wordmark above a ferry carrying two account bubbles on the sea, and a Connect Instagram account button">
   <img src="docs/screenshots/inbox.png" width="200" alt="Inbox with two accounts: a chip for each account and a list of chats, each marked with its account">
   <img src="docs/screenshots/group-thread.png" width="200" alt="A group chat in dark mode: sender names above incoming messages, a reply and a reaction">
@@ -51,7 +55,13 @@ Ferry Messenger is not affiliated with Instagram or Meta.
 
 ## Install
 
-Ferry Messenger isn't on the App Store, so you install it yourself:
+Get Ferry Messenger from the App Store:
+
+<p align="center">
+  <a href="https://apps.apple.com/app/ferry-messenger-calm-dms/id6838185228"><img src="docs/app-store-badge.svg" height="54" alt="Download on the App Store"></a>
+</p>
+
+Or install it yourself:
 
 - **With AltStore or SideStore:** add Ferry Messenger's source, as the
   [latest release](https://github.com/luisten/ferry-messenger/releases/latest) explains, and install it from there.

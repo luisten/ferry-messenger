@@ -154,6 +154,9 @@ and `LaunchMark` @2x/@3x, light and dark. It refuses SVG features it doesn't dra
 
 ## Install on your iPhone
 
+To just use the app, get it from the [App Store](https://apps.apple.com/app/ferry-messenger-calm-dms/id6838185228).
+This is how to build it and install it yourself.
+
 1. Create `Config/Local.xcconfig` with your team ID and a bundle prefix of yours (above). Don't pick a team in Xcode's
    Signing & Capabilities: that writes it into `project.pbxproj`.
 2. On the phone, turn on **Developer Mode** (Settings → Privacy & Security), connect it to the Mac and trust it.
@@ -239,7 +242,7 @@ xcrun simctl spawn $SIM launchctl stop com.apple.SpringBoard   # only if `simctl
 
 ## Releases
 
-The App Store (an experiment, likely rejected): [APP-STORE.md](APP-STORE.md), the process and every answer.
+The App Store (on it since 1.8, 2026-11-24): [APP-STORE.md](APP-STORE.md), the process and every answer.
 
 **Release candidates** carry a label in `Config/Base.xcconfig` (`FERRY_PRERELEASE = RC1`), shown after the version in
 Accounts ("Ferry Messenger 1.7-RC1"); `MARKETING_VERSION` stays numbers only, as iOS requires. CI fails on main and
