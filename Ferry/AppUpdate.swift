@@ -1,7 +1,8 @@
 import Foundation
 
-/// For builds from source only (`FerryDistribution` empty): the release workflow stamps its .ipa `ipa`, and AltStore or
-/// SideStore learn of new versions from the release's `source.json` instead. Accounts' footer says when a newer
+/// For builds from source only (`FerryDistribution` empty, and a provisioning profile on a device): the release workflow
+/// stamps its .ipa `ipa`, and AltStore or SideStore learn of new versions from the release's `source.json` instead; the
+/// App Store (and TestFlight) strip the profile and update the app themselves. Accounts' footer says when a newer
 /// release is out and until when this build opens (docs/DEVELOPMENT.md "Update to a new version").
 nonisolated enum AppUpdate {
     static let latestURL = URL(string: "https://github.com/luisten/ferry-messenger/releases/latest")!
@@ -15,6 +16,13 @@ nonisolated enum AppUpdate {
     static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
     static let prerelease = Bundle.main.object(forInfoDictionaryKey: "FerryPrerelease") as? String ?? ""
     static let fromSource = (Bundle.main.object(forInfoDictionaryKey: "FerryDistribution") as? String ?? "").isEmpty
+        && (hasProfile || isSimulator)
+    private static let hasProfile = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision") != nil
+    #if targetEnvironment(simulator)
+    private static let isSimulator = true  // its builds have no profile
+    #else
+    private static let isSimulator = false
+    #endif
 
     /// At most once a day, as the app becomes active: one HEAD request to `releases/latest`, whose redirect names the
     /// newest release (D22: no API, no JSON, nothing about the user but the app's version). Any failure: nothing.
