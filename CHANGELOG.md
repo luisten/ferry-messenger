@@ -7,6 +7,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-11-25
+
 ### Added
 
 - A Privacy Policy link in Accounts.
@@ -211,7 +213,8 @@ only), and each release is a signed tag `v` and its version ([docs/DEVELOPMENT.m
 - First public release: your Instagram direct messages, from all your accounts in one inbox, talking to Instagram
   straight from your iPhone.
 
-[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.8...HEAD
+[unreleased]: https://github.com/luisten/ferry-messenger/compare/v1.8.1...HEAD
+[1.8.1]: https://github.com/luisten/ferry-messenger/compare/v1.8...v1.8.1
 [1.8]: https://github.com/luisten/ferry-messenger/compare/v1.7.1...v1.8
 [1.7.1]: https://github.com/luisten/ferry-messenger/compare/v1.7...v1.7.1
 [1.7]: https://github.com/luisten/ferry-messenger/compare/v1.6.5...v1.7
